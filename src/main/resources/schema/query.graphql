@@ -1,0 +1,11 @@
+
+type Query {
+    # 단일 유저 정보 가져오기
+    getUser(id : Int) : User,
+    # 토큰으로 나의 정보 가져오기
+    me : User
+}
+
+schema{
+    query: Query
+}
