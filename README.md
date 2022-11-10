@@ -5,4 +5,4 @@
 - Aws codebuild -> ecr 
   - https://yunsangjun.github.io/cloud/2019/06/21/aws-cicd03.html
 
-codebuild test용 주석
+codebuild test용 주석2
