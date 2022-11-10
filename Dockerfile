@@ -19,6 +19,8 @@ ENV PROFILE=dev
 ARG FILENAME=marketbill-core-server-${VERSION}
 ARG JAR_FILE=/app/build/libs/${FILENAME}.jar
 COPY --from=builder ${JAR_FILE} ./app.jar
+
+EXPOSE 80
 ENTRYPOINT ["java","-jar", "-Dspring.profiles.active=${PROFILE}", "/app.jar"]
 
 #FROM gradle:7.5.1-jdk18 AS builder
