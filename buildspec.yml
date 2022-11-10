@@ -23,7 +23,7 @@ phases:
       - echo Building the Docker image...
       - echo $IMAGE_TAG
         # update the following line with the name of your own ECR repository
-      - docker build -f Dockerfile --build-arg ENV=dev -t $REPOSITORY_URI:latest .
+      - docker build -f Dockerfile -t $REPOSITORY_URI:latest .
         # update the following line with the URI of your own ECR repository (view the Push Commands in the console)
       - docker tag $REPOSITORY_URI:latest $REPOSITORY_URI:$IMAGE_TAG
 
@@ -36,7 +36,7 @@ phases:
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
       #- printf '[{"ImageURI":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imageDetail.json
-      - printf '[{"name":"{service name}","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imageDetail.json
+      - printf '[{"name":"{service name}","imageUri":"%s"}]' $REPOSITORY_URI:$IMAGE_TAG > imagedefinitions.json
 artifacts:
   files:
-    - imageDetail.json
+    - imagedefinitions.json

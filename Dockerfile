@@ -4,9 +4,12 @@ MAINTAINER terry960302@gmail.com
 
 WORKDIR /app
 COPY ["build.gradle.kts", "settings.gradle.kts", "./"]
+COPY gradlew .
 COPY gradle  ./gradle/
 COPY src ./src/
-RUN gradle clean build --no-daemon
+# RUN gradle clean build --no-daemon
+RUN chmod +x ./gradlew
+RUN ./gradlew build
 
 FROM public.ecr.aws/docker/library/openjdk:latest AS runner
 
