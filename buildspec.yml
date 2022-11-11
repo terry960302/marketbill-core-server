@@ -14,7 +14,7 @@ phases:
       - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
 #      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
 #      - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - SERVICE_NAME=core-server-service # ecs cluster service name
+      - CONTAINER_NAME=core-server-container # ecs cluster container name
       - IMAGE_TAG="$(date '+%Y%m%d%H%M%S')"
       - REPOSITORY_URI=113244157722.dkr.ecr.ap-northeast-2.amazonaws.com/marketbill-core-server
 
@@ -34,7 +34,7 @@ phases:
       - docker push $REPOSITORY_URI:latest
       - docker push $REPOSITORY_URI:$IMAGE_TAG
       - echo Writing image definitions file...
-      - printf '[{"name":"%s","imageUri":"%s"}]' $SERVICE_NAME $REPOSITORY_URI:$IMAGE_TAG > imageDetail.json
+      - printf '[{"name":"%s","imageUri":"%s"}]' $CONTAINER_NAME $REPOSITORY_URI:$IMAGE_TAG > imageDetail.json
 artifacts:
   files:
     - imageDetail.json
