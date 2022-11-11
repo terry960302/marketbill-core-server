@@ -7,7 +7,7 @@ dgs:
 
 server:
   host: localhost
-  port: 8000
+  port: 80
 
 spring:
   config:
