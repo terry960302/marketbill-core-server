@@ -14,7 +14,7 @@ phases:
       - $(aws ecr get-login --region $AWS_DEFAULT_REGION --no-include-email)
 #      - COMMIT_HASH=$(echo $CODEBUILD_RESOLVED_SOURCE_VERSION | cut -c 1-7)
 #      - IMAGE_TAG=${COMMIT_HASH:=latest}
-      - CONTAINER_NAME=core-server-container # ecs cluster container name
+      - CONTAINER_NAME=core-server-container # ecs cluster container name on which upload source file to
       - IMAGE_TAG="$(date '+%Y%m%d%H%M%S')"
       - REPOSITORY_URI=113244157722.dkr.ecr.ap-northeast-2.amazonaws.com/marketbill-core-server
 
