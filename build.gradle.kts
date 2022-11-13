@@ -39,6 +39,9 @@ dependencies {
 	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
 	implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
 
+	// actuator
+	implementation("org.springframework.boot:spring-boot-starter-actuator:2.7.5")
+
 	// security
 //	implementation("org.springframework.boot:spring-boot-starter-security")
 //	implementation("org.springframework.boot:spring-boot-starter-web")
