@@ -13,7 +13,7 @@ RUN ./gradlew build
 FROM public.ecr.aws/docker/library/openjdk:latest AS runner
 
 ENV VERSION=0.0.1-SNAPSHOT
-ENV PROFILE=dev
+ENV PROFILE=prod
 
 ARG FILENAME=marketbill-core-server-${VERSION}
 ARG JAR_FILE=/app/build/libs/${FILENAME}.jar
