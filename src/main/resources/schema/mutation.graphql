@@ -1,0 +1,16 @@
+type Mutation{
+    signUp(input : SignUpInput) : AuthToken
+}
+
+input SignUpInput{
+    name : String!,
+    phoneNo : String!,
+    password : String!,
+    #  역할 및 권한 (WHOLESALER_EMPR, WHOLESALER_EMPE, RETAILER)
+    role : String!,
+}
+
+type AuthToken{
+    accessToken : String!,
+    refreshToken : String!,
+}

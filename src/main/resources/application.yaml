@@ -15,13 +15,13 @@ spring:
       on-profile: local
   datasource:
     driver-class-name: org.postgresql.Driver
-    url: jdbc:postgresql://localhost:5432/postgres
+    url: jdbc:postgresql://localhost:5432/marketbill-test
     username: postgres
     password: postgres
   jpa:
     open-in-view: true
     hibernate:
-      ddl-auto: create # create-drop, create, update, validate, none
+      ddl-auto: create-drop # create-drop, create, update, validate, none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       use-new-id-generator-mappings: false
@@ -43,7 +43,7 @@ spring:
   jpa:
     open-in-view: true
     hibernate:
-      ddl-auto: none # create-drop, create, update, validate, none
+      ddl-auto: create-drop # create-drop, create, update, validate, none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       use-new-id-generator-mappings: false

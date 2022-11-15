@@ -1,4 +1,33 @@
+scalar LocalDate
+
 # 소매상, 도매상(대표, 직원)
 type User {
     id : Int!,
+    name : String!,
+    # 사업자번호(nullable)
+    businessNo : String,
+    deletedAt : LocalDate
+    userCredential : UserCredential,
+}
+
+# 유저의 로그인, 회원가입 정보
+type UserCredential {
+    id : Int!,
+    user: User,
+    # 역할, 권한
+    role : AccountRole,
+    phoneNo : String!,
+    password : String!,
+    createdAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+
+enum  AccountRole {
+    # 소매상
+    RETAILER
+    # 도매상 점주
+    WHOLESALER_EMPR
+    # 도매상 직원
+    WHOLESALER_EMPE
 }
