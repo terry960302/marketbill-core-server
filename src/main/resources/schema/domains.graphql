@@ -8,6 +8,7 @@ type User {
     businessNo : String,
     deletedAt : LocalDate
     userCredential : UserCredential,
+    authToken : AuthToken,
 }
 
 # 유저의 로그인, 회원가입 정보
@@ -22,12 +23,19 @@ type UserCredential {
     deletedAt : LocalDate,
 }
 
+type AuthToken{
+    accessToken : String!,
+    refreshToken : String!,
+}
 
+#  역할 및 권한(소매상1, 도매상2)
 enum  AccountRole {
     # 소매상
-    RETAILER
+    ROLE_RETAILER
     # 도매상 점주
-    WHOLESALER_EMPR
+    ROLE_WHOLESALER_EMPR
     # 도매상 직원
-    WHOLESALER_EMPE
+    ROLE_WHOLESALER_EMPE
 }
+
+

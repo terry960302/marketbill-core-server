@@ -15,18 +15,15 @@ class CustomUserDetailsService : UserDetailsService{
     private lateinit var userCredentialRepository: UserCredentialRepository
 
     override fun loadUserByUsername(username: String?): UserDetails {
-        val userId = username!!.toLong() // userId를 받아서 처리할 예정
+        val userId = username!!.toLong()
         val credential = userCredentialRepository.getUserCredentialByUserId(userId)
 
-        val userDetails = CustomUserDetails(
+        val hasCred = credential.isPresent
+        if (!hasCred) throw Error("There's no user who has this userId($userId)")
+
+        return CustomUserDetails(
             phoneNo = credential.get().phoneNo,
             role = AccountRole.values().first { it.name == credential.get().user!!.userCredential!!.role.toString() }
         )
-
-        if (credential.isEmpty) {
-            throw Error("There's no user mathed to username")
-        } else {
-            return userDetails
-        }
     }
 }

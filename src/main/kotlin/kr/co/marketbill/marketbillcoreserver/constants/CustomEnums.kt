@@ -1,9 +1,9 @@
 package kr.co.marketbill.marketbillcoreserver.constants
 
 enum class AccountRole {
-    RETAILER,
-    WHOLESALER_EMPR, // 고용주(EMPLOYER)
-    WHOLESALER_EMPE  // 고용자(EMPLOYEE)
+    ROLE_RETAILER,
+    ROLE_WHOLESALER_EMPR, // 고용주(EMPLOYER)
+    ROLE_WHOLESALER_EMPE  // 고용자(EMPLOYEE)
 }
 
 // string -> enum

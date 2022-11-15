@@ -1,44 +1,50 @@
 package kr.co.marketbill.marketbillcoreserver.security
 
-import kr.co.marketbill.marketbillcoreserver.vo.CustomUserDetails
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
-import org.springframework.web.filter.GenericFilterBean
-
-import java.io.IOException
+import org.springframework.web.filter.OncePerRequestFilter
+import org.springframework.web.servlet.HandlerExceptionResolver
 import javax.servlet.FilterChain
-import javax.servlet.ServletException
-import javax.servlet.ServletRequest
-import javax.servlet.ServletResponse
 import javax.servlet.http.HttpServletRequest
+import javax.servlet.http.HttpServletResponse
+
 
 @Component
-class JwtAuthFilter() : GenericFilterBean() {
+class JwtAuthFilter : OncePerRequestFilter() {
+
+    private val log: Logger = LoggerFactory.getLogger(javaClass)
+
     @Autowired
     private lateinit var jwtProvider: JwtProvider
 
-    @Throws(IOException::class, ServletException::class)
-    override fun doFilter(request: ServletRequest?, response: ServletResponse?, chain: FilterChain?) {
-        val token: String = jwtProvider.resolveToken((request as HttpServletRequest))
-        println("@@ token : $token  @@")
-        if (token.isNotBlank()) {
-            val isValidToken = jwtProvider.validateToken(token)
-            if (isValidToken) {
-                val authentication = jwtProvider.getAuthentication(token)
-                SecurityContextHolder.getContext().authentication = authentication
-            }else{
-                // TODO : 유효하지 않으면(엑세스 토큰 만료) => 리프레시 토큰 확인 후 갱신해서 통과시킴
+    @Autowired
+    @Qualifier("handlerExceptionResolver")
+    private val resolver: HandlerExceptionResolver? = null
+    override fun doFilterInternal(
+        request: HttpServletRequest,
+        response: HttpServletResponse,
+        filterChain: FilterChain
+    ) {
+        try{
+            val token: String = jwtProvider.resolveToken((request as HttpServletRequest))
+            if (token.isNotBlank()) {
+                val isValidToken = jwtProvider.validateToken(token)
+                if (isValidToken) {
+                    val authentication = jwtProvider.getAuthentication(token)
+                    SecurityContextHolder.getContext().authentication = authentication
+                }else{
+                    // TODO : 유효하지 않으면(엑세스 토큰 만료) => 리프레시 토큰 확인 후 갱신해서 통과시킴
+                }
             }
-
-
-//            val mockUserDetails = CustomUserDetails(email = "tester1@gmail.com", roles = setOf(AccountRoleType.ADMIN))
-//            println("@@ authorities : ${mockUserDetails.authorities} @@ ")
-//            val mockAuthentication =
-//                UsernamePasswordAuthenticationToken(mockUserDetails, "", mockUserDetails.authorities)
-//            SecurityContextHolder.getContext().authentication = mockAuthentication
+        }catch (e : Exception){
+            log.error("Spring Security Filter Chain Exception:", e);
+            resolver?.resolveException(request, response, null, e);
         }
-        chain?.doFilter(request, response)
+        filterChain.doFilter(request, response)
     }
 
 
