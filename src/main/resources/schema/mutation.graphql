@@ -1,6 +1,8 @@
 type Mutation{
     signUp(input : SignUpInput) : AuthToken
     signIn(input : SignInInput) : AuthToken
+    deleteUser(userId : Int!) : Boolean
+    deleteAuthToken(tokenId : Int!) : Boolean,
 }
 
 input SignUpInput{

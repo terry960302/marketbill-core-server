@@ -39,4 +39,14 @@ class UserDataFetcher {
     fun signIn(@InputArgument input : SignInInput) : AuthTokenDto{
         return userService.signIn(input)
     }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.DeleteUser)
+    fun deleteUser(@InputArgument userId : Long) : Boolean{
+        return userService.deleteUser(userId)
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.DeleteAuthToken)
+    fun deleteAuthToken(@InputArgument tokenId : Long) : Boolean{
+        return userService.deleteAuthToken(tokenId)
+    }
 }

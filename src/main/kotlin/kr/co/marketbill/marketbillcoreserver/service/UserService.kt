@@ -15,6 +15,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 import java.util.Optional
 
 @Service
@@ -43,6 +44,27 @@ class UserService {
         return userRepository.findById(userId)
     }
 
+    fun deleteUser(userId: Long) : Boolean {
+        return try{
+            userRepository.deleteById(userId)
+            true
+        }catch (e : Exception){
+            println(e.message)
+            false
+        }
+    }
+    fun deleteAuthToken(tokenId : Long) : Boolean{
+        return try{
+            val token = authTokenRepository.findById(tokenId)
+            val user = token.get().user
+            authTokenRepository.deleteById(tokenId)
+            true
+        }catch (e : Exception){
+            println(e.message)
+            false
+        }
+    }
+
     @Transactional
     fun signUp(input: SignUpInput): AuthTokenDto {
         try {
@@ -60,7 +82,9 @@ class UserService {
             )
             userCredentialRepository.save(userCredInput)
 
-            return generateAuthToken(user, role = AccountRole.valueOf(input.role.name))
+            return generateAuthToken(user, role = AccountRole.valueOf(input.role.name)) {
+                authTokenRepository.save(it)
+            }
 
 
         } catch (err: Error) {
@@ -75,9 +99,19 @@ class UserService {
         val hasUserCred = userCred.isPresent
         if (!hasUserCred) throw IllegalArgumentException(NO_USER_ERR)
 
+
         val isValidPassword = passwordEncoder.matches(input.password, userCred.get().password)
         if (!isValidPassword) throw IllegalArgumentException(NO_USER_ERR)
-        return generateAuthToken(userCred.get().user!!, role = AccountRole.valueOf(input.role.name))
+        return generateAuthToken(userCred.get().user!!, role = AccountRole.valueOf(input.role.name)) {
+            val authTokenId = userCred.get().user?.authToken?.id
+            authTokenRepository.save(
+                AuthToken(
+                    id = authTokenId,
+                    refreshToken = it.refreshToken,
+                    user = userCred.get().user,
+                )
+            )
+        }
     }
 
     fun generateAuthToken(
@@ -95,11 +129,9 @@ class UserService {
             user = user,
         )
 
-        authTokenRepository.save(authTokenInput)
-
-//        if (onGenerateRefreshToken != null) {
-//            onGenerateRefreshToken(authTokenInput)
-//        }
+        if (onGenerateRefreshToken != null) {
+            onGenerateRefreshToken(authTokenInput)
+        }
 
         return AuthTokenDto(
             accessToken = accessToken,

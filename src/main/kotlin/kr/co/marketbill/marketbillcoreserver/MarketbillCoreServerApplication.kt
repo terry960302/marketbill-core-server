@@ -1,9 +1,10 @@
 package kr.co.marketbill.marketbillcoreserver
 
-//import kr.co.marketbill.marketbillcoreserver.config.SecurityConfig
 import org.springframework.boot.autoconfigure.SpringBootApplication
 import org.springframework.boot.runApplication
+import org.springframework.data.jpa.repository.config.EnableJpaAuditing
 
+@EnableJpaAuditing
 @SpringBootApplication
 class MarketbillCoreServerApplication
 
