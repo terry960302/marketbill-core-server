@@ -1,6 +1,7 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.order
 
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime
+import kr.co.marketbill.marketbillcoreserver.entity.user.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*

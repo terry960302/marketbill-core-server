@@ -1,13 +1,9 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.user
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime
-import org.hibernate.annotations.OnDelete
-import org.hibernate.annotations.OnDeleteAction
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
-import org.springframework.data.annotation.CreatedDate
-import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity

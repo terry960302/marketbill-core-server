@@ -1,10 +1,4 @@
-type Mutation{
-    signUp(input : SignUpInput) : AuthToken
-    signIn(input : SignInInput) : AuthToken
-    deleteUser(userId : Int!) : Boolean
-    deleteAuthToken(tokenId : Int!) : Boolean,
-}
-
+# ----------------- INPUT ------------------
 input SignUpInput{
     name : String!,
     phoneNo : String!,
@@ -17,4 +11,3 @@ input SignInInput{
     password : String!,
     role : AccountRole!,
 }
-

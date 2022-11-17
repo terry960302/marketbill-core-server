@@ -1,0 +1,62 @@
+# 소매상, 도매상(대표, 직원)
+type User {
+    id : Int!,
+    name : String!,
+    # 사업자번호(nullable)
+    businessNo : String,
+    deletedAt : LocalDate
+    userCredential : UserCredential,
+    authToken : AuthToken,
+}
+
+# 유저의 로그인, 회원가입 정보
+type UserCredential {
+    id : Int!,
+    user: User,
+    # 역할, 권한
+    role : AccountRole,
+    phoneNo : String!,
+    password : String!,
+    createdAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+# 주의 : 서로 다른 Role 끼리 거래관계를 맺기 때문에 같은 role 의 데이터를 가져올 경우 데이터가 없습니다.
+type BizConnection {
+    id : Int!,
+    # 본인이 도매상인 경우 retailer 의 목록을 가져옴
+    retailer : User!,
+    # 본인이 소매상의 경우 wholesaler 의 목록을 가져옴
+    wholesaler : User!,
+    applyStatus : ApplyStatus!,
+    createdAt : LocalDate!,
+    deletedAt : LocalDate,
+    updatedAt : LocalDate!
+}
+
+type AuthToken{
+    accessToken : String!,
+    refreshToken : String!,
+}
+
+## -------------- QUERY ------------------
+type Query {
+    # 단일 유저 정보 가져오기
+    getUser(id : Int) : User,
+    # 토큰으로 나의 정보 가져오기
+    me : User
+    # 모든 유저 정보 가져오기
+    getAllUsers : [User],
+    # 모든 거래처 신청 관계 가져오기
+    getAllBizConnections : [BizConnection],
+}
+
+## -------------- MUTATION ------------------
+type Mutation{
+    signUp(input : SignUpInput) : AuthToken
+    signIn(input : SignInInput) : AuthToken
+#    deleteUser(userId : Int!) : Boolean
+#    deleteAuthToken(tokenId : Int!) : Boolean,
+}
+
+

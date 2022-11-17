@@ -1,4 +1,4 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.order
 
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime
 import org.hibernate.annotations.SQLDelete
@@ -27,4 +27,4 @@ data class OrderSheetReceipt(
     @Column(name= "metadata", columnDefinition = "TEXT")
     val metadata : String? = null,
 
-) : BaseTime()
+    ) : BaseTime()

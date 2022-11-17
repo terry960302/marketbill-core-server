@@ -1,4 +1,4 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.user
 
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime

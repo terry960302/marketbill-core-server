@@ -1,5 +1,7 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.flower
 
+import kr.co.marketbill.marketbillcoreserver.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
@@ -28,5 +30,5 @@ class Flower(
     @OneToMany(mappedBy = "flower")
     val orderItems : List<OrderItem> = arrayListOf(),
 
-) : BaseTime(){
+    ) : BaseTime(){
 }

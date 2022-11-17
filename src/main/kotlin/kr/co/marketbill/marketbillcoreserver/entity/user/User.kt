@@ -1,5 +1,8 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.user
 
+import kr.co.marketbill.marketbillcoreserver.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.entity.order.OrderItem
+import kr.co.marketbill.marketbillcoreserver.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
@@ -48,5 +51,5 @@ data class User(
     val orderItemsByWholesaler : List<OrderItem> = arrayListOf(),
 
 
-) : BaseTime() {
+    ) : BaseTime() {
 }

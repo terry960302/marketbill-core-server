@@ -1,11 +1,7 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.user
 
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime
 import org.hibernate.annotations.*
-import org.springframework.data.annotation.CreatedDate
-import org.springframework.data.annotation.LastModifiedDate
-import org.springframework.data.jpa.domain.support.AuditingEntityListener
-import java.time.LocalDateTime
 import javax.persistence.*
 import javax.persistence.Entity
 import javax.persistence.Table

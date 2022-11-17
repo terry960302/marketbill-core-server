@@ -3,6 +3,7 @@ package kr.co.marketbill.marketbillcoreserver.security
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
+import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.service.CustomUserDetailsService
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
@@ -15,7 +16,7 @@ import javax.servlet.http.HttpServletRequest
 @Component
 class JwtProvider {
     @Autowired
-    private lateinit var customUserDetailsService : CustomUserDetailsService
+    private lateinit var customUserDetailsService: CustomUserDetailsService
 
 
     companion object {
@@ -43,6 +44,12 @@ class JwtProvider {
     fun parseUserId(token: String): Long {
         val claims: Claims = getAllClaims(token)
         return claims["user_id"].toString().toLong()
+    }
+
+    fun parseUserRole(token: String): AccountRole {
+        val claims: Claims = getAllClaims(token)
+        val roleStr = claims["role"].toString()
+        return AccountRole.valueOf(roleStr)
     }
 
     fun getAuthentication(token: String): Authentication {

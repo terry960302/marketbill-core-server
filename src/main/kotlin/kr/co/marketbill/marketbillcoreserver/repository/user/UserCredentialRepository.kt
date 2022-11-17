@@ -1,6 +1,6 @@
-package kr.co.marketbill.marketbillcoreserver.repository
+package kr.co.marketbill.marketbillcoreserver.repository.user
 
-import kr.co.marketbill.marketbillcoreserver.entity.UserCredential
+import kr.co.marketbill.marketbillcoreserver.entity.user.UserCredential
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository

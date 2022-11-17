@@ -1,0 +1,45 @@
+
+type CartItem{
+    id : Int!,
+    retailer : User!,
+    flower : Flower!,
+    quantity : Int!,
+    grade : String!,
+    orderedAt : LocalDate,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+type OrderSheet{
+    id : Int!,
+    retailer : User!,
+    wholesaler : User!,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+type OrderItem{
+    id : Int!,
+    orderSheet : OrderSheet,
+    retailer : User,
+    wholesaler : User!,
+    quantity : Int!,
+    grade : String!,
+    price : Int!,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+type OrderSheetReceipt{
+    id : Int!,
+    orderSheet : OrderSheet,
+    filePath : String!,
+    fileFormat : String!,
+    metadata : String,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}

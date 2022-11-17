@@ -2,12 +2,14 @@ package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.dto.AuthTokenDto
-import kr.co.marketbill.marketbillcoreserver.entity.AuthToken
-import kr.co.marketbill.marketbillcoreserver.entity.User
-import kr.co.marketbill.marketbillcoreserver.entity.UserCredential
-import kr.co.marketbill.marketbillcoreserver.repository.AuthTokenRepository
-import kr.co.marketbill.marketbillcoreserver.repository.UserCredentialRepository
-import kr.co.marketbill.marketbillcoreserver.repository.UserRepository
+import kr.co.marketbill.marketbillcoreserver.entity.user.AuthToken
+import kr.co.marketbill.marketbillcoreserver.entity.user.BizConnection
+import kr.co.marketbill.marketbillcoreserver.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.entity.user.UserCredential
+import kr.co.marketbill.marketbillcoreserver.repository.user.AuthTokenRepository
+import kr.co.marketbill.marketbillcoreserver.repository.user.BizConnectionRepository
+import kr.co.marketbill.marketbillcoreserver.repository.user.UserCredentialRepository
+import kr.co.marketbill.marketbillcoreserver.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
@@ -15,7 +17,6 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
 import java.util.Optional
 
 @Service
@@ -28,6 +29,9 @@ class UserService {
 
     @Autowired
     private lateinit var authTokenRepository: AuthTokenRepository
+
+    @Autowired
+    private lateinit var bizConnectionRepository: BizConnectionRepository
 
     @Autowired
     private lateinit var passwordEncoder: BCryptPasswordEncoder
@@ -44,25 +48,33 @@ class UserService {
         return userRepository.findById(userId)
     }
 
-    fun deleteUser(userId: Long) : Boolean {
-        return try{
-            userRepository.deleteById(userId)
-            true
-        }catch (e : Exception){
-            println(e.message)
-            false
-        }
+//    fun deleteUser(userId: Long) : Boolean {
+//        return try{
+//            userRepository.deleteById(userId)
+//            true
+//        }catch (e : Exception){
+//            println(e.message)
+//            false
+//        }
+//    }
+//    fun deleteAuthToken(tokenId : Long) : Boolean{
+//        return try{
+//            val token = authTokenRepository.findById(tokenId)
+//            val user = token.get().user
+//            authTokenRepository.deleteById(tokenId)
+//            true
+//        }catch (e : Exception){
+//            println(e.message)
+//            false
+//        }
+//    }
+
+    fun getAllBizConnByRetailerId(retailerId : Long) : List<BizConnection>{
+        return bizConnectionRepository.getAllBizConnByRetailerId(retailerId)
     }
-    fun deleteAuthToken(tokenId : Long) : Boolean{
-        return try{
-            val token = authTokenRepository.findById(tokenId)
-            val user = token.get().user
-            authTokenRepository.deleteById(tokenId)
-            true
-        }catch (e : Exception){
-            println(e.message)
-            false
-        }
+
+    fun getAllBizConnByWholesalerId(wholesalerId : Long) : List<BizConnection>{
+        return bizConnectionRepository.getAllBizConnByWholesalerId(wholesalerId)
     }
 
     @Transactional

@@ -1,4 +1,4 @@
-package kr.co.marketbill.marketbillcoreserver.entity
+package kr.co.marketbill.marketbillcoreserver.entity.flower
 
 import kr.co.marketbill.marketbillcoreserver.entity.common.BaseTime
 import org.hibernate.annotations.SQLDelete

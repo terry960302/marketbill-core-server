@@ -1,0 +1,21 @@
+## -------------- TYPE ------------------
+
+type Flower{
+    id : Int!,
+    flowerType : FlowerType!,
+    name : String!,
+}
+
+type FlowerType {
+    id : Int!,
+    name : String!,
+}
+
+type BiddingFlower {
+    id : Int!,
+    flower : Flower!,
+    biddingDate : LocalDate!,
+}
+
+## -------------- QUERY ------------------
+## -------------- MUTATION ------------------
