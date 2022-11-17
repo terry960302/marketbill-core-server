@@ -25,5 +25,28 @@ data class User(
 
     @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
     val authToken: AuthToken? = null,
+
+    @OneToMany(mappedBy = "retailer")
+    val retailerToWholesaler : List<BizConnection> = arrayListOf(),
+
+    @OneToMany(mappedBy = "wholesaler")
+    val wholesalerToRetailer : List<BizConnection> = arrayListOf(),
+
+    @OneToMany(mappedBy = "retailer")
+    val cartItems : List<CartItem> = arrayListOf(),
+
+    @OneToMany(mappedBy = "retailer")
+    val orderSheetsByRetailer : List<OrderSheet> = arrayListOf(),
+
+    @OneToMany(mappedBy = "wholesaler")
+    val orderSheetsByWholesaler : List<OrderSheet> = arrayListOf(),
+
+    @OneToMany(mappedBy = "retailer")
+    val orderItemsByRetailer : List<OrderItem> = arrayListOf(),
+
+    @OneToMany(mappedBy = "wholesaler")
+    val orderItemsByWholesaler : List<OrderItem> = arrayListOf(),
+
+
 ) : BaseTime() {
 }
