@@ -13,6 +13,12 @@ enum class ApplyStatus {
     REJECTED,
 }
 
+enum class FlowerGrade{
+    UPPER,
+    MIDDLE,
+    LOWER,
+}
+
 // string -> enum
 inline fun <reified T : Enum<T>, V> ((T) -> V).find(value: V): T? {
     return enumValues<T>().firstOrNull { this(it) == value }

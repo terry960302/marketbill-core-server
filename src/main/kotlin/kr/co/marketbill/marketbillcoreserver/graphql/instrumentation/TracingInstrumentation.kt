@@ -1,4 +1,4 @@
-package kr.co.marketbill.marketbillcoreserver.graphql.instumentation
+package kr.co.marketbill.marketbillcoreserver.graphql.instrumentation
 
 import graphql.ExecutionResult
 import graphql.execution.instrumentation.InstrumentationContext

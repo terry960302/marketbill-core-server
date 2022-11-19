@@ -11,7 +11,7 @@ import javax.persistence.*
 @Entity
 @Table(name = "cart_items")
 @SQLDelete(sql = "UPDATE cart_items SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
+@Where(clause = "deleted_at is Null AND ordered_at is Null")
 data class CartItem(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)

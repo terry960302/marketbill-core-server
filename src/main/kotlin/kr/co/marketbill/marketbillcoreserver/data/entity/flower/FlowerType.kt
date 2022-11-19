@@ -17,7 +17,7 @@ data class FlowerType(
     @Column(name = "name")
     val name : String = "",
 
-    @OneToMany(mappedBy = "flowerType")
+    @OneToMany(mappedBy = "flowerType", fetch = FetchType.LAZY)
     val flowers : List<Flower> = arrayListOf(),
 
     ) : BaseTime(){

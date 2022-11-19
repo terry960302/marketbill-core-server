@@ -43,3 +43,16 @@ type OrderSheetReceipt{
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
 }
+
+## -------------- QUERY ------------------
+extend type Query {
+    # [소매상] 장바구니 목록 가져오기
+    getAllCartItems(pagination : PaginationInput) : [CartItem]
+}
+## -------------- MUTATION ------------------
+extend type Mutation {
+    # [소매상] 장바구니 담기
+    addToCart(input : AddToCartInput) : CartItem!,
+    # [소매상] 장바구니 항목 삭제
+    removeCartItem(cartItemId : Int!) : Int!,
+}

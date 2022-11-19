@@ -24,7 +24,9 @@ type BiddingFlower {
 extend type Query{
     # 사입할 수 있는 꽃 목록 불러오기
     getAllBuyableFlowers(pagination : PaginationInput) : [Flower],
+    # 꽃 검색하기(자동완성 및 검색결과)
     searchFlowers(keyword : String!, pagination : PaginationInput) : [Flower]
+    # 꽃 검색 결과 개수 가져오기
     getSearchFlowersCount(keyword : String) : Int!,
 }
 ## -------------- MUTATION ------------------

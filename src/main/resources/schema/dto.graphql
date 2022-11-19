@@ -12,6 +12,12 @@ input SignInInput{
     role : AccountRole!,
 }
 
+input AddToCartInput{
+    flowerId : Int!,
+    quantity : Int!,
+    grade : String!,
+}
+
 input PaginationInput {
     page : Int = 0,
     size : Int = 15,
