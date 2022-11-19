@@ -4,11 +4,13 @@ type Flower{
     id : Int!,
     flowerType : FlowerType!,
     name : String!,
+    biddingFlowers : [BiddingFlower],
 }
 
 type FlowerType {
     id : Int!,
     name : String!,
+    flowers : [Flower]
 }
 
 type BiddingFlower {
@@ -18,4 +20,11 @@ type BiddingFlower {
 }
 
 ## -------------- QUERY ------------------
+
+extend type Query{
+    # 사입할 수 있는 꽃 목록 불러오기
+    getAllBuyableFlowers(pagination : PaginationInput) : [Flower],
+    searchFlowers(keyword : String!, pagination : PaginationInput) : [Flower]
+    getSearchFlowersCount(keyword : String) : Int!,
+}
 ## -------------- MUTATION ------------------

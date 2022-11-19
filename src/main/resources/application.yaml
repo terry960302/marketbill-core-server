@@ -1,7 +1,7 @@
 dgs:
   graphql:
     graphiql:
-      title: "MarketBill-Graphql"
+      title: "MarketBill-Core-Server"
       enabled: true
     path: /graphql/**
 
@@ -18,6 +18,9 @@ spring:
     url: jdbc:postgresql://localhost:5432/marketbill-test
     username: postgres
     password: postgres
+#  sql:
+#    init:
+#      mode: always
   jpa:
     open-in-view: true
     hibernate:
@@ -25,6 +28,7 @@ spring:
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       use-new-id-generator-mappings: false
+    generate-ddl: true
     show-sql: true
     properties:
       hibernate:

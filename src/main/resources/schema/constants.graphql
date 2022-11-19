@@ -22,4 +22,5 @@ enum ApplyStatus{
 
 schema{
     query: Query
+    mutation: Mutation
 }

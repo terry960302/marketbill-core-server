@@ -5,9 +5,9 @@ import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.InputArgument
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.dto.AuthTokenDto
-import kr.co.marketbill.marketbillcoreserver.entity.user.BizConnection
-import kr.co.marketbill.marketbillcoreserver.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.data.dto.AuthTokenDto
+import kr.co.marketbill.marketbillcoreserver.data.entity.user.BizConnection
+import kr.co.marketbill.marketbillcoreserver.data.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.UserService
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
