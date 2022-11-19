@@ -24,7 +24,7 @@ class Flower(
     @JoinColumn(name = "flower_type_id")
     val flowerType: FlowerType? = null,
 
-    @OneToMany(mappedBy = "flower", fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)
     val biddingFlowers: List<BiddingFlower> = arrayListOf(),
 
     @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)

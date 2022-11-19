@@ -53,10 +53,10 @@ type Query {
 
 ## -------------- MUTATION ------------------
 type Mutation{
+    # 회원가입
     signUp(input : SignUpInput) : AuthToken
+    # 로그인
     signIn(input : SignInInput) : AuthToken
-#    deleteUser(userId : Int!) : Boolean
-#    deleteAuthToken(tokenId : Int!) : Boolean,
 }
 
 
