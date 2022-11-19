@@ -11,3 +11,8 @@ input SignInInput{
     password : String!,
     role : AccountRole!,
 }
+
+input PaginationInput {
+    page : Int = 0,
+    size : Int = 15,
+}

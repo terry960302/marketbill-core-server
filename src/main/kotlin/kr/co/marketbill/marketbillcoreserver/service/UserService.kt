@@ -1,26 +1,34 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.dto.AuthTokenDto
-import kr.co.marketbill.marketbillcoreserver.entity.user.AuthToken
-import kr.co.marketbill.marketbillcoreserver.entity.user.BizConnection
-import kr.co.marketbill.marketbillcoreserver.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.entity.user.UserCredential
-import kr.co.marketbill.marketbillcoreserver.repository.user.AuthTokenRepository
-import kr.co.marketbill.marketbillcoreserver.repository.user.BizConnectionRepository
-import kr.co.marketbill.marketbillcoreserver.repository.user.UserCredentialRepository
-import kr.co.marketbill.marketbillcoreserver.repository.user.UserRepository
+import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
+import kr.co.marketbill.marketbillcoreserver.data.dto.AuthTokenDto
+import kr.co.marketbill.marketbillcoreserver.data.entity.user.AuthToken
+import kr.co.marketbill.marketbillcoreserver.data.entity.user.BizConnection
+import kr.co.marketbill.marketbillcoreserver.data.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.data.entity.user.UserCredential
+import kr.co.marketbill.marketbillcoreserver.data.repository.user.AuthTokenRepository
+import kr.co.marketbill.marketbillcoreserver.data.repository.user.BizConnectionRepository
+import kr.co.marketbill.marketbillcoreserver.data.repository.user.UserCredentialRepository
+import kr.co.marketbill.marketbillcoreserver.data.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
+import javax.annotation.PostConstruct
+import javax.persistence.EntityManager
 
 @Service
 class UserService {
+    @Autowired
+    private lateinit var entityManager: EntityManager
+
     @Autowired
     private lateinit var userRepository: UserRepository
 
@@ -43,37 +51,18 @@ class UserService {
         const val NO_USER_ERR =
             "There's no user who has this phone number and password. Please check your phone number again."
     }
+    val logger: Logger = LoggerFactory.getLogger(UserService::class.java)
+
 
     fun me(userId: Long): Optional<User> {
         return userRepository.findById(userId)
     }
 
-//    fun deleteUser(userId: Long) : Boolean {
-//        return try{
-//            userRepository.deleteById(userId)
-//            true
-//        }catch (e : Exception){
-//            println(e.message)
-//            false
-//        }
-//    }
-//    fun deleteAuthToken(tokenId : Long) : Boolean{
-//        return try{
-//            val token = authTokenRepository.findById(tokenId)
-//            val user = token.get().user
-//            authTokenRepository.deleteById(tokenId)
-//            true
-//        }catch (e : Exception){
-//            println(e.message)
-//            false
-//        }
-//    }
-
-    fun getAllBizConnByRetailerId(retailerId : Long) : List<BizConnection>{
+    fun getAllBizConnByRetailerId(retailerId: Long): List<BizConnection> {
         return bizConnectionRepository.getAllBizConnByRetailerId(retailerId)
     }
 
-    fun getAllBizConnByWholesalerId(wholesalerId : Long) : List<BizConnection>{
+    fun getAllBizConnByWholesalerId(wholesalerId: Long): List<BizConnection> {
         return bizConnectionRepository.getAllBizConnByWholesalerId(wholesalerId)
     }
 
@@ -149,5 +138,53 @@ class UserService {
             accessToken = accessToken,
             refreshToken = refreshToken
         )
+    }
+
+    @PostConstruct
+    fun createMockUsers() {
+        val retailer = User(name = "name_retailer", businessNo = null)
+        val wholesaler = User(name = "name_wholesaler", businessNo = null)
+        userRepository.saveAll(arrayListOf(retailer, wholesaler))
+
+        val retailerCred = UserCredential(
+            user = entityManager.getReference(User::class.java, 1.toLong()),
+            phoneNo = "01011112222",
+            password = passwordEncoder.encode("1234"),
+            role = AccountRole.ROLE_RETAILER
+        )
+        val wholesalerCred = UserCredential(
+            user = entityManager.getReference(User::class.java, 2.toLong()),
+            phoneNo = "01011113333",
+            password = passwordEncoder.encode("1234"),
+            role = AccountRole.ROLE_WHOLESALER_EMPR
+        )
+        userCredentialRepository.saveAll(arrayListOf(retailerCred, wholesalerCred))
+
+        val authToken1 = AuthToken(
+            user = entityManager.getReference(User::class.java, 1.toLong()),
+            refreshToken = jwtProvider.generateToken(
+                1.toLong(),
+                AccountRole.ROLE_RETAILER.toString(),
+                JwtProvider.refreshExpiration
+            )
+        )
+        val authToken2 = AuthToken(
+            user = entityManager.getReference(User::class.java, 2.toLong()),
+            refreshToken = jwtProvider.generateToken(
+                2.toLong(),
+                AccountRole.ROLE_RETAILER.toString(),
+                JwtProvider.refreshExpiration
+            )
+        )
+        authTokenRepository.saveAll(arrayListOf(authToken1, authToken2))
+
+        val bizConn = BizConnection(
+            retailer = entityManager.getReference(User::class.java, 1.toLong()),
+            wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
+            applyStatus = ApplyStatus.APPLYING,
+        )
+        bizConnectionRepository.save(bizConn)
+
+        logger.trace("createMockUsers completed")
     }
 }
