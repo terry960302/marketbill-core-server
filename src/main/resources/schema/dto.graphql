@@ -18,6 +18,11 @@ input AddToCartInput{
     grade : String!,
 }
 
+input OrderCartItemsInput {
+    cartItemIds : [Int!]!,
+    wholesalerId : Int!,
+}
+
 input PaginationInput {
     page : Int = 0,
     size : Int = 15,

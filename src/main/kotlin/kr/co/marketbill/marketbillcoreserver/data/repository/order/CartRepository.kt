@@ -9,9 +9,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface CartRepository : JpaRepository<CartItem, Long> {
-    @Query(
-        "SELECT * FROM cart_items AS ci INNER JOIN users AS u ON u.id = ci.retailer_id WHERE ci.retailer_id = :userId",
-        nativeQuery = true
-    )
-    fun getAllCartItems(userId: Long, pageable: Pageable): Page<CartItem>
+    fun findAllByRetailerId(retailerId : Long, pageable: Pageable) : Page<CartItem>
 }
