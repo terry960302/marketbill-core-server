@@ -32,5 +32,5 @@ data class CartItem(
     val grade: String? = null,
 
     @Column(name = "ordered_at")
-    val orderedAt: LocalDateTime? = null,
+    var orderedAt: LocalDateTime? = null,
 ) : BaseTime()

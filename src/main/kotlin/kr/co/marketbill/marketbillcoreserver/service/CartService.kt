@@ -25,7 +25,7 @@ class CartService {
 
 
     fun getAllCartItems(userId: Long, pageable: Pageable): Page<CartItem> {
-        return cartRepository.getAllCartItems(userId, pageable)
+        return cartRepository.findAllByRetailerId(userId, pageable)
     }
 
     fun addToCart(userId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {

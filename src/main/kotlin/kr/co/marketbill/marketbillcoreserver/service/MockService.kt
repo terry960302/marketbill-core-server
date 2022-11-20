@@ -26,6 +26,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Profile
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import javax.annotation.PostConstruct
 import javax.persistence.EntityManager
@@ -75,6 +76,7 @@ class MockService {
         createMockCartItems()
     }
 
+    @Transactional
     fun createMockUsers() {
         val retailer = User(name = "name_retailer", businessNo = null)
         val wholesaler = User(name = "name_wholesaler", businessNo = null)
@@ -122,6 +124,7 @@ class MockService {
         logger.trace("createMockUsers completed")
     }
 
+    @Transactional
     fun createMockFlowers() {
         val flowerType1 = FlowerType(1, "국화")
         val flowerType2 = FlowerType(2, "과꽃")
@@ -158,6 +161,7 @@ class MockService {
         logger.trace("createMockFlowers completed")
     }
 
+    @Transactional
     fun createMockCartItems() {
         val cartItems = (1..5).map {
             CartItem(

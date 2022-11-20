@@ -8,9 +8,12 @@ import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.data.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.data.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
+import kr.co.marketbill.marketbillcoreserver.service.OrderService
 import kr.co.marketbill.marketbillcoreserver.types.AddToCartInput
+import kr.co.marketbill.marketbillcoreserver.types.OrderCartItemsInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
@@ -22,6 +25,9 @@ import org.springframework.web.bind.annotation.RequestHeader
 class OrderDataFetcher {
     @Autowired
     private lateinit var cartService: CartService
+
+    @Autowired
+    private lateinit var orderService: OrderService
 
     @Autowired
     private lateinit var jwtProvider: JwtProvider
@@ -53,5 +59,10 @@ class OrderDataFetcher {
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveCartItem)
     fun removeCartItem(@InputArgument cartItemId: Long): Long {
         return cartService.removeCartItem(cartItemId)
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.OrderCartItems)
+    fun orderCartItems(@InputArgument input: OrderCartItemsInput): OrderSheet {
+        return orderService.orderCartItems(input.cartItemIds.map { it.toLong() }, input.wholesalerId.toLong())
     }
 }
