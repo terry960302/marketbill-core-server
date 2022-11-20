@@ -17,7 +17,7 @@ import org.springframework.web.bind.annotation.RequestHeader
 import java.util.*
 
 @DgsComponent
-class UserDataFetcher {
+class UserFetcher {
 
     @Autowired
     private lateinit var userService: UserService

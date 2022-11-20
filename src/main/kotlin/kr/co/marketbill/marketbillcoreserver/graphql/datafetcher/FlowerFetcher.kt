@@ -15,7 +15,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 
 @DgsComponent
-class FlowerDataFetcher {
+class FlowerFetcher {
     @Autowired
     private lateinit var flowerService: FlowerService
 

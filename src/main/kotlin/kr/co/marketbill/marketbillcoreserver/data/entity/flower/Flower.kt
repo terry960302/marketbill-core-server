@@ -7,7 +7,6 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*
 
-// TODO : 테스트용 엔티티(설계 보완해서 다시 짤 수도 있음)
 @Entity
 @Table(name = "flowers")
 @SQLDelete(sql = "UPDATE flowers SET deleted_at = current_timestamp WHERE id = ?")

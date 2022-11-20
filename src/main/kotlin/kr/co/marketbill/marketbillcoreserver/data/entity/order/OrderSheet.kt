@@ -15,6 +15,9 @@ data class OrderSheet(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
+    @Column(name = "order_no")
+    val orderNo: String = "",
+
     @ManyToOne
     @JoinColumn(name = "retailer_id")
     val retailer: User? = null,
@@ -23,11 +26,32 @@ data class OrderSheet(
     @JoinColumn(name = "wholesaler_id")
     val wholesaler: User? = null,
 
-    @OneToMany(mappedBy = "orderSheet")
-    val orderItems : List<OrderItem> = arrayListOf(),
+    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true)
+    val orderItems: List<OrderItem> = arrayListOf(),
 
     @OneToMany(mappedBy = "orderSheet")
     val orderSheetReceipts: List<OrderSheetReceipt> = arrayListOf(),
 
-    ) : BaseTime() {
+    @Transient
+    var totalFlowerQuantity: Int = 0,
+
+    @Transient
+    var totalFlowerTypeCount: Int = 0,
+) : BaseTime() {
+    @PostLoad
+    fun postLoad() {
+        totalFlowerQuantity = if (orderItems.isNotEmpty()) {
+            val quantities: List<Int> = orderItems.map { if (it.quantity == null) 0 else it.quantity!! }
+            quantities.reduce { acc, i -> acc + i }
+        } else {
+            0
+        }
+
+        totalFlowerTypeCount = if (orderItems.isNotEmpty()) {
+            val flowerTypes: List<Long> = orderItems.mapNotNull { it.flower?.flowerType?.id }.distinct()
+            flowerTypes.count()
+        } else {
+            0
+        }
+    }
 }
