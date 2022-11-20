@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.data.repository.flower
 
+import kr.co.marketbill.marketbillcoreserver.constants.SOFT_DELETE_CLAUSE
 import kr.co.marketbill.marketbillcoreserver.data.entity.flower.Flower
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
@@ -15,10 +16,11 @@ interface FlowerRepository : JpaRepository<Flower, Long>, JpaSpecificationExecut
         "SELECT * FROM flowers AS f " +
                 "JOIN flower_types AS ft ON ft.id = f.flower_type_id " +
                 "JOIN bidding_flowers AS bf ON bf.flower_id = f.id " +
-                "WHERE CAST(bf.bidding_date AS date) = :currentDate", nativeQuery = true
+                "WHERE CAST(bf.bidding_date AS date) = :currentDate " +
+                "AND f.$SOFT_DELETE_CLAUSE", nativeQuery = true
     )
     fun getAllBuyableFlowers(currentDate: Date, pageable : Pageable): Page<Flower>
 
-    @Query("SELECT COUNT(*) FROM flowers AS f WHERE f.name LIKE %:keyword%", nativeQuery = true)
+    @Query("SELECT COUNT(*) FROM flowers AS f WHERE f.name LIKE %:keyword% AND f.$SOFT_DELETE_CLAUSE", nativeQuery = true)
     fun getSearchFlowersCount(keyword : String) : Long
 }

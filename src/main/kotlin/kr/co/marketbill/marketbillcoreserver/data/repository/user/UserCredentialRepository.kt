@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.data.repository.user
 
+import kr.co.marketbill.marketbillcoreserver.constants.SOFT_DELETE_CLAUSE
 import kr.co.marketbill.marketbillcoreserver.data.entity.user.UserCredential
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.Query
@@ -8,15 +9,9 @@ import java.util.Optional
 
 @Repository
 interface UserCredentialRepository : JpaRepository<UserCredential, Long> {
-    @Query("SELECT * FROM user_credentials AS uc WHERE uc.user_id = :userId", nativeQuery = true)
+    @Query("SELECT * FROM user_credentials AS uc WHERE uc.user_id = :userId AND uc.$SOFT_DELETE_CLAUSE", nativeQuery = true)
     fun getUserCredentialByUserId(userId: Long): Optional<UserCredential>
 
-    @Query("SELECT * FROM user_credentials AS uc WHERE uc.phone_no = :phoneNo", nativeQuery = true)
+    @Query("SELECT * FROM user_credentials AS uc WHERE uc.phone_no = :phoneNo AND uc.$SOFT_DELETE_CLAUSE", nativeQuery = true)
     fun getUserCredentialByPhoneNo(phoneNo: String): Optional<UserCredential>
-
-    @Query(
-        "SELECT * FROM user_credentials AS uc WHERE uc.phone_no = :phoneNo AND uc.password = :password",
-        nativeQuery = true
-    )
-    fun getUserCredentialByPhoneNoPassword(phoneNo: String, password: String): Optional<UserCredential>
 }

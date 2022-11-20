@@ -26,4 +26,5 @@ input OrderCartItemsInput {
 input PaginationInput {
     page : Int = 0,
     size : Int = 15,
+    sort : Sort = ASCEND,
 }

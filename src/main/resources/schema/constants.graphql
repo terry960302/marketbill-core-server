@@ -20,6 +20,13 @@ enum ApplyStatus{
     REJECTED,
 }
 
+enum Sort{
+    # 오름차순
+    ASCEND,
+    # 내림차순
+    DESCEND,
+}
+
 schema{
     query: Query
     mutation: Mutation
