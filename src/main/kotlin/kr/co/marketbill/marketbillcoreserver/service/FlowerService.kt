@@ -1,22 +1,15 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
-import kr.co.marketbill.marketbillcoreserver.data.entity.flower.BiddingFlower
-import kr.co.marketbill.marketbillcoreserver.data.entity.flower.Flower
-import kr.co.marketbill.marketbillcoreserver.data.entity.flower.FlowerType
-import kr.co.marketbill.marketbillcoreserver.data.repository.flower.BiddingFlowerRepository
-import kr.co.marketbill.marketbillcoreserver.data.repository.flower.FlowerRepository
-import kr.co.marketbill.marketbillcoreserver.data.repository.flower.FlowerTypeRepository
-import kr.co.marketbill.marketbillcoreserver.data.specs.FlowerSpecs
+import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
+import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerRepository
+import kr.co.marketbill.marketbillcoreserver.domain.specs.FlowerSpecs
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
-import java.time.LocalDateTime
 import java.util.*
-import javax.annotation.PostConstruct
-import javax.persistence.EntityManager
 
 @Service
 class FlowerService {

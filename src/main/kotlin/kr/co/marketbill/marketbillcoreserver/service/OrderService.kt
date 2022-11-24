@@ -1,12 +1,12 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.CartItem
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.OrderItem
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.OrderSheet
-import kr.co.marketbill.marketbillcoreserver.data.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.data.repository.order.CartRepository
-import kr.co.marketbill.marketbillcoreserver.data.repository.order.OrderItemRepository
-import kr.co.marketbill.marketbillcoreserver.data.repository.order.OrderSheetRepository
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -15,7 +15,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
-import java.util.Date
 import java.util.Optional
 import javax.persistence.EntityManager
 

@@ -6,7 +6,7 @@ import com.netflix.graphql.dgs.InputArgument
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
-import kr.co.marketbill.marketbillcoreserver.data.entity.flower.Flower
+import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.service.FlowerService
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import org.springframework.beans.factory.annotation.Autowired

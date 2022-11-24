@@ -1,10 +1,10 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
-import kr.co.marketbill.marketbillcoreserver.data.entity.flower.Flower
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.CartItem
-import kr.co.marketbill.marketbillcoreserver.data.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.data.repository.order.CartRepository
+import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired

@@ -1,8 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.data.repository.user.UserCredentialRepository
-import kr.co.marketbill.marketbillcoreserver.data.vo.CustomUserDetails
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
+import kr.co.marketbill.marketbillcoreserver.domain.vo.CustomUserDetails
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
