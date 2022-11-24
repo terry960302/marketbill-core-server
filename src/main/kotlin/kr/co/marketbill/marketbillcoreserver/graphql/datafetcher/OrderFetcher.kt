@@ -9,9 +9,9 @@ import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.CartItem
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.OrderItem
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.OrderSheet
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.graphql.context.OrderContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider

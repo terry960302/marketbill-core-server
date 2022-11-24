@@ -1,16 +1,15 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
-import kr.co.marketbill.marketbillcoreserver.data.dto.AuthTokenDto
-import kr.co.marketbill.marketbillcoreserver.data.entity.user.AuthToken
-import kr.co.marketbill.marketbillcoreserver.data.entity.user.BizConnection
-import kr.co.marketbill.marketbillcoreserver.data.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.data.entity.user.UserCredential
-import kr.co.marketbill.marketbillcoreserver.data.repository.user.AuthTokenRepository
-import kr.co.marketbill.marketbillcoreserver.data.repository.user.BizConnectionRepository
-import kr.co.marketbill.marketbillcoreserver.data.repository.user.UserCredentialRepository
-import kr.co.marketbill.marketbillcoreserver.data.repository.user.UserRepository
+import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.AuthToken
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.UserCredential
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.AuthTokenRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BizConnectionRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
@@ -21,8 +20,6 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
-import javax.annotation.PostConstruct
-import javax.persistence.EntityManager
 
 @Service
 class UserService {

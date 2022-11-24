@@ -4,11 +4,10 @@ import com.netflix.graphql.dgs.DgsDataLoader
 import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
-import kr.co.marketbill.marketbillcoreserver.data.entity.order.OrderItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.graphql.context.OrderContext
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
 import org.dataloader.BatchLoaderEnvironment
-import org.dataloader.MappedBatchLoader
 import org.dataloader.MappedBatchLoaderWithContext
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.PageRequest
