@@ -28,3 +28,8 @@ input PaginationInput {
     size : Int = 15,
     sort : Sort = ASCEND,
 }
+
+input UserFilterInput{
+    roles : [AccountRole],
+    excludeMe : Boolean = false,
+}

@@ -94,8 +94,9 @@ class MockService {
     @Transactional
     fun createMockUsers() {
         val retailer = User(name = "name_retailer", businessNo = null)
-        val wholesaler = User(name = "name_wholesaler", businessNo = null)
-        userRepository.saveAll(arrayListOf(retailer, wholesaler))
+        val wholesaler1 = User(name = "name_wholesaler", businessNo = null)
+        val wholesaler2 = User(name = "name_wholesaler", businessNo = null)
+        userRepository.saveAll(arrayListOf(retailer, wholesaler1, wholesaler2))
 
         val retailerCred = UserCredential(
             user = entityManager.getReference(User::class.java, 1.toLong()),
@@ -103,13 +104,19 @@ class MockService {
             password = passwordEncoder.encode("1234"),
             role = AccountRole.ROLE_RETAILER
         )
-        val wholesalerCred = UserCredential(
+        val wholesalerCred1 = UserCredential(
             user = entityManager.getReference(User::class.java, 2.toLong()),
             phoneNo = "01011113333",
             password = passwordEncoder.encode("1234"),
             role = AccountRole.ROLE_WHOLESALER_EMPR
         )
-        userCredentialRepository.saveAll(arrayListOf(retailerCred, wholesalerCred))
+        val wholesalerCred2 = UserCredential(
+            user = entityManager.getReference(User::class.java, 3.toLong()),
+            phoneNo = "01011113333",
+            password = passwordEncoder.encode("1234"),
+            role = AccountRole.ROLE_WHOLESALER_EMPE
+        )
+        userCredentialRepository.saveAll(arrayListOf(retailerCred, wholesalerCred1, wholesalerCred2))
 
         val authToken1 = AuthToken(
             user = entityManager.getReference(User::class.java, 1.toLong()),
@@ -123,11 +130,19 @@ class MockService {
             user = entityManager.getReference(User::class.java, 2.toLong()),
             refreshToken = jwtProvider.generateToken(
                 2.toLong(),
-                AccountRole.ROLE_RETAILER.toString(),
+                AccountRole.ROLE_WHOLESALER_EMPR.toString(),
                 JwtProvider.refreshExpiration
             )
         )
-        authTokenRepository.saveAll(arrayListOf(authToken1, authToken2))
+        val authToken3 = AuthToken(
+            user = entityManager.getReference(User::class.java, 3.toLong()),
+            refreshToken = jwtProvider.generateToken(
+                3.toLong(),
+                AccountRole.ROLE_WHOLESALER_EMPE.toString(),
+                JwtProvider.refreshExpiration
+            )
+        )
+        authTokenRepository.saveAll(arrayListOf(authToken1, authToken2, authToken3))
 
         val bizConn = BizConnection(
             retailer = entityManager.getReference(User::class.java, 1.toLong()),

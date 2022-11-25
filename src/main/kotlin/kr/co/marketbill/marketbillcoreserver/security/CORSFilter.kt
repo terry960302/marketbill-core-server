@@ -6,7 +6,7 @@ import javax.servlet.*
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
-
+// CORS를 대문자로 해야 inject가 되므로 '파스칼 케이스로 변경 금지'
 @Component
 class CORSFilter : Filter {
     @Throws(ServletException::class)
