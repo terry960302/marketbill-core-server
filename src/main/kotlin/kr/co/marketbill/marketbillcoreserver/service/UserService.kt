@@ -3,19 +3,21 @@ package kr.co.marketbill.marketbillcoreserver.service
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.AuthToken
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.UserCredential
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.AuthTokenRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BizConnectionRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
+import kr.co.marketbill.marketbillcoreserver.domain.specs.UserSpecs
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Page
+import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -25,14 +27,19 @@ import java.util.Optional
 class UserService {
     @Autowired
     private lateinit var userRepository: UserRepository
+
     @Autowired
     private lateinit var userCredentialRepository: UserCredentialRepository
+
     @Autowired
     private lateinit var authTokenRepository: AuthTokenRepository
+
     @Autowired
     private lateinit var bizConnectionRepository: BizConnectionRepository
+
     @Autowired
     private lateinit var passwordEncoder: BCryptPasswordEncoder
+
     @Autowired
     private lateinit var jwtProvider: JwtProvider
 
@@ -40,6 +47,7 @@ class UserService {
         const val NO_USER_ERR =
             "There's no user who has this phone number and password. Please check your phone number again."
     }
+
     val logger: Logger = LoggerFactory.getLogger(UserService::class.java)
 
 
@@ -47,12 +55,8 @@ class UserService {
         return userRepository.findById(userId)
     }
 
-    fun getAllBizConnByRetailerId(retailerId: Long): List<BizConnection> {
-        return bizConnectionRepository.getAllBizConnByRetailerId(retailerId)
-    }
-
-    fun getAllBizConnByWholesalerId(wholesalerId: Long): List<BizConnection> {
-        return bizConnectionRepository.getAllBizConnByWholesalerId(wholesalerId)
+    fun getUsers(excludeId: Long?, roles: List<AccountRole>?, pageable: Pageable): Page<User> {
+        return userRepository.findAll(UserSpecs.exclude(excludeId).and(UserSpecs.hasRoles(roles)), pageable)
     }
 
     @Transactional

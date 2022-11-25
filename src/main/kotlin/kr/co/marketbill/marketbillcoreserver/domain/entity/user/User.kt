@@ -18,37 +18,44 @@ data class User(
     val id: Long? = null,
 
     @Column(name = "name")
-    val name: String = "",
+    val name: String? = null,
 
     @Column(name = "business_no", nullable = true)
     val businessNo: String? = null,
 
-    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true) // cascade 부모 삭제하면 자식 전체 삭제, orphanRemoval 자식인 경우 삭제하면 부모도 삭제
+    @OneToOne(
+        mappedBy = "user",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY,
+    ) // cascade 부모 삭제하면 자식 전체 삭제, orphanRemoval 자식인 경우 삭제하면 부모도 삭제
     val userCredential: UserCredential? = null,
 
-    @OneToOne(mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true)
+    @OneToOne(
+        mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY,
+    )
     val authToken: AuthToken? = null,
 
     @OneToMany(mappedBy = "retailer")
-    val retailerToWholesaler : List<BizConnection> = arrayListOf(),
+    val retailerToWholesaler: List<BizConnection>? = null,
 
     @OneToMany(mappedBy = "wholesaler")
-    val wholesalerToRetailer : List<BizConnection> = arrayListOf(),
+    val wholesalerToRetailer: List<BizConnection>? = null,
 
     @OneToMany(mappedBy = "retailer")
-    val cartItems : List<CartItem> = arrayListOf(),
+    val cartItems: List<CartItem>? = null,
 
     @OneToMany(mappedBy = "retailer")
-    val orderSheetsByRetailer : List<OrderSheet> = arrayListOf(),
+    val orderSheetsByRetailer: List<OrderSheet>? = null,
 
     @OneToMany(mappedBy = "wholesaler")
-    val orderSheetsByWholesaler : List<OrderSheet> = arrayListOf(),
+    val orderSheetsByWholesaler: List<OrderSheet>? = null,
 
     @OneToMany(mappedBy = "retailer")
-    val orderItemsByRetailer : List<OrderItem> = arrayListOf(),
+    val orderItemsByRetailer: List<OrderItem>? = null,
 
     @OneToMany(mappedBy = "wholesaler")
-    val orderItemsByWholesaler : List<OrderItem> = arrayListOf(),
+    val orderItemsByWholesaler: List<OrderItem>? = null,
 
 
     ) : BaseTime() {
