@@ -6,6 +6,7 @@ import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
+import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
@@ -19,6 +20,7 @@ import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
 import kr.co.marketbill.marketbillcoreserver.types.AddToCartInput
 import kr.co.marketbill.marketbillcoreserver.types.OrderCartItemsInput
+import kr.co.marketbill.marketbillcoreserver.types.OrderSheetFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
@@ -26,6 +28,9 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.web.bind.annotation.RequestHeader
+import java.time.LocalDate
+import java.time.LocalDateTime
+import java.util.Date
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
@@ -79,29 +84,44 @@ class OrderFetcher {
         return orderService.getOrderSheet(orderSheetId)
     }
 
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllOrderSheetsByRetailer)
-    fun getAllOrderSheetsByRetailer(
-        @RequestHeader("Authorization") authorization: String,
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheets)
+    fun getOrderSheets(
+        @RequestHeader("Authorization") authorization: String?,
+        @InputArgument filter: OrderSheetFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<OrderSheet> {
-        val token = jwtProvider.filterOnlyToken(authorization)
-        val userId: Long = jwtProvider.parseUserId(token)
+        var userId: Long? = null
+        var role: AccountRole? = null
+        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+        var date : LocalDate? = null
 
-        val sort =
-            if (pagination?.sort == null || pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.DESCEND) {
+        if (authorization != null) {
+            val token = jwtProvider.filterOnlyToken(authorization)
+            userId = jwtProvider.parseUserId(token)
+            role = jwtProvider.parseUserRole(token)
+        }
+
+        if (pagination != null) {
+            val sort = if (pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.DESCEND) {
                 Sort.by("createdAt").descending()
             } else {
                 Sort.by("createdAt").ascending()
             }
-        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE, sort)
-        if (pagination != null) {
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
+            pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
         }
-        return orderService.getAllOrderSheetsByRetailer(userId, pageable)
+
+        if(filter != null){
+            date = LocalDate.parse(filter.date)
+        }
+
+        return orderService.getOrderSheets(userId, role, date, pageable)
     }
 
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
-    fun orderItems(dfe: DgsDataFetchingEnvironment, @InputArgument pagination: PaginationInput?): CompletableFuture<List<OrderItem>> {
+    fun orderItems(
+        dfe: DgsDataFetchingEnvironment,
+        @InputArgument pagination: PaginationInput?
+    ): CompletableFuture<List<OrderItem>> {
         val orderSheet = dfe.getSource<OrderSheet>()
         val dataLoader = dfe.getDataLoader<Long, List<OrderItem>>(OrderItemLoader::class.java)
 
@@ -112,7 +132,7 @@ class OrderFetcher {
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveOrderSheet)
-    fun removeOrderSheet(@InputArgument orderSheetId : Long) : Int{
+    fun removeOrderSheet(@InputArgument orderSheetId: Long): Int {
         return orderService.removeOrderSheet(orderSheetId).toInt()
     }
 }

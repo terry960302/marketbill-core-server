@@ -57,7 +57,7 @@ extend type Query {
     # [소매상] 장바구니 목록 가져오기
     getAllCartItems(pagination : PaginationInput) : [CartItem]
     # [소매상] 주문서 목록 가져오기
-    getAllOrderSheetsByRetailer(pagination : PaginationInput) : [OrderSheet],
+    getOrderSheets(filter : OrderSheetFilterInput,  pagination : PaginationInput) : [OrderSheet],
     # [소매상] 주문서 단건 가져오기
     getOrderSheet(orderSheetId : Int!, pagination : PaginationInput) : OrderSheet,
 }
