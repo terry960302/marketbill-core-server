@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
+import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
@@ -7,6 +8,8 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
+import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
+import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -14,7 +17,9 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDate
 import java.time.LocalDateTime
+import java.util.Date
 import java.util.Optional
 import javax.persistence.EntityManager
 
@@ -65,25 +70,33 @@ class OrderService {
         return orderSheetRepository.save(orderSheet)
     }
 
-    fun getAllOrderSheetsByRetailer(retailerId: Long, pageable: Pageable): Page<OrderSheet> {
-        return orderSheetRepository.findAllByRetailerId(retailerId, pageable)
+    fun getOrderSheets(userId: Long?, role: AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderSheet> {
+        return orderSheetRepository.findAll(
+            OrderSheetSpecs.byUserId(userId, role).and(OrderSheetSpecs.atDate(date)),
+            pageable
+        )
     }
 
-    fun getAllOrderItemsByOrderSheetIds(orderSheetIds: List<Long>, pageable: Pageable): MutableMap<Long, List<OrderItem>> {
-        val orderItems = orderItemRepository.getAllOrderItemsByOrderSheetIds(orderSheetIds, pageable)
+
+
+    fun getAllOrderItemsByOrderSheetIds(
+        orderSheetIds: List<Long>,
+        pageable: Pageable
+    ): MutableMap<Long, List<OrderItem>> {
+        val orderItems = orderItemRepository.findAll(OrderItemSpecs.byOrderSheetIds(orderSheetIds), pageable)
         return orderItems.groupBy { it.orderSheet!!.id!! }
             .toMutableMap()
     }
 
-    fun getOrderSheet(orderSheetId : Long) : Optional<OrderSheet>{
+    fun getOrderSheet(orderSheetId: Long): Optional<OrderSheet> {
         return orderSheetRepository.findById(orderSheetId)
     }
 
-    fun removeOrderSheet(orderSheetId : Long) : Long{
-        try{
+    fun removeOrderSheet(orderSheetId: Long): Long {
+        try {
             orderSheetRepository.deleteById(orderSheetId)
             return orderSheetId
-        }catch (e : java.lang.Exception){
+        } catch (e: java.lang.Exception) {
             logger.error(e.message)
             throw e
         }
