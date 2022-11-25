@@ -34,7 +34,12 @@ input UserFilterInput{
     excludeMe : Boolean = false,
 }
 
-input OrderSheetFilterInput{
+input DateFilterInput{
     # 'YYYY-MM-DD' 포맷 날짜
     date : String,
+}
+
+input OrderItemPriceInput{
+    id : Int!,
+    price : Int!,
 }

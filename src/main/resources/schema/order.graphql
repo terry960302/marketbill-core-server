@@ -57,9 +57,11 @@ extend type Query {
     # [소매상] 장바구니 목록 가져오기
     getAllCartItems(pagination : PaginationInput) : [CartItem]
     # [소매상] 주문서 목록 가져오기
-    getOrderSheets(filter : OrderSheetFilterInput,  pagination : PaginationInput) : [OrderSheet],
+    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet],
     # [소매상] 주문서 단건 가져오기
     getOrderSheet(orderSheetId : Int!, pagination : PaginationInput) : OrderSheet,
+    # 주문 항목 가져오기
+    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem],
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {
@@ -71,4 +73,6 @@ extend type Mutation {
     orderCartItems(input : OrderCartItemsInput) : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
     removeOrderSheet(orderSheetId : Int!) : Int!,
+    # 주문 항목 수정
+    updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem]
 }

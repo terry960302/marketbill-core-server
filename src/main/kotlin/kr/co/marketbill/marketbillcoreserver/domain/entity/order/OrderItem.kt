@@ -39,5 +39,5 @@ data class OrderItem(
     val grade: String? = null,
 
     @Column(name = "price", nullable = true)
-    val price: Int? = null,
+    var price: Int? = null,
 ) : BaseTime()

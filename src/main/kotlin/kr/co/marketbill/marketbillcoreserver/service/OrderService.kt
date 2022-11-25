@@ -10,6 +10,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRe
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
+import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -77,6 +78,9 @@ class OrderService {
         )
     }
 
+    fun getOrderItems(date: LocalDate?, pageable: Pageable): Page<OrderItem> {
+        return orderItemRepository.findAll(OrderItemSpecs.atDate(date), pageable)
+    }
 
 
     fun getAllOrderItemsByOrderSheetIds(
@@ -100,5 +104,14 @@ class OrderService {
             logger.error(e.message)
             throw e
         }
+    }
+
+    fun updateOrderItemsPrice(items : List<OrderItemPriceInput>): List<OrderItem>{
+        val orderItems : List<OrderItem> = items.map {
+            val orderItem = entityManager.getReference(OrderItem::class.java, it.id.toLong())
+            orderItem.price = it.price
+            orderItem
+        }
+        return orderItemRepository.saveAll(orderItems)
     }
 }
