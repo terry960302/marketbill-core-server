@@ -10,6 +10,7 @@ import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
+import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderStatisticOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
@@ -18,10 +19,7 @@ import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
-import kr.co.marketbill.marketbillcoreserver.types.AddToCartInput
-import kr.co.marketbill.marketbillcoreserver.types.OrderCartItemsInput
-import kr.co.marketbill.marketbillcoreserver.types.OrderSheetFilterInput
-import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
+import kr.co.marketbill.marketbillcoreserver.types.*
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -29,8 +27,6 @@ import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
 import org.springframework.web.bind.annotation.RequestHeader
 import java.time.LocalDate
-import java.time.LocalDateTime
-import java.util.Date
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
@@ -87,13 +83,13 @@ class OrderFetcher {
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheets)
     fun getOrderSheets(
         @RequestHeader("Authorization") authorization: String?,
-        @InputArgument filter: OrderSheetFilterInput?,
+        @InputArgument filter: DateFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<OrderSheet> {
         var userId: Long? = null
         var role: AccountRole? = null
         var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
-        var date : LocalDate? = null
+        var date: LocalDate? = null
 
         if (authorization != null) {
             val token = jwtProvider.filterOnlyToken(authorization)
@@ -110,11 +106,51 @@ class OrderFetcher {
             pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
         }
 
-        if(filter != null){
+        if (filter != null) {
             date = LocalDate.parse(filter.date)
         }
 
         return orderService.getOrderSheets(userId, role, date, pageable)
+    }
+
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderItems)
+    fun getOrderItems(
+        @InputArgument filter: DateFilterInput?,
+        @InputArgument pagination: PaginationInput?
+    ): Page<OrderItem> {
+        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+        var date: LocalDate? = null
+
+        if (pagination != null) {
+            val sort = if (pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.DESCEND) {
+                Sort.by("createdAt").descending()
+            } else {
+                Sort.by("createdAt").ascending()
+            }
+            pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
+        }
+
+        if (filter != null) {
+            date = LocalDate.parse(filter.date)
+        }
+
+        return orderService.getOrderItems(date, pageable)
+    }
+
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderStatistics)
+    fun getDailyOrderStatistics(
+        @RequestHeader authorization: String,
+        @InputArgument pagination: PaginationInput?
+    ): Page<OrderStatisticOutput> {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId = jwtProvider.parseUserId(token)
+        var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+
+        if (pagination != null) {
+            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
+        }
+
+        return orderService.getDailyOrderStatistics(userId, pageable)
     }
 
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
@@ -134,5 +170,15 @@ class OrderFetcher {
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveOrderSheet)
     fun removeOrderSheet(@InputArgument orderSheetId: Long): Int {
         return orderService.removeOrderSheet(orderSheetId).toInt()
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateOrderItemsPrice)
+    fun updateOrderItemsPrice(@InputArgument items: List<OrderItemPriceInput>): List<OrderItem> {
+        return orderService.updateOrderItemsPrice(items)
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.IssueOrderSheetReceipt)
+    fun issueOrderSheetReceipt(@InputArgument orderSheetId: Long): kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt {
+        return orderService.issueOrderSheetReceipt(orderSheetId)
     }
 }

@@ -24,14 +24,15 @@ class Flower(
     val flowerType: FlowerType? = null,
 
     @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)
-    val biddingFlowers: List<BiddingFlower> = arrayListOf(),
+    val biddingFlowers: List<BiddingFlower>? = null,
 
     @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)
-    val cartItems: List<CartItem> = arrayListOf(),
+    val cartItems: List<CartItem>? = null,
 
     @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)
-    val orderItems: List<OrderItem> = arrayListOf(),
+    val orderItems: List<OrderItem>? = null,
 
-
+    @Transient
+    var totalResultCount : Long? = null,
     ) : BaseTime() {
 }

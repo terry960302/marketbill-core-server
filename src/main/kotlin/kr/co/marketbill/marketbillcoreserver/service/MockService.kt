@@ -205,6 +205,7 @@ class MockService {
         logger.trace("createMockCartItems completed")
     }
 
+    // 3일정도 주기의 주문서
     @Transactional
     fun createMockOrderSheets() {
 

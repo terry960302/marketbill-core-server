@@ -21,6 +21,8 @@ type OrderSheet{
     totalFlowerQuantity : Int,
     # 주문서에 해당하는 꽃의 품종 개수(중복x)
     totalFlowerTypeCount : Int,
+    # 영수증 발행 여부
+    hasReceipt : Boolean,
     orderSheetReceipts : [OrderSheetReceipt],
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
@@ -52,14 +54,29 @@ type OrderSheetReceipt{
     deletedAt : LocalDate,
 }
 
+# 일자별 주문 집계
+type OrderStatistic{
+    # 날짜(date)
+    date : LocalDate,
+    # 꽃 종류 개수(중복x)
+    flowerTypeCount  :Int,
+    # 주문 수
+    orderSheetCount : Int,
+}
+
+
 ## -------------- QUERY ------------------
 extend type Query {
     # [소매상] 장바구니 목록 가져오기
     getAllCartItems(pagination : PaginationInput) : [CartItem]
     # [소매상] 주문서 목록 가져오기
-    getOrderSheets(filter : OrderSheetFilterInput,  pagination : PaginationInput) : [OrderSheet],
+    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet],
     # [소매상] 주문서 단건 가져오기
-    getOrderSheet(orderSheetId : Int!, pagination : PaginationInput) : OrderSheet,
+    getOrderSheet(orderSheetId : Int!) : OrderSheet,
+    # 주문 항목 가져오기
+    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem],
+    # 일자별 주문 집계 목록
+    getDailyOrderStatistics(pagination : PaginationInput) : [OrderStatistic]
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {
@@ -71,4 +88,9 @@ extend type Mutation {
     orderCartItems(input : OrderCartItemsInput) : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
     removeOrderSheet(orderSheetId : Int!) : Int!,
+    # 주문 항목 수정
+    updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem]
+    # 영수증 발행
+    # - 파일처리 구축 후 실제 로직 적용 예정
+    issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt,
 }

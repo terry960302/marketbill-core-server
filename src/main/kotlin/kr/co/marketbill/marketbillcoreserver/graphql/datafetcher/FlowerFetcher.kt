@@ -8,37 +8,47 @@ import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.service.FlowerService
+import kr.co.marketbill.marketbillcoreserver.types.FlowerFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import java.time.LocalDate
 
 @DgsComponent
 class FlowerFetcher {
     @Autowired
     private lateinit var flowerService: FlowerService
 
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllBuyableFlowers)
-    fun getAllBuyableFlowers(@InputArgument pagination : PaginationInput?): Page<Flower> {
-        var pageable: Pageable =  PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
-        if(pagination != null){
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetFlowers)
+    fun getFlowers(
+        @InputArgument filter: FlowerFilterInput?,
+        @InputArgument pagination: PaginationInput?
+    ): Page<Flower> {
+        var fromDate: LocalDate? = null
+        var toDate: LocalDate? = null
+        var keyword: String? = null
+        var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+
+        if (filter != null) {
+            if (filter.dateRange != null) {
+                fromDate = LocalDate.parse(filter.dateRange.fromDate)
+                toDate = LocalDate.parse(filter.dateRange.toDate)
+            }
+            if (filter.keyword != null) {
+                keyword = filter.keyword
+            }
+        }
+
+        if (pagination != null) {
             pageable = PageRequest.of(pagination.page!!, pagination.size!!)
         }
-        return flowerService.getAllBuyableFlowers(pageable)
-    }
 
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.SearchFlowers)
-    fun searchFlowers(@InputArgument keyword: String, @InputArgument pagination: PaginationInput?): Page<Flower> {
-        var pageable: Pageable =  PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
-        if(pagination != null){
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
+        val res = flowerService.getFlowers(fromDate, toDate, keyword, pageable)
+        return res.map {
+            it.totalResultCount = res.totalElements
+            it
         }
-        return flowerService.searchFlowers(keyword, pageable)
-    }
-
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetSearchFlowersCount)
-    fun getSearchFlowersCount(@InputArgument keyword: String): Int {
-        return flowerService.getSearchFlowersTotalCount(keyword)
     }
 }

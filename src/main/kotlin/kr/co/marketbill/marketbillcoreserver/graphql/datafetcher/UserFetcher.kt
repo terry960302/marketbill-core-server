@@ -6,9 +6,11 @@ import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.dgs.client.GraphQLError
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.UserService
@@ -54,18 +56,18 @@ class UserFetcher {
         @InputArgument filter: UserFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<User> {
-        try{
+        try {
             var userId: Long? = null
             var roles: List<AccountRole>? = null
             var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
 
-            if(filter != null){
-                if (filter.excludeMe == true){
-                    if(authorization == null) throw Exception("'excludeMe' parameter needs authorization token")
+            if (filter != null) {
+                if (filter.excludeMe == true) {
+                    if (authorization == null) throw Exception("'excludeMe' parameter needs authorization token")
                     val token = jwtProvider.filterOnlyToken(authorization)
                     userId = jwtProvider.parseUserId(token)
                 }
-                if(filter.roles != null){
+                if (filter.roles != null) {
                     roles = filter.roles.map { AccountRole.valueOf(it.toString()) }
                 }
             }
@@ -75,8 +77,21 @@ class UserFetcher {
             }
 
             return userService.getUsers(userId, roles, pageable)
-        }catch (e : Exception){
+        } catch (e: Exception) {
             throw e
         }
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ApplyBizConnection)
+    fun applyBizConnection(@InputArgument retailerId: Long, @InputArgument wholesalerId: Long): BizConnection {
+        return userService.createBizConnection(retailerId, wholesalerId)
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateBizConnection)
+    fun updateBizConnection(
+        @InputArgument bizConnId: Long,
+        @InputArgument status: kr.co.marketbill.marketbillcoreserver.types.ApplyStatus
+    ): BizConnection {
+        return userService.updateBizConnection(bizConnId, ApplyStatus.valueOf(status.toString()))
     }
 }

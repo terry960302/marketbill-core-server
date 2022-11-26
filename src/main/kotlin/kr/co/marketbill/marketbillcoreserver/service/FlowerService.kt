@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import java.time.LocalDate
 import java.util.*
 
 @Service
@@ -19,16 +20,11 @@ class FlowerService {
 
     val logger: Logger = LoggerFactory.getLogger(FlowerService::class.java)
 
-    fun getAllBuyableFlowers(pageable: Pageable): Page<Flower> {
-        return flowerRepository.getAllBuyableFlowers(Date(), pageable)
+    fun getFlowers(fromDate: LocalDate?, toDate: LocalDate?, keyword: String?, pageable: Pageable): Page<Flower> {
+        return flowerRepository.findAll(
+            FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
+            pageable
+        )
     }
-
-    fun searchFlowers(keyword: String, pageable: Pageable): Page<Flower> {
-        return flowerRepository.findAll(FlowerSpecs.nameLike(keyword), pageable)
-    }
-    fun getSearchFlowersTotalCount(keyword :String): Int{
-        return flowerRepository.getSearchFlowersCount(keyword).toInt()
-    }
-
 
 }
