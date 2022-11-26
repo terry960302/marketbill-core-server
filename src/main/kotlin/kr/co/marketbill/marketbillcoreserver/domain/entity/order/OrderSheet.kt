@@ -29,14 +29,17 @@ data class OrderSheet(
     @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true)
     val orderItems: List<OrderItem> = arrayListOf(),
 
-    @OneToMany(mappedBy = "orderSheet")
-    val orderSheetReceipts: List<OrderSheetReceipt> = arrayListOf(),
+    @OneToMany(mappedBy = "orderSheet", fetch = FetchType.EAGER)
+    val orderSheetReceipts: List<OrderSheetReceipt>? = null,
 
     @Transient
     var totalFlowerQuantity: Int = 0,
 
     @Transient
     var totalFlowerTypeCount: Int = 0,
+
+    @Transient
+    var hasReceipt: Boolean = false,
 ) : BaseTime() {
     @PostLoad
     fun postLoad() {
@@ -52,6 +55,12 @@ data class OrderSheet(
             flowerTypes.count()
         } else {
             0
+        }
+
+        hasReceipt = if (orderSheetReceipts == null) {
+            false
+        } else {
+            orderSheetReceipts!!.isNotEmpty()
         }
     }
 }

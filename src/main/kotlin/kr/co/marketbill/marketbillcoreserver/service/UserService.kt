@@ -1,14 +1,17 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.AuthToken
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.UserCredential
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.AuthTokenRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BizConnectionRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
+import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.UserSpecs
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
@@ -22,9 +25,13 @@ import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
+import javax.persistence.EntityManager
 
 @Service
 class UserService {
+    @Autowired
+    private lateinit var entityManager: EntityManager
+
     @Autowired
     private lateinit var userRepository: UserRepository
 
@@ -131,5 +138,27 @@ class UserService {
             accessToken = accessToken,
             refreshToken = refreshToken
         )
+    }
+
+    fun createBizConnection(retailerId: Long, wholesalerId: Long): BizConnection {
+        val bizConnections: List<BizConnection> = bizConnectionRepository.findAll(
+            BizConnSpecs.isRetailerId(retailerId).and(BizConnSpecs.isWholesalerId(wholesalerId))
+        )
+        if (bizConnections.isNotEmpty()) throw Exception("There's already a bizConnection between retailer($retailerId) and wholesaler($wholesalerId)")
+
+        val bizConnection = BizConnection(
+            retailer = entityManager.getReference(User::class.java, retailerId),
+            wholesaler = entityManager.getReference(User::class.java, wholesalerId),
+            applyStatus = ApplyStatus.APPLYING,
+        )
+        return bizConnectionRepository.save(bizConnection)
+    }
+
+    fun updateBizConnection(bizConnId : Long, status : ApplyStatus) : BizConnection{
+        val bizConnection : Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
+        if(bizConnection.isEmpty) throw Exception("There's no bizConnection whose id is $bizConnId")
+
+        bizConnection.get().applyStatus = status
+        return bizConnectionRepository.save(bizConnection.get())
     }
 }

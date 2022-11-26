@@ -20,7 +20,6 @@ type UserCredential {
     # 역할, 권한
     role : AccountRole,
     phoneNo : String!,
-    password : String!,
     createdAt : LocalDate!,
     deletedAt : LocalDate,
 }
@@ -32,6 +31,7 @@ type BizConnection {
     retailer : User!,
     # 본인이 소매상의 경우 wholesaler 의 목록을 가져옴
     wholesaler : User!,
+    # 거래처 신청 상태
     applyStatus : ApplyStatus!,
     createdAt : LocalDate!,
     deletedAt : LocalDate,
@@ -47,7 +47,10 @@ type AuthToken{
 type Query {
     # 토큰으로 나의 정보 가져오기
     me : User
-    # 유저 목록 가져오기(+거래처 목록)
+    # 유저 목록 가져오기
+    # - 거래처 목록 가져오기
+    #   - 나 = 소매상(ROLE_RETAILER) : wholesaler 의 목록을 쿼리
+    #   - 나 = 도매상(ROLE_WHOLESALER_EMPR, EMPE) : retailer 의 목록을 쿼리
     getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User]
 }
 
@@ -57,6 +60,10 @@ type Mutation{
     signUp(input : SignUpInput) : AuthToken
     # 로그인
     signIn(input : SignInInput) : AuthToken
+    # 소매상 -> 도매상 거래처 신청
+    applyBizConnection(retailerId : Int!, wholesalerId : Int!) : BizConnection
+    # 도매상 -> 소매상 거래처 신청처리(승낙, 거절)
+    updateBizConnection(bizConnId : Int!, status : ApplyStatus): BizConnection
 }
 
 

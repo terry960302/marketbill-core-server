@@ -1,12 +1,15 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderStatisticOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetReceiptRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
@@ -20,9 +23,10 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 import java.time.LocalDateTime
-import java.util.Date
-import java.util.Optional
+import java.time.ZoneId
+import java.util.*
 import javax.persistence.EntityManager
+
 
 @Service
 class OrderService {
@@ -37,6 +41,9 @@ class OrderService {
 
     @Autowired
     private lateinit var orderSheetRepository: OrderSheetRepository
+
+    @Autowired
+    private lateinit var orderSheetReceiptRepository: OrderSheetReceiptRepository
 
     val logger: Logger = LoggerFactory.getLogger(OrderService::class.java)
 
@@ -106,12 +113,38 @@ class OrderService {
         }
     }
 
-    fun updateOrderItemsPrice(items : List<OrderItemPriceInput>): List<OrderItem>{
-        val orderItems : List<OrderItem> = items.map {
+    fun updateOrderItemsPrice(items: List<OrderItemPriceInput>): List<OrderItem> {
+        val orderItems: List<OrderItem> = items.map {
             val orderItem = entityManager.getReference(OrderItem::class.java, it.id.toLong())
             orderItem.price = it.price
             orderItem
         }
         return orderItemRepository.saveAll(orderItems)
+    }
+
+    fun getDailyOrderStatistics(wholesalerId: Long, pageable: Pageable): Page<OrderStatisticOutput> {
+        val monthsToSubtract: Long = 3.toLong()
+
+        val curDate = Date()
+        val dateBeforeThreeMonth = Date.from(
+            LocalDate.now().minusMonths(monthsToSubtract).atStartOfDay(ZoneId.systemDefault()).toInstant()
+        )
+        return orderSheetRepository.getAllDailyStatistics(wholesalerId, dateBeforeThreeMonth, curDate, pageable)
+    }
+
+    fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
+        val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
+        if (orderSheet.isEmpty) throw Exception("There's no OrderSheet data whose id is $orderSheetId")
+
+        val orderItems = orderSheet.get().orderItems
+
+        val orderSheetReceipt = OrderSheetReceipt(
+            orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId),
+            filePath = "",
+            fileFormat = "excel",
+            metadata = "{volume : 128KB}"
+        )
+
+        return orderSheetReceiptRepository.save(orderSheetReceipt)
     }
 }

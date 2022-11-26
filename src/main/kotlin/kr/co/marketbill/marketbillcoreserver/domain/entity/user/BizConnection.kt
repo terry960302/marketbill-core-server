@@ -25,6 +25,6 @@ data class BizConnection(
 
     @Column(name = "apply_status")
     @Enumerated(EnumType.STRING)
-    val applyStatus: ApplyStatus? = null,
+    var applyStatus: ApplyStatus? = null,
 ) : BaseTime() {
 }

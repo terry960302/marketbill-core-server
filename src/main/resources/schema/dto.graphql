@@ -30,16 +30,34 @@ input PaginationInput {
 }
 
 input UserFilterInput{
+    # 가져오고 싶은 Role
     roles : [AccountRole],
+    # 반환값에서 '나' 제외 여부(pagination 영향안받음)
     excludeMe : Boolean = false,
 }
 
 input DateFilterInput{
-    # 'YYYY-MM-DD' 포맷 날짜
+    # 'YYYY-MM-dd' 포맷 날짜 문자열
     date : String,
 }
 
 input OrderItemPriceInput{
+    # orderItem ID
     id : Int!,
+    # 판매가
     price : Int!,
+}
+
+input DateRangeInput{
+    # "YYYY-MM-dd" 포맷 날짜 문자열
+    fromDate : String!,
+    # "YYYY-MM-dd" 포맷 날짜 문자열
+    toDate : String!,
+}
+
+input FlowerFilterInput{
+    # 경매 기간별 설정(from ~ to)
+    dateRange : DateRangeInput,
+    # 검색용 키워드
+    keyword : String,
 }

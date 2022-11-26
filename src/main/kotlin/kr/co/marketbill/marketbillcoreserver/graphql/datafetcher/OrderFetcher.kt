@@ -10,6 +10,7 @@ import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
+import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderStatisticOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
@@ -136,6 +137,22 @@ class OrderFetcher {
         return orderService.getOrderItems(date, pageable)
     }
 
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderStatistics)
+    fun getDailyOrderStatistics(
+        @RequestHeader authorization: String,
+        @InputArgument pagination: PaginationInput?
+    ): Page<OrderStatisticOutput> {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId = jwtProvider.parseUserId(token)
+        var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+
+        if (pagination != null) {
+            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
+        }
+
+        return orderService.getDailyOrderStatistics(userId, pageable)
+    }
+
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
     fun orderItems(
         dfe: DgsDataFetchingEnvironment,
@@ -157,6 +174,11 @@ class OrderFetcher {
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateOrderItemsPrice)
     fun updateOrderItemsPrice(@InputArgument items: List<OrderItemPriceInput>): List<OrderItem> {
-        return updateOrderItemsPrice(items)
+        return orderService.updateOrderItemsPrice(items)
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.IssueOrderSheetReceipt)
+    fun issueOrderSheetReceipt(@InputArgument orderSheetId: Long): kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt {
+        return orderService.issueOrderSheetReceipt(orderSheetId)
     }
 }
