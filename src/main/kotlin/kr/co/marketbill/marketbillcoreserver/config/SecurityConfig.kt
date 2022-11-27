@@ -5,6 +5,7 @@ import kr.co.marketbill.marketbillcoreserver.security.JwtAuthFilter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
+import org.springframework.http.HttpMethod
 import org.springframework.security.config.Customizer
 import org.springframework.security.config.annotation.method.configuration.EnableGlobalMethodSecurity
 import org.springframework.security.config.annotation.web.builders.HttpSecurity
@@ -34,13 +35,12 @@ class SecurityConfig {
     @Bean
     fun corsConfigurationSource(): CorsConfigurationSource {
         val configuration = CorsConfiguration()
-        configuration.allowedOrigins = listOf("*")
-        configuration.allowedMethods = ImmutableList.of(
-            "HEAD",
-            "GET", "POST", "PUT", "DELETE", "PATCH"
-        )
+        configuration.allowedOriginPatterns = listOf("*")
+        configuration.allowedMethods = ImmutableList.of("*")
         configuration.allowCredentials = true
-        configuration.allowedHeaders = ImmutableList.of("Authorization", "Cache-Control", "Content-Type")
+        configuration.allowedHeaders = ImmutableList.of("*")
+        configuration.exposedHeaders = listOf("*")
+
         val source = UrlBasedCorsConfigurationSource()
         source.registerCorsConfiguration("/**", configuration)
         return source
@@ -50,7 +50,8 @@ class SecurityConfig {
     @Throws(Exception::class)
     fun securityFilterChain(http: HttpSecurity): SecurityFilterChain? {
         return http
-            .cors()
+            .headers().frameOptions().disable().and()
+            .cors().configurationSource(corsConfigurationSource())
             .and().addFilterBefore(
                 jwtAuthFilter,
                 UsernamePasswordAuthenticationFilter::class.java
@@ -59,7 +60,8 @@ class SecurityConfig {
             .authorizeRequests(
                 Customizer { auth ->
                     auth
-                        .antMatchers("**/graphiql/**")
+                        .antMatchers(HttpMethod.OPTIONS, "/**/graphiql/*").permitAll()
+                        .antMatchers(HttpMethod.POST,"/**/graphiql/*")
                         .permitAll()
                 }
             )
