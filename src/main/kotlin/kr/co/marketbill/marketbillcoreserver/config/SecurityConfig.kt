@@ -60,9 +60,9 @@ class SecurityConfig {
             .authorizeRequests(
                 Customizer { auth ->
                     auth
-                        .antMatchers(HttpMethod.OPTIONS, "/**/graphiql/*").permitAll()
-                        .antMatchers(HttpMethod.POST,"/**/graphiql/*").permitAll()
-                        .antMatchers(HttpMethod.GET,"/**/graphql/*")
+                        .antMatchers(HttpMethod.OPTIONS, "/**/graphql/*").permitAll()
+                        .antMatchers(HttpMethod.POST,"/**/graphql/*").permitAll()
+                        .antMatchers(HttpMethod.GET,"/**/graphiql/*")
                         .permitAll()
                 }
             )
