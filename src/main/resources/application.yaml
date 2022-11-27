@@ -3,7 +3,7 @@ dgs:
     graphiql:
       title: "MarketBill-Core-Server"
       enabled: true
-    path: /graphiql/**
+    path: /graphql/**
 
 server:
   host: localhost
