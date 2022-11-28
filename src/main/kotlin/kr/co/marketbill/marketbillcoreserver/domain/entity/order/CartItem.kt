@@ -22,6 +22,10 @@ data class CartItem(
     val retailer: User? = null,
 
     @ManyToOne
+    @JoinColumn(name = "wholesaler_id", nullable = true)
+    var wholesaler: User? = null,
+
+    @ManyToOne
     @JoinColumn(name = "flower_id")
     val flower: Flower? = null,
 

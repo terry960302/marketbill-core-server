@@ -25,6 +25,7 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.data.domain.Sort
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestHeader
 import java.time.LocalDate
 import java.util.Optional
@@ -41,6 +42,7 @@ class OrderFetcher {
     @Autowired
     private lateinit var jwtProvider: JwtProvider
 
+    // query
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllCartItems)
     fun getAllCartItems(
         @RequestHeader("Authorization") authorization: String,
@@ -53,26 +55,6 @@ class OrderFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getAllCartItems(userId, pageable)
-    }
-
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.AddToCart)
-    fun addToCart(
-        @RequestHeader("Authorization") authorization: String,
-        @InputArgument input: AddToCartInput
-    ): CartItem {
-        val token = jwtProvider.filterOnlyToken(authorization)
-        val userId: Long = jwtProvider.parseUserId(token)
-        return cartService.addToCart(userId, input.flowerId.toLong(), input.quantity, FlowerGrade.valueOf(input.grade))
-    }
-
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveCartItem)
-    fun removeCartItem(@InputArgument cartItemId: Long): Long {
-        return cartService.removeCartItem(cartItemId)
-    }
-
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.OrderCartItems)
-    fun orderCartItems(@InputArgument input: OrderCartItemsInput): OrderSheet {
-        return orderService.orderCartItems(input.cartItemIds.map { it.toLong() }, input.wholesalerId.toLong())
     }
 
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheet)
@@ -153,18 +135,37 @@ class OrderFetcher {
         return orderService.getDailyOrderStatistics(userId, pageable)
     }
 
-    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
-    fun orderItems(
-        dfe: DgsDataFetchingEnvironment,
-        @InputArgument pagination: PaginationInput?
-    ): CompletableFuture<List<OrderItem>> {
-        val orderSheet = dfe.getSource<OrderSheet>()
-        val dataLoader = dfe.getDataLoader<Long, List<OrderItem>>(OrderItemLoader::class.java)
 
-        val orderContext = DgsContext.Companion.getCustomContext<OrderContext>(dfe)
-        orderContext.pagination = pagination
+    // mutation
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.AddToCart)
+    fun addToCart(
+        @RequestHeader("Authorization") authorization: String,
+        @InputArgument input: AddToCartInput
+    ): CartItem {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId: Long = jwtProvider.parseUserId(token)
+        return cartService.addToCart(userId, input.flowerId.toLong(), input.quantity, FlowerGrade.valueOf(input.grade))
+    }
 
-        return dataLoader.load(orderSheet.id)
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveCartItem)
+    fun removeCartItem(@InputArgument cartItemId: Long): Long {
+        return cartService.removeCartItem(cartItemId)
+    }
+
+    @PreAuthorize("ROLE_RETAILER")
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
+    fun upsertWholesalerOnCartItems(
+        @RequestHeader("Authorization") authorization: String,
+        @InputArgument wholesalerId: Long
+    ): List<CartItem> {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val retailerId = jwtProvider.parseUserId(token)
+        return cartService.upsertWholesalerOnCartItems(retailerId, wholesalerId)
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.OrderCartItems)
+    fun orderCartItems(@InputArgument input: OrderCartItemsInput): OrderSheet {
+        return orderService.orderCartItems(input.cartItemIds.map { it.toLong() }, input.wholesalerId.toLong())
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveOrderSheet)
@@ -180,5 +181,32 @@ class OrderFetcher {
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.IssueOrderSheetReceipt)
     fun issueOrderSheetReceipt(@InputArgument orderSheetId: Long): kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt {
         return orderService.issueOrderSheetReceipt(orderSheetId)
+    }
+
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.BatchCartToOrder)
+    fun batchCartToOrder(): Boolean {
+        return try {
+            cartService.batchCartToOrder()
+            true
+        } catch (e: Exception) {
+            false
+        }
+    }
+
+
+    // field
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
+    fun orderItems(
+        dfe: DgsDataFetchingEnvironment,
+        @InputArgument pagination: PaginationInput?
+    ): CompletableFuture<List<OrderItem>> {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        val dataLoader = dfe.getDataLoader<Long, List<OrderItem>>(OrderItemLoader::class.java)
+
+        val orderContext = DgsContext.Companion.getCustomContext<OrderContext>(dfe)
+        orderContext.pagination = pagination
+
+        return dataLoader.load(orderSheet.id)
     }
 }

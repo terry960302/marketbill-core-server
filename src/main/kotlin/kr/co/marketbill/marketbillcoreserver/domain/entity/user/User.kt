@@ -43,7 +43,10 @@ data class User(
     val wholesalerToRetailer: List<BizConnection>? = null,
 
     @OneToMany(mappedBy = "retailer")
-    val cartItems: List<CartItem>? = null,
+    val retailerCartItems: List<CartItem>? = null,
+
+    @OneToMany(mappedBy = "wholesaler")
+    val wholesalerCartItems: List<CartItem>? = null,
 
     @OneToMany(mappedBy = "retailer")
     val orderSheetsByRetailer: List<OrderSheet>? = null,

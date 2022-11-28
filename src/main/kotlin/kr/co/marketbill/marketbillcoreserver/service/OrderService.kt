@@ -71,6 +71,7 @@ class OrderService {
         val savedOrderItems = orderItemRepository.saveAll(orderItems)
 
         val orderSheet = OrderSheet(
+            orderNo = UUID.randomUUID().toString(),
             retailer = savedOrderItems[0].retailer,
             wholesaler = selectedWholesaler,
             orderItems = savedOrderItems,
