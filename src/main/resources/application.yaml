@@ -3,7 +3,7 @@ dgs:
     graphiql:
       title: "MarketBill-Core-Server"
       enabled: true
-    path: /graphql/**
+    path: /graphql # 서버 엔드포인트(콘솔x)
 
 server:
   host: localhost
