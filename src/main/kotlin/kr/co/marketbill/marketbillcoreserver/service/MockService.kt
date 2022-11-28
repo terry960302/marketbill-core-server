@@ -102,19 +102,19 @@ class MockService {
             user = entityManager.getReference(User::class.java, 1.toLong()),
             phoneNo = "01011112222",
             password = passwordEncoder.encode("1234"),
-            role = AccountRole.ROLE_RETAILER
+            role = AccountRole.RETAILER
         )
         val wholesalerCred1 = UserCredential(
             user = entityManager.getReference(User::class.java, 2.toLong()),
             phoneNo = "01011113333",
             password = passwordEncoder.encode("1234"),
-            role = AccountRole.ROLE_WHOLESALER_EMPR
+            role = AccountRole.WHOLESALER_EMPR
         )
         val wholesalerCred2 = UserCredential(
             user = entityManager.getReference(User::class.java, 3.toLong()),
             phoneNo = "01011113333",
             password = passwordEncoder.encode("1234"),
-            role = AccountRole.ROLE_WHOLESALER_EMPE
+            role = AccountRole.WHOLESALER_EMPE
         )
         userCredentialRepository.saveAll(arrayListOf(retailerCred, wholesalerCred1, wholesalerCred2))
 
@@ -122,7 +122,7 @@ class MockService {
             user = entityManager.getReference(User::class.java, 1.toLong()),
             refreshToken = jwtProvider.generateToken(
                 1.toLong(),
-                AccountRole.ROLE_RETAILER.toString(),
+                AccountRole.RETAILER.toString(),
                 JwtProvider.refreshExpiration
             )
         )
@@ -130,7 +130,7 @@ class MockService {
             user = entityManager.getReference(User::class.java, 2.toLong()),
             refreshToken = jwtProvider.generateToken(
                 2.toLong(),
-                AccountRole.ROLE_WHOLESALER_EMPR.toString(),
+                AccountRole.WHOLESALER_EMPR.toString(),
                 JwtProvider.refreshExpiration
             )
         )
@@ -138,7 +138,7 @@ class MockService {
             user = entityManager.getReference(User::class.java, 3.toLong()),
             refreshToken = jwtProvider.generateToken(
                 3.toLong(),
-                AccountRole.ROLE_WHOLESALER_EMPE.toString(),
+                AccountRole.WHOLESALER_EMPE.toString(),
                 JwtProvider.refreshExpiration
             )
         )

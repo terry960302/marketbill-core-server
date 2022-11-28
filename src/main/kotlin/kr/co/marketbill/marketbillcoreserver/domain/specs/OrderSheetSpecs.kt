@@ -16,7 +16,7 @@ class OrderSheetSpecs {
                 if (userId == null || role == null) {
                     builder.conjunction()
                 } else {
-                    if (role == AccountRole.ROLE_RETAILER) {
+                    if (role == AccountRole.RETAILER) {
                         val retailer = root.join<OrderSheet, User>("retailer")
                         builder.equal(retailer.get<Long>("id"), userId)
                     } else {

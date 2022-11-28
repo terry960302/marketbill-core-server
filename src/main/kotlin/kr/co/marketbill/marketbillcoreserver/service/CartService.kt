@@ -22,6 +22,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.time.LocalDateTime
 import java.util.*
 import javax.persistence.EntityManager
 
@@ -98,6 +99,14 @@ class CartService {
                 val retailer = entityManager.getReference(User::class.java, retailerId)
                 val wholesaler = cartItems[0].wholesaler
 
+                val orderedAt = LocalDateTime.now()
+                cartRepository.saveAll(
+                    cartItems.map {
+                        it.orderedAt = orderedAt
+                        it
+                    }
+                )
+
                 val orderSheet = OrderSheet(
                     orderNo = UUID.randomUUID().toString(),
                     retailer = retailer,
@@ -121,9 +130,11 @@ class CartService {
                 orderItemRepository.saveAll(orderItems)
             }
 
+
+
             log.orderSheetCount = newOrderSheets.size
             log.orderItemCount = newOrderItems.size
-        } catch (e: java.lang.Exception){
+        } catch (e: java.lang.Exception) {
             log.errLogs = e.message
             throw e
         } finally {

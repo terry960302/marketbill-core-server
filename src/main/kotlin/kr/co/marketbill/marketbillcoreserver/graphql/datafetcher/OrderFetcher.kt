@@ -152,7 +152,7 @@ class OrderFetcher {
         return cartService.removeCartItem(cartItemId)
     }
 
-    @PreAuthorize("ROLE_RETAILER")
+    @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
     fun upsertWholesalerOnCartItems(
         @RequestHeader("Authorization") authorization: String,
@@ -163,9 +163,12 @@ class OrderFetcher {
         return cartService.upsertWholesalerOnCartItems(retailerId, wholesalerId)
     }
 
+    @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.OrderCartItems)
-    fun orderCartItems(@InputArgument input: OrderCartItemsInput): OrderSheet {
-        return orderService.orderCartItems(input.cartItemIds.map { it.toLong() }, input.wholesalerId.toLong())
+    fun orderCartItems( @RequestHeader("Authorization") authorization: String): OrderSheet {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val retailerId = jwtProvider.parseUserId(token)
+        return orderService.orderCartItems(retailerId)
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveOrderSheet)

@@ -87,7 +87,7 @@ extend type Mutation {
     # [소매상] 장바구니 거래처 설정 및 수정
     upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem],
     # [소매상] 장바구니 항목들 주문하기
-    orderCartItems(input : OrderCartItemsInput) : OrderSheet,
+    orderCartItems : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
     removeOrderSheet(orderSheetId : Int!) : Int!,
     # [도매상] 주문 항목 수정

@@ -19,7 +19,7 @@ class CustomUserDetailsService : UserDetailsService{
         val credential = userCredentialRepository.getUserCredentialByUserId(userId)
 
         val hasCred = credential.isPresent
-        if (!hasCred) throw Error("There's no user who has this userId($userId)")
+        if (!hasCred) throw Error("There's no user whose userId is $userId")
 
         return CustomUserDetails(
             phoneNo = credential.get().phoneNo,

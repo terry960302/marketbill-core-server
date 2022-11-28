@@ -1,6 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderStatisticOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
@@ -18,6 +19,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -48,16 +50,21 @@ class OrderService {
     val logger: Logger = LoggerFactory.getLogger(OrderService::class.java)
 
     @Transactional
-    fun orderCartItems(cartItemIds: List<Long>, wholesalerId: Long): OrderSheet {
-        val cartItems: List<CartItem> = cartItemIds.map {
-            entityManager.getReference(CartItem::class.java, it)
-        }.map {
-            it.orderedAt = LocalDateTime.now()
-            it
+    fun orderCartItems(retailerId: Long): OrderSheet {
+        val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+            .map {
+                it.orderedAt = LocalDateTime.now()
+                it
+            }.get().toList()
+
+        if(cartItems.isEmpty()){
+            throw Exception("There's no cart items to order.")
         }
+
         cartRepository.saveAll(cartItems)
 
-        val selectedWholesaler = entityManager.getReference(User::class.java, wholesalerId)
+        val selectedWholesaler = cartItems[0].wholesaler
+
         val orderItems = cartItems.map {
             OrderItem(
                 retailer = it.retailer,
