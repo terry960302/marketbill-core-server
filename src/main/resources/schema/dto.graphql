@@ -15,7 +15,13 @@ input SignInInput{
 input AddToCartInput{
     flowerId : Int!,
     quantity : Int!,
-    grade : String!,
+    grade : FlowerGrade!,
+}
+
+input UpdateCartItemInput{
+    id : Int!,
+    quantity : Int!,
+    grade : FlowerGrade!,
 }
 
 input OrderCartItemsInput {

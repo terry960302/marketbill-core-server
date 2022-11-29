@@ -30,10 +30,10 @@ data class CartItem(
     val flower: Flower? = null,
 
     @Column(name = "quantity")
-    val quantity: Int? = null,
+    var quantity: Int? = null,
 
     @Column(name = "grade")
-    val grade: String? = null,
+    var grade: String? = null,
 
     @Column(name = "ordered_at")
     var orderedAt: LocalDateTime? = null,

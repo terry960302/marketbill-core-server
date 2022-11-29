@@ -1,19 +1,20 @@
 
 type CartItem{
-    id : Int!,
-    retailer : User!,
-    flower : Flower!,
-    quantity : Int!,
-    grade : String!,
+    id : Int,
+    retailer : User,
+    wholesaler : User,
+    flower : Flower,
+    quantity : Int,
+    grade : String,
     orderedAt : LocalDate,
-    createdAt : LocalDate!,
-    updatedAt : LocalDate!,
+    createdAt : LocalDate,
+    updatedAt : LocalDate,
     deletedAt : LocalDate,
 }
 
 type OrderSheet{
-    id : Int!,
-    orderNo : String!,
+    id : Int,
+    orderNo : String,
     retailer : User,
     wholesaler : User,
     orderItems(pagination: PaginationInput) : [OrderItem!],
@@ -24,33 +25,33 @@ type OrderSheet{
     # 영수증 발행 여부
     hasReceipt : Boolean,
     orderSheetReceipts : [OrderSheetReceipt!],
-    createdAt : LocalDate!,
-    updatedAt : LocalDate!,
+    createdAt : LocalDate,
+    updatedAt : LocalDate,
     deletedAt : LocalDate,
 }
 
 type OrderItem{
-    id : Int!,
+    id : Int,
     orderSheet : OrderSheet,
     retailer : User,
-    wholesaler : User!,
-    flower : Flower!,
-    quantity : Int!,
-    grade : String!,
+    wholesaler : User,
+    flower : Flower,
+    quantity : Int,
+    grade : String,
     price : Int,
-    createdAt : LocalDate!,
-    updatedAt : LocalDate!,
+    createdAt : LocalDate,
+    updatedAt : LocalDate,
     deletedAt : LocalDate,
 }
 
 type OrderSheetReceipt{
-    id : Int!,
+    id : Int,
     orderSheet : OrderSheet,
-    filePath : String!,
-    fileFormat : String!,
+    filePath : String,
+    fileFormat : String,
     metadata : String,
-    createdAt : LocalDate!,
-    updatedAt : LocalDate!,
+    createdAt : LocalDate,
+    updatedAt : LocalDate,
     deletedAt : LocalDate,
 }
 
@@ -84,6 +85,8 @@ extend type Mutation {
     addToCart(input : AddToCartInput) : CartItem!,
     # [소매상] 장바구니 항목 삭제
     removeCartItem(cartItemId : Int!) : Int!,
+    # [소매상] 장바구니 항목 수정
+    updateCartItem(input : UpdateCartItemInput) : CartItem
     # [소매상] 장바구니 거래처 설정 및 수정
     upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem!],
     # [소매상] 장바구니 항목들 주문하기
