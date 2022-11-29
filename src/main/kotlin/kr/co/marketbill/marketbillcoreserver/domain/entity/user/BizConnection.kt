@@ -15,11 +15,13 @@ data class BizConnection(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // 거래처 관계 신청자
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "retailer_id")
     val retailer: User? = null,
 
-    @ManyToOne(fetch = FetchType.LAZY)
+    // 거래처 관계 수취자
+    @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "wholesaler_id")
     val wholesaler: User? = null,
 

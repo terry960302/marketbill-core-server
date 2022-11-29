@@ -1,5 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.user
 
+import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
@@ -27,7 +29,7 @@ data class User(
         mappedBy = "user",
         cascade = [CascadeType.ALL],
         orphanRemoval = true,
-        fetch = FetchType.LAZY,
+        fetch = FetchType.EAGER,
     ) // cascade 부모 삭제하면 자식 전체 삭제, orphanRemoval 자식인 경우 삭제하면 부모도 삭제
     val userCredential: UserCredential? = null,
 
@@ -36,11 +38,11 @@ data class User(
     )
     val authToken: AuthToken? = null,
 
-    @OneToMany(mappedBy = "retailer")
-    val retailerToWholesaler: List<BizConnection>? = null,
+    @OneToMany(mappedBy = "retailer", fetch = FetchType.LAZY)
+    val appliedConnections: List<BizConnection>? = null,
 
-    @OneToMany(mappedBy = "wholesaler")
-    val wholesalerToRetailer: List<BizConnection>? = null,
+    @OneToMany(mappedBy = "wholesaler", fetch = FetchType.LAZY)
+    val receivedConnections: List<BizConnection>? = null,
 
     @OneToMany(mappedBy = "retailer")
     val retailerCartItems: List<CartItem>? = null,
@@ -59,6 +61,9 @@ data class User(
 
     @OneToMany(mappedBy = "wholesaler")
     val orderItemsByWholesaler: List<OrderItem>? = null,
+
+    @Transient
+    var applyStatus: ApplyStatus? = null,
 
 
     ) : BaseTime() {

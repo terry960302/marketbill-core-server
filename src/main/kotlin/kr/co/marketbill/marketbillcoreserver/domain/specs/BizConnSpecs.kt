@@ -1,5 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.domain.specs
 
+import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
@@ -11,6 +13,39 @@ import javax.persistence.criteria.Join
 class BizConnSpecs {
 
     companion object {
+
+        fun byRetailerIds(userIds: List<Long>?): Specification<BizConnection> {
+            return Specification<BizConnection> { root, query, builder ->
+                if (userIds == null || userIds.isEmpty()) {
+                    builder.conjunction()
+                } else {
+                    val retailer: Join<BizConnection, User> = root.join("retailer")
+                    retailer.get<Long>("id").`in`(userIds)
+                }
+            }
+        }
+
+        fun byWholesalerIds(userIds: List<Long>?): Specification<BizConnection> {
+            return Specification<BizConnection> { root, query, builder ->
+                if (userIds == null || userIds.isEmpty()) {
+                    builder.conjunction()
+                } else {
+                    val wholesaler: Join<BizConnection, User> = root.join("wholesaler")
+                    wholesaler.get<Long>("id").`in`(userIds)
+                }
+            }
+        }
+
+        fun isApplyStatus(status: ApplyStatus?): Specification<BizConnection> {
+            return Specification<BizConnection> { root, query, builder ->
+                if (status == null) {
+                    builder.conjunction()
+                } else {
+                    builder.equal(root.get<ApplyStatus>("applyStatus"), status)
+                }
+            }
+        }
+
         fun isRetailerId(retailerId: Long?): Specification<BizConnection> {
             return Specification<BizConnection> { root, query, builder ->
                 if (retailerId == null) {
@@ -27,8 +62,8 @@ class BizConnSpecs {
                 if (wholesalerId == null) {
                     builder.conjunction()
                 } else {
-                    val wholesalerId: Join<BizConnection, User> = root.join("wholesalerId")
-                    builder.equal(wholesalerId.get<Long>("id"), wholesalerId)
+                    val wholesaler: Join<BizConnection, User> = root.join("wholesaler")
+                    builder.equal(wholesaler.get<Long>("id"), wholesalerId)
                 }
             };
         }

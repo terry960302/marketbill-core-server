@@ -62,8 +62,32 @@ class UserService {
         return userRepository.findById(userId)
     }
 
-    fun getUsers(excludeId: Long?, roles: List<AccountRole>?, pageable: Pageable): Page<User> {
-        return userRepository.findAll(UserSpecs.exclude(excludeId).and(UserSpecs.hasRoles(roles)), pageable)
+    fun getAllUsers(pageable: Pageable): Page<User> {
+        return userRepository.findAll(pageable)
+    }
+
+    @Transactional(readOnly = true)
+    fun getAppliedConnectionsByRetailerIds(
+        retailerIds: List<Long>,
+        status: ApplyStatus?,
+        pageable: Pageable
+    ): MutableMap<Long, List<BizConnection>> {
+        val bizConnections = bizConnectionRepository.findAll(
+            BizConnSpecs.isApplyStatus(status).and(BizConnSpecs.byRetailerIds(retailerIds)), pageable
+        )
+        return bizConnections.groupBy { it.retailer!!.id!! }.toMutableMap()
+    }
+
+    @Transactional(readOnly = true)
+    fun getReceivedConnectionsByWholesalerIds(
+        wholesalerIds: List<Long>,
+        status: ApplyStatus?,
+        pageable: Pageable
+    ): MutableMap<Long, List<BizConnection>> {
+        val bizConnections = bizConnectionRepository.findAll(
+            BizConnSpecs.isApplyStatus(status).and(BizConnSpecs.byWholesalerIds(wholesalerIds)), pageable
+        )
+        return bizConnections.groupBy { it.wholesaler!!.id!! }.toMutableMap()
     }
 
     @Transactional
@@ -154,9 +178,9 @@ class UserService {
         return bizConnectionRepository.save(bizConnection)
     }
 
-    fun updateBizConnection(bizConnId : Long, status : ApplyStatus) : BizConnection{
-        val bizConnection : Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
-        if(bizConnection.isEmpty) throw Exception("There's no bizConnection whose id is $bizConnId")
+    fun updateBizConnection(bizConnId: Long, status: ApplyStatus): BizConnection {
+        val bizConnection: Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
+        if (bizConnection.isEmpty) throw Exception("There's no bizConnection whose id is $bizConnId")
 
         bizConnection.get().applyStatus = status
         return bizConnectionRepository.save(bizConnection.get())

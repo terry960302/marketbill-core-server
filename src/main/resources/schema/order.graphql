@@ -16,14 +16,14 @@ type OrderSheet{
     orderNo : String!,
     retailer : User,
     wholesaler : User,
-    orderItems(pagination: PaginationInput) : [OrderItem],
+    orderItems(pagination: PaginationInput) : [OrderItem!],
     # 주문서에 해당하는 꽃의 총 개수
     totalFlowerQuantity : Int,
     # 주문서에 해당하는 꽃의 품종 개수(중복x)
     totalFlowerTypeCount : Int,
     # 영수증 발행 여부
     hasReceipt : Boolean,
-    orderSheetReceipts : [OrderSheetReceipt],
+    orderSheetReceipts : [OrderSheetReceipt!],
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
@@ -68,15 +68,15 @@ type OrderStatistic{
 ## -------------- QUERY ------------------
 extend type Query {
     # [소매상] 장바구니 목록 가져오기
-    getAllCartItems(pagination : PaginationInput) : [CartItem]
+    getAllCartItems(pagination : PaginationInput) : [CartItem!]
     # 주문서 목록 가져오기
-    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet],
+    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!],
     # 주문서 단건(상세) 가져오기
     getOrderSheet(orderSheetId : Int!) : OrderSheet,
     # 주문 항목 가져오기
-    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem],
+    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!],
     # [도매상] 일자별 주문 집계 목록
-    getDailyOrderStatistics(pagination : PaginationInput) : [OrderStatistic]
+    getDailyOrderStatistics(pagination : PaginationInput) : [OrderStatistic!]
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {
@@ -85,16 +85,16 @@ extend type Mutation {
     # [소매상] 장바구니 항목 삭제
     removeCartItem(cartItemId : Int!) : Int!,
     # [소매상] 장바구니 거래처 설정 및 수정
-    upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem],
+    upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem!],
     # [소매상] 장바구니 항목들 주문하기
     orderCartItems : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
     removeOrderSheet(orderSheetId : Int!) : Int!,
     # [도매상] 주문 항목 수정
-    updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem]
+    updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem!]
     # [도매상] 영수증 발행
     # - 파일처리 구축 후 실제 로직 적용 예정
     issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt,
     # 배치 장바구니 주문처리
-    batchCartToOrder : Boolean
+    batchCartToOrder : Boolean!
 }

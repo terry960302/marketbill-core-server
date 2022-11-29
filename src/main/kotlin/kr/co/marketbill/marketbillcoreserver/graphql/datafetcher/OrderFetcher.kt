@@ -14,13 +14,14 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderStatisticOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
-import kr.co.marketbill.marketbillcoreserver.graphql.context.OrderContext
+import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
 import kr.co.marketbill.marketbillcoreserver.types.*
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -207,8 +208,8 @@ class OrderFetcher {
         val orderSheet = dfe.getSource<OrderSheet>()
         val dataLoader = dfe.getDataLoader<Long, List<OrderItem>>(OrderItemLoader::class.java)
 
-        val orderContext = DgsContext.Companion.getCustomContext<OrderContext>(dfe)
-        orderContext.pagination = pagination
+        val context = DgsContext.Companion.getCustomContext<CustomContext>(dfe)
+        context.orderItemsInput.pagination = pagination
 
         return dataLoader.load(orderSheet.id)
     }

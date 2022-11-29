@@ -1,8 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
-import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
+import kr.co.marketbill.marketbillcoreserver.constants.*
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.BiddingFlower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.FlowerType
@@ -23,12 +21,14 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.user.AuthTokenRep
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BizConnectionRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
+import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Profile
+import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
