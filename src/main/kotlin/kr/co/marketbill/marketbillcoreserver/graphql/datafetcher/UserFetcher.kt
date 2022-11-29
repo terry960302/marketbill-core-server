@@ -67,7 +67,7 @@ class UserFetcher {
 
         return if (selection.contains("applyStatus")) {
             userService.getUsersWithApplyStatus(userId, role, pageable)
-        }else{
+        } else {
             userService.getAllUsers(pageable)
         }
     }

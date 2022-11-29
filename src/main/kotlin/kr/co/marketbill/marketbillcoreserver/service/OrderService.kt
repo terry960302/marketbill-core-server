@@ -14,6 +14,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetR
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -58,7 +59,7 @@ class OrderService {
             }.get().toList()
 
         if(cartItems.isEmpty()){
-            throw Exception("There's no cart items to order.")
+            throw CustomException("There's no cart items to order.")
         }
 
         cartRepository.saveAll(cartItems)
@@ -143,7 +144,7 @@ class OrderService {
 
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
-        if (orderSheet.isEmpty) throw Exception("There's no OrderSheet data whose id is $orderSheetId")
+        if (orderSheet.isEmpty) throw CustomException("There's no OrderSheet data whose id is $orderSheetId")
 
         val orderItems = orderSheet.get().orderItems
 

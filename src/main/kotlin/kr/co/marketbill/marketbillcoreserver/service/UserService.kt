@@ -13,6 +13,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredenti
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.UserSpecs
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
@@ -68,7 +69,7 @@ class UserService {
 
     fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
         if(userId == null || role == null){
-            throw Exception("There must be Authorization token in request header when using 'needApplyStatus' input value or fetching 'applyStatus' field")
+            throw CustomException("There must be Authorization token in request header when using 'applyStatus' field")
         }
         if (role == AccountRole.RETAILER) {
             val roles = listOf<AccountRole>(AccountRole.WHOLESALER_EMPR, AccountRole.WHOLESALER_EMPE)
@@ -123,7 +124,7 @@ class UserService {
     fun signUp(input: SignUpInput): AuthTokenDto {
         try {
             val hasUserCred: Boolean = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo).isPresent
-            if (hasUserCred) throw IllegalArgumentException("There's user who has same phone number. Please check your phone number again.")
+            if (hasUserCred) throw CustomException("There's user who has same phone number. Please check your phone number again.")
 
             val userInput = User(name = input.name, businessNo = null)
             val user = userRepository.save(userInput)
@@ -151,11 +152,11 @@ class UserService {
         val userCred = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo)
 
         val hasUserCred = userCred.isPresent
-        if (!hasUserCred) throw IllegalArgumentException(NO_USER_ERR)
+        if (!hasUserCred) throw CustomException(NO_USER_ERR)
 
 
         val isValidPassword = passwordEncoder.matches(input.password, userCred.get().password)
-        if (!isValidPassword) throw IllegalArgumentException(NO_USER_ERR)
+        if (!isValidPassword) throw CustomException(NO_USER_ERR)
         return generateAuthToken(userCred.get().user!!, role = AccountRole.valueOf(input.role.name)) {
             val authTokenId = userCred.get().user?.authToken?.id
             authTokenRepository.save(
@@ -197,7 +198,7 @@ class UserService {
         val bizConnections: List<BizConnection> = bizConnectionRepository.findAll(
             BizConnSpecs.isRetailerId(retailerId).and(BizConnSpecs.isWholesalerId(wholesalerId))
         )
-        if (bizConnections.isNotEmpty()) throw Exception("There's already a bizConnection between retailer($retailerId) and wholesaler($wholesalerId)")
+        if (bizConnections.isNotEmpty()) throw CustomException("There's already a bizConnection between retailer($retailerId) and wholesaler($wholesalerId)")
 
         val bizConnection = BizConnection(
             retailer = entityManager.getReference(User::class.java, retailerId),
@@ -209,7 +210,7 @@ class UserService {
 
     fun updateBizConnection(bizConnId: Long, status: ApplyStatus): BizConnection {
         val bizConnection: Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
-        if (bizConnection.isEmpty) throw Exception("There's no bizConnection whose id is $bizConnId")
+        if (bizConnection.isEmpty) throw CustomException("There's no bizConnection whose id is $bizConnId")
 
         bizConnection.get().applyStatus = status
         return bizConnectionRepository.save(bizConnection.get())
