@@ -29,11 +29,8 @@ input PaginationInput {
     sort : Sort = ASCEND,
 }
 
-input UserFilterInput{
-    # 가져오고 싶은 Role
-    roles : [AccountRole],
-    # 반환값에서 '나' 제외 여부(pagination 영향안받음)
-    excludeMe : Boolean = false,
+input BizConnectionFilterInput{
+    applyStatus : ApplyStatus!,
 }
 
 input DateFilterInput{

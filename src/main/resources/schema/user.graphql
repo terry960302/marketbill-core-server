@@ -7,10 +7,12 @@ type User {
     deletedAt : LocalDate
     userCredential : UserCredential,
     authToken : AuthToken,
-    # 소매상 -> 도매상 신청 내역(팔로잉, 팔로워 개념)
-    retailerToWholesaler : [BizConnection],
-    # 도매상 -> 소매상 신청 내역(팔로잉, 팔로워 개념)
-    wholesalerToRetailer : [BizConnection],
+    # 보낸 거래처 신청
+    appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
+    # 받은 거래처 신청
+    receivedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
+    # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
+    applyStatus : ApplyStatus,
 }
 
 # 유저의 로그인, 회원가입 정보
@@ -27,9 +29,9 @@ type UserCredential {
 # 주의 : 서로 다른 Role 끼리 거래관계를 맺기 때문에 같은 role 의 데이터를 가져올 경우 데이터가 없습니다.
 type BizConnection {
     id : Int!,
-    # 본인이 도매상인 경우 retailer 의 목록을 가져옴
+    # 거래처 신청자(=소매상)
     retailer : User!,
-    # 본인이 소매상의 경우 wholesaler 의 목록을 가져옴
+    # 거래처 신청 수취자(=도매상)
     wholesaler : User!,
     # 거래처 신청 상태
     applyStatus : ApplyStatus!,
@@ -46,12 +48,12 @@ type AuthToken{
 ## -------------- QUERY ------------------
 type Query {
     # 토큰으로 나의 정보 가져오기
+    # - 거래처 목록 가져오기(내가 신청한 것만)
     me : User
     # 유저 목록 가져오기
-    # - 거래처 목록 가져오기
-    #   - 나 = 소매상(ROLE_RETAILER) : wholesaler 의 목록을 쿼리
-    #   - 나 = 도매상(ROLE_WHOLESALER_EMPR, EMPE) : retailer 의 목록을 쿼리
-    getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User]
+    # - 거래처 목록 가져오기(전체 목록) : User > applyStatus 필드를 추가할 경우(내가 소매상이면 도매상 목록을 가져옴)
+    # - 유저 전체 목록 가져오기 : User > applyStatus 필드 없는 경우
+    getUsers(pagination : PaginationInput) : [User!]
 }
 
 ## -------------- MUTATION ------------------

@@ -15,18 +15,35 @@ class UserSpecs {
             return Specification<User> { root, query, builder ->
                 if (roles == null) {
                     builder.conjunction()
-                }else{
+                } else {
                     val userCred: Join<User, UserCredential> = root.join("userCredential")
                     userCred.get<AccountRole>("role").`in`(roles)
                 }
             }
         }
 
+//        fun leftJoinBizConn(userId: Long?, role: AccountRole?): Specification<User> {
+//            return Specification<User> { root, query, builder ->
+//                if (userId == null || role == null) {
+//                    builder.conjunction()
+//                } else {
+//                    if (role == AccountRole.RETAILER) {
+//                        val bizConn = root.join<User, BizConnection>("retailerToWholesaler", JoinType.LEFT)
+//                        builder.equal(bizConn.get<Long>("retailer_id"), userId)
+//                    } else {
+//                        val bizConn = root.join<User, BizConnection>("wholesalerToRetailer", JoinType.LEFT)
+//                        builder.equal(bizConn.get<Long>("wholesaler_id"), userId)
+//                    }
+//
+//                }
+//            }
+//        }
+
         fun exclude(id: Long?): Specification<User> {
             return Specification<User> { root, query, builder ->
                 if (id == null) {
                     builder.conjunction()
-                }else{
+                } else {
                     builder.notEqual(root.get<Long>("id"), id)
                 }
             }
