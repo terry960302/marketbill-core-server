@@ -18,7 +18,6 @@ import java.util.concurrent.CompletionStage
 
 
 @DgsDataLoader(name = "order_items")
-@Qualifier("order_item_context_builder")
 class OrderItemLoader : MappedBatchLoaderWithContext<Long, List<OrderItem>> {
     @Autowired
     private lateinit var orderService: OrderService

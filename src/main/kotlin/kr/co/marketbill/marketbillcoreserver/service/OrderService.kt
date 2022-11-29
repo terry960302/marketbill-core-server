@@ -98,6 +98,7 @@ class OrderService {
     }
 
 
+    @Transactional(readOnly = true)
     fun getAllOrderItemsByOrderSheetIds(
         orderSheetIds: List<Long>,
         pageable: Pageable

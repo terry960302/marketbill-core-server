@@ -40,20 +40,36 @@ class UserFetcher {
     fun me(@RequestHeader("Authorization") authorization: String): Optional<User> {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
-        return userService.me(userId)
+        return userService.getUser(userId)
     }
 
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetUsers)
     fun getUsers(
+        dfe: DgsDataFetchingEnvironment,
         @RequestHeader("Authorization") authorization: String?,
-        @InputArgument filter: UserFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<User> {
+        var userId: Long? = null
+        var role: kr.co.marketbill.marketbillcoreserver.constants.AccountRole? = null
         var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+
+        if (authorization != null) {
+            val token = jwtProvider.filterOnlyToken(authorization)
+            userId = jwtProvider.parseUserId(token)
+            role = jwtProvider.parseUserRole(token)
+        }
         if (pagination != null) {
             pageable = PageRequest.of(pagination.page!!, pagination.size!!)
         }
-        return userService.getAllUsers(pageable)
+
+
+        val selection = dfe.selectionSet
+
+        return if (selection.contains("applyStatus")) {
+            userService.getUsersWithApplyStatus(userId, role, pageable)
+        }else{
+            userService.getAllUsers(pageable)
+        }
     }
 
     @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.AppliedConnections)

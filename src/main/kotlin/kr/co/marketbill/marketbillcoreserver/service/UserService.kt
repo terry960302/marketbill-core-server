@@ -58,12 +58,41 @@ class UserService {
     val logger: Logger = LoggerFactory.getLogger(UserService::class.java)
 
 
-    fun me(userId: Long): Optional<User> {
+    fun getUser(userId: Long): Optional<User> {
         return userRepository.findById(userId)
     }
 
     fun getAllUsers(pageable: Pageable): Page<User> {
         return userRepository.findAll(pageable)
+    }
+
+    fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
+        if(userId == null || role == null){
+            throw Exception("There must be Authorization token in request header when using 'needApplyStatus' input value or fetching 'applyStatus' field")
+        }
+        if (role == AccountRole.RETAILER) {
+            val roles = listOf<AccountRole>(AccountRole.WHOLESALER_EMPR, AccountRole.WHOLESALER_EMPE)
+            val users = userRepository.findAll(UserSpecs.hasRoles(roles).and(UserSpecs.exclude(userId)), pageable)
+
+            return users.map { it ->
+                val connections = it.receivedConnections!!.filter { conn -> conn.retailer!!.id == userId }
+                if(connections.isNotEmpty()){
+                    it.applyStatus = connections[0].applyStatus
+                }
+                it
+            }
+        } else {
+            val roles = listOf<AccountRole>(AccountRole.RETAILER)
+            val users = userRepository.findAll(UserSpecs.hasRoles(roles).and(UserSpecs.exclude(userId)), pageable)
+
+            return users.map { it ->
+                val connections = it.appliedConnections!!.filter { conn -> conn.wholesaler!!.id == userId }
+                if(connections.isNotEmpty()){
+                    it.applyStatus = connections[0].applyStatus
+                }
+                it
+            }
+        }
     }
 
     @Transactional(readOnly = true)
