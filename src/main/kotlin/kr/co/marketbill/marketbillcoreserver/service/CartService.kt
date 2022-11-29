@@ -13,7 +13,9 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartReposit
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
+import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -55,9 +57,20 @@ class CartService {
             retailer = entityManager.getReference(User::class.java, userId),
             flower = entityManager.getReference(Flower::class.java, flowerId),
             quantity = quantity,
-            grade = grade.toString()
+            grade = convertFlowerGradeToKor(grade)
         )
         return cartRepository.save(cartItem)
+    }
+
+    fun updateCartItem(id : Long, quantity: Int, grade : FlowerGrade) : CartItem{
+        val cartItem = cartRepository.findById(id)
+        if (cartItem.isEmpty) throw CustomException("There's no cart_item whose ID is $id")
+
+        val item = cartItem.get()
+        item.quantity = quantity
+        item.grade = convertFlowerGradeToKor(grade)
+
+        return cartRepository.save(item)
     }
 
     fun removeCartItem(cartItemId: Long): Long {

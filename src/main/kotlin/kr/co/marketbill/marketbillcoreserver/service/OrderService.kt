@@ -58,17 +58,26 @@ class OrderService {
                 it
             }.get().toList()
 
-        if(cartItems.isEmpty()){
+        if (cartItems.isEmpty()) {
             throw CustomException("There's no cart items to order.")
         }
-
         cartRepository.saveAll(cartItems)
 
+        val selectedRetailer = cartItems[0].retailer
         val selectedWholesaler = cartItems[0].wholesaler
+
+        val orderSheet = OrderSheet(
+            orderNo = UUID.randomUUID().toString(),
+            retailer = selectedRetailer,
+            wholesaler = selectedWholesaler,
+        )
+
+        val savedOrderSheet = orderSheetRepository.save(orderSheet)
 
         val orderItems = cartItems.map {
             OrderItem(
                 retailer = it.retailer,
+                orderSheet = savedOrderSheet,
                 wholesaler = selectedWholesaler,
                 flower = it.flower,
                 quantity = it.quantity,
@@ -76,15 +85,9 @@ class OrderService {
                 price = null,
             )
         }
-        val savedOrderItems = orderItemRepository.saveAll(orderItems)
 
-        val orderSheet = OrderSheet(
-            orderNo = UUID.randomUUID().toString(),
-            retailer = savedOrderItems[0].retailer,
-            wholesaler = selectedWholesaler,
-            orderItems = savedOrderItems,
-        )
-        return orderSheetRepository.save(orderSheet)
+        orderItemRepository.saveAll(orderItems)
+        return savedOrderSheet
     }
 
     fun getOrderSheets(userId: Long?, role: AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderSheet> {

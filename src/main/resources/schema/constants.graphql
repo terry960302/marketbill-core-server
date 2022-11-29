@@ -20,6 +20,16 @@ enum ApplyStatus{
     REJECTED,
 }
 
+# 꽃 등급
+enum FlowerGrade{
+    # 상
+    UPPER,
+    # 중
+    MIDDLE,
+    # 하
+    LOWER,
+}
+
 enum Sort{
     # 오름차순
     ASCEND,

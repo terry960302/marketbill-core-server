@@ -49,9 +49,15 @@ class OrderFetcher {
         @RequestHeader("Authorization") authorization: String,
         @InputArgument pagination: PaginationInput?
     ): Page<CartItem> {
-        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE, Sort.by("createdAt").ascending())
         if (pagination != null) {
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
+            val sort = if (pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.ASCEND) {
+                Sort.by("createdAt").ascending()
+            } else {
+                Sort.by("createdAt").descending()
+            }
+            pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
+
         }
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
@@ -145,7 +151,21 @@ class OrderFetcher {
     ): CartItem {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
-        return cartService.addToCart(userId, input.flowerId.toLong(), input.quantity, FlowerGrade.valueOf(input.grade))
+        return cartService.addToCart(
+            userId,
+            input.flowerId.toLong(),
+            input.quantity,
+            FlowerGrade.valueOf(input.grade.toString())
+        )
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateCartItem)
+    fun updateCartItem(@InputArgument input: UpdateCartItemInput): CartItem {
+        return cartService.updateCartItem(
+            input.id.toLong(),
+            input.quantity,
+            FlowerGrade.valueOf(input.grade.toString())
+        )
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveCartItem)
@@ -166,7 +186,7 @@ class OrderFetcher {
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.OrderCartItems)
-    fun orderCartItems( @RequestHeader("Authorization") authorization: String): OrderSheet {
+    fun orderCartItems(@RequestHeader("Authorization") authorization: String): OrderSheet {
         val token = jwtProvider.filterOnlyToken(authorization)
         val retailerId = jwtProvider.parseUserId(token)
         return orderService.orderCartItems(retailerId)
