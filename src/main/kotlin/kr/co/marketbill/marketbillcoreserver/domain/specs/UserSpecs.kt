@@ -11,6 +11,17 @@ import javax.persistence.criteria.JoinType
 class UserSpecs {
     companion object {
 
+        fun isName(name: String?): Specification<User> {
+            return Specification<User> { root, query, builder ->
+                if (name == null) {
+                    builder.conjunction()
+                } else {
+                    builder.equal(root.get<String>("name"), name)
+                }
+            }
+        }
+
+
         fun hasRoles(roles: List<AccountRole>?): Specification<User> {
             return Specification<User> { root, query, builder ->
                 if (roles == null) {
@@ -21,23 +32,6 @@ class UserSpecs {
                 }
             }
         }
-
-//        fun leftJoinBizConn(userId: Long?, role: AccountRole?): Specification<User> {
-//            return Specification<User> { root, query, builder ->
-//                if (userId == null || role == null) {
-//                    builder.conjunction()
-//                } else {
-//                    if (role == AccountRole.RETAILER) {
-//                        val bizConn = root.join<User, BizConnection>("retailerToWholesaler", JoinType.LEFT)
-//                        builder.equal(bizConn.get<Long>("retailer_id"), userId)
-//                    } else {
-//                        val bizConn = root.join<User, BizConnection>("wholesalerToRetailer", JoinType.LEFT)
-//                        builder.equal(bizConn.get<Long>("wholesaler_id"), userId)
-//                    }
-//
-//                }
-//            }
-//        }
 
         fun exclude(id: Long?): Specification<User> {
             return Specification<User> { root, query, builder ->

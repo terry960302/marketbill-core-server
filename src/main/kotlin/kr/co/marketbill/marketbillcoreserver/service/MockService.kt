@@ -36,6 +36,7 @@ import java.time.LocalDateTime
 import java.util.*
 import javax.annotation.PostConstruct
 import javax.persistence.EntityManager
+import kotlin.streams.asSequence
 
 @Service
 class MockService {
@@ -92,64 +93,58 @@ class MockService {
     }
 
     @Transactional
+    fun createMockOnlyUsers(fromCount: Int = 1, toCount: Int = 100, role: AccountRole) {
+        val users = (fromCount..toCount).map {
+            User(
+                id = it.toLong(),
+                name = generateRandomStr(),
+                businessNo = null
+            )
+        }
+
+        val creds = (fromCount..toCount).map {
+            UserCredential(
+                user = entityManager.getReference(User::class.java, it.toLong()),
+                phoneNo = generatePhoneNoStr(),
+                password = passwordEncoder.encode("1234"),
+                role = role,
+            )
+        }
+
+        val authTokens = (fromCount..toCount).map {
+            AuthToken(
+                user = entityManager.getReference(User::class.java, it.toLong()),
+                refreshToken = jwtProvider.generateToken(
+                    it.toLong(),
+                    role.toString(),
+                    JwtProvider.refreshExpiration
+                )
+            )
+        }
+
+        userRepository.saveAll(users)
+        userCredentialRepository.saveAll(creds)
+        authTokenRepository.saveAll(authTokens)
+    }
+
+    @Transactional
+    fun createMockBizConns() {
+        val conns = (1..100).map {
+            BizConnection(
+                retailer = entityManager.getReference(User::class.java, (1..10).random().toLong()),
+                wholesaler = entityManager.getReference(User::class.java, (11..30).random().toLong()),
+                applyStatus = ApplyStatus.APPLYING,
+            )
+        }
+        bizConnectionRepository.saveAll(conns)
+    }
+
+    @Transactional
     fun createMockUsers() {
-        val retailer = User(name = "name_retailer", businessNo = null)
-        val wholesaler1 = User(name = "name_wholesaler", businessNo = null)
-        val wholesaler2 = User(name = "name_wholesaler", businessNo = null)
-        userRepository.saveAll(arrayListOf(retailer, wholesaler1, wholesaler2))
-
-        val retailerCred = UserCredential(
-            user = entityManager.getReference(User::class.java, 1.toLong()),
-            phoneNo = "01011112222",
-            password = passwordEncoder.encode("1234"),
-            role = AccountRole.RETAILER
-        )
-        val wholesalerCred1 = UserCredential(
-            user = entityManager.getReference(User::class.java, 2.toLong()),
-            phoneNo = "01011113333",
-            password = passwordEncoder.encode("1234"),
-            role = AccountRole.WHOLESALER_EMPR
-        )
-        val wholesalerCred2 = UserCredential(
-            user = entityManager.getReference(User::class.java, 3.toLong()),
-            phoneNo = "01011113333",
-            password = passwordEncoder.encode("1234"),
-            role = AccountRole.WHOLESALER_EMPE
-        )
-        userCredentialRepository.saveAll(arrayListOf(retailerCred, wholesalerCred1, wholesalerCred2))
-
-        val authToken1 = AuthToken(
-            user = entityManager.getReference(User::class.java, 1.toLong()),
-            refreshToken = jwtProvider.generateToken(
-                1.toLong(),
-                AccountRole.RETAILER.toString(),
-                JwtProvider.refreshExpiration
-            )
-        )
-        val authToken2 = AuthToken(
-            user = entityManager.getReference(User::class.java, 2.toLong()),
-            refreshToken = jwtProvider.generateToken(
-                2.toLong(),
-                AccountRole.WHOLESALER_EMPR.toString(),
-                JwtProvider.refreshExpiration
-            )
-        )
-        val authToken3 = AuthToken(
-            user = entityManager.getReference(User::class.java, 3.toLong()),
-            refreshToken = jwtProvider.generateToken(
-                3.toLong(),
-                AccountRole.WHOLESALER_EMPE.toString(),
-                JwtProvider.refreshExpiration
-            )
-        )
-        authTokenRepository.saveAll(arrayListOf(authToken1, authToken2, authToken3))
-
-        val bizConn = BizConnection(
-            retailer = entityManager.getReference(User::class.java, 1.toLong()),
-            wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
-            applyStatus = ApplyStatus.APPLYING,
-        )
-        bizConnectionRepository.save(bizConn)
+        createMockOnlyUsers(1,10, AccountRole.RETAILER)
+        createMockOnlyUsers(11, 20, AccountRole.WHOLESALER_EMPR)
+        createMockOnlyUsers(21, 30, AccountRole.WHOLESALER_EMPE)
+        createMockBizConns()
 
         logger.trace("createMockUsers completed")
     }
@@ -211,7 +206,7 @@ class MockService {
 
         val orderSheets = (1..3).map {
             OrderSheet(
-                orderNo= UUID.randomUUID().toString(),
+                orderNo = UUID.randomUUID().toString(),
                 retailer = entityManager.getReference(User::class.java, 1.toLong()),
                 wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
             )
@@ -219,7 +214,7 @@ class MockService {
         orderSheetRepository.saveAll(orderSheets)
 
         val orderItems = (1..9).map {
-            val orderSheetId = ((it -1) / 3) + 1
+            val orderSheetId = ((it - 1) / 3) + 1
             OrderItem(
                 orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId.toLong()),
                 retailer = entityManager.getReference(User::class.java, 1.toLong()),
@@ -230,5 +225,22 @@ class MockService {
             )
         }
         orderItemRepository.saveAll(orderItems)
+    }
+
+    fun generateRandomStr(outputStrLength: Long = 10): String {
+        val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
+        return java.util.Random().ints(outputStrLength, 0, source.length)
+            .asSequence()
+            .map(source::get)
+            .joinToString("")
+    }
+
+    fun generatePhoneNoStr(outputStrLength: Long = 8): String {
+        val source = "0123456789"
+        val postNo = Random().ints(outputStrLength, 0, source.length)
+            .asSequence()
+            .map(source::get)
+            .joinToString("")
+        return "010$postNo"
     }
 }

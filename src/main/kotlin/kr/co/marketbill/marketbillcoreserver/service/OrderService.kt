@@ -10,8 +10,10 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartReposit
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetReceiptRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.WholesalerConnectionRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
+import kr.co.marketbill.marketbillcoreserver.domain.specs.WholesalerConnSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
 import org.slf4j.Logger
@@ -96,8 +98,11 @@ class OrderService {
         )
     }
 
-    fun getOrderItems(date: LocalDate?, pageable: Pageable): Page<OrderItem> {
-        return orderItemRepository.findAll(OrderItemSpecs.atDate(date), pageable)
+    fun getOrderItems(wholesalerId: Long?, date: LocalDate?, pageable: Pageable): Page<OrderItem> {
+        return orderItemRepository.findAll(
+            OrderItemSpecs.atDate(date).and(OrderItemSpecs.byWholesalerId(wholesalerId)),
+            pageable
+        )
     }
 
 
@@ -170,7 +175,6 @@ class OrderService {
             fileFormat = "excel",
             metadata = "{volume : 128KB}"
         )
-
         return orderSheetReceiptRepository.save(orderSheetReceipt)
     }
 }
