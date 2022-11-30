@@ -11,15 +11,15 @@ type Flower{
 }
 
 type FlowerType {
-    id : Int,
-    name : String,
+    id : Int!,
+    name : String!,
     flowers : [Flower!]
 }
 
 type BiddingFlower {
-    id : Int,
-    flower : Flower,
-    biddingDate : LocalDate,
+    id : Int!,
+    flower : Flower!,
+    biddingDate : LocalDate!,
 }
 
 ## -------------- QUERY ------------------
