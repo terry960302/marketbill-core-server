@@ -13,6 +13,8 @@ type User {
     receivedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
     # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
     applyStatus : ApplyStatus,
+    # 거래처 신청 테이블 고유값
+    bizConnectionId : Int
 }
 
 # 유저의 로그인, 회원가입 정보
@@ -63,7 +65,7 @@ type Mutation{
     # 로그인
     signIn(input : SignInInput) : AuthToken
     # 소매상 -> 도매상 거래처 신청
-    applyBizConnection(retailerId : Int!, wholesalerId : Int!) : BizConnection
+    applyBizConnection(wholesalerId : Int!) : BizConnection
     # 도매상 -> 소매상 거래처 신청처리(승낙, 거절)
     updateBizConnection(bizConnId : Int!, status : ApplyStatus): BizConnection
 }

@@ -40,7 +40,7 @@ input BizConnectionFilterInput{
 }
 
 input DateFilterInput{
-    # 'YYYY-MM-dd' 포맷 날짜 문자열
+    # 'yyyy-MM-dd' 포맷 날짜 문자열
     date : String,
 }
 
@@ -52,9 +52,9 @@ input OrderItemPriceInput{
 }
 
 input DateRangeInput{
-    # "YYYY-MM-dd" 포맷 날짜 문자열
+    # "yyyy-MM-dd" 포맷 날짜 문자열
     fromDate : String!,
-    # "YYYY-MM-dd" 포맷 날짜 문자열
+    # "yyyy-MM-dd" 포맷 날짜 문자열
     toDate : String!,
 }
 

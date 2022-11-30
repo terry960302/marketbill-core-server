@@ -69,7 +69,7 @@ class UserService {
 
     fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
         if(userId == null || role == null){
-            throw CustomException("There must be Authorization token in request header when using 'applyStatus' field")
+            throw CustomException("There must be Authorization token in request header when using 'applyStatus' field or 'bizConnectionId' field")
         }
         if (role == AccountRole.RETAILER) {
             val roles = listOf<AccountRole>(AccountRole.WHOLESALER_EMPR, AccountRole.WHOLESALER_EMPE)
@@ -79,6 +79,7 @@ class UserService {
                 val connections = it.receivedConnections!!.filter { conn -> conn.retailer!!.id == userId }
                 if(connections.isNotEmpty()){
                     it.applyStatus = connections[0].applyStatus
+                    it.bizConnectionId = connections[0].id
                 }
                 it
             }
@@ -90,6 +91,7 @@ class UserService {
                 val connections = it.appliedConnections!!.filter { conn -> conn.wholesaler!!.id == userId }
                 if(connections.isNotEmpty()){
                     it.applyStatus = connections[0].applyStatus
+                    it.bizConnectionId = connections[0].id
                 }
                 it
             }

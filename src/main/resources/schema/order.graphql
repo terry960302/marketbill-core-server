@@ -56,13 +56,13 @@ type OrderSheetReceipt{
 }
 
 # 일자별 주문 집계
-type OrderStatistic{
+type OrderSheetsAggregate{
     # 날짜(date)
     date : LocalDate,
     # 꽃 종류 개수(중복x)
-    flowerTypeCount  :Int,
+    flowerTypesCount  :Int,
     # 주문 수
-    orderSheetCount : Int,
+    orderSheetsCount : Int,
 }
 
 
@@ -77,7 +77,10 @@ extend type Query {
     # 주문 항목 가져오기
     getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!],
     # [도매상] 일자별 주문 집계 목록
-    getDailyOrderStatistics(pagination : PaginationInput) : [OrderStatistic!]
+    getAllDailyOrderSheetAggregates(pagination : PaginationInput) : [OrderSheetsAggregate!]
+    # [도매상] 오늘의 주문합계
+    # - input > date : "yyyy-MM-dd" 문자열 포맷(없는 경우 오늘 날짜 들어감)
+    getDailyOrderSheetAggregate(date : String) : OrderSheetsAggregate
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {

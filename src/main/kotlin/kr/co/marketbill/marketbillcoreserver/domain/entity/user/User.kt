@@ -65,6 +65,9 @@ data class User(
     @Transient
     var applyStatus: ApplyStatus? = null,
 
+    @Transient
+    var bizConnectionId : Long? = null,
+
 
     ) : BaseTime() {
 }
