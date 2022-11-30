@@ -108,6 +108,7 @@ class OrderFetcher {
         return orderService.getOrderSheets(userId, role, date, pageable)
     }
 
+    // 공용
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderItems)
     fun getOrderItems(
         @RequestHeader("Authorization") authorization: String?,
@@ -125,7 +126,7 @@ class OrderFetcher {
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
 
-            if(role == kr.co.marketbill.marketbillcoreserver.constants.AccountRole.WHOLESALER_EMPE){
+            if (role == kr.co.marketbill.marketbillcoreserver.constants.AccountRole.WHOLESALER_EMPE) {
                 userId = userService.getConnectedEmployerId(userId)
             }
         }
@@ -143,7 +144,7 @@ class OrderFetcher {
             date = LocalDate.parse(filter.date)
         }
 
-        return orderService.getOrderItems(userId, date, pageable)
+        return orderService.getOrderItems(userId, role, date, pageable)
     }
 
     // 도매상

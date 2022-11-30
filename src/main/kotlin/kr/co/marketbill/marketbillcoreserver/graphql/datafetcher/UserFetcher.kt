@@ -23,6 +23,7 @@ import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestHeader
 import java.util.*
 import java.util.concurrent.CompletableFuture
@@ -62,7 +63,6 @@ class UserFetcher {
             pageable = PageRequest.of(pagination.page!!, pagination.size!!)
         }
 
-
         val selection = dfe.selectionSet
 
         return if (selection.contains("applyStatus") || selection.contains("bizConnectionId")) {
@@ -70,6 +70,37 @@ class UserFetcher {
         } else {
             userService.getAllUsers(pageable)
         }
+    }
+
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignUp)
+    fun signUp(@InputArgument input: SignUpInput): AuthTokenDto {
+        return userService.signUp(input)
+    }
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignIn)
+    fun signIn(@InputArgument input: SignInInput): AuthTokenDto {
+        return userService.signIn(input)
+    }
+
+    @PreAuthorize("hasRole('RETAILER')")
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ApplyBizConnection)
+    fun applyBizConnection(
+        @RequestHeader("Authorization") authorization: String,
+        @InputArgument wholesalerId: Long
+    ): BizConnection {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId = jwtProvider.parseUserId(token)
+        return userService.createBizConnection(userId, wholesalerId)
+    }
+
+    @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateBizConnection)
+    fun updateBizConnection(
+        @InputArgument bizConnId: Long,
+        @InputArgument status: kr.co.marketbill.marketbillcoreserver.types.ApplyStatus
+    ): BizConnection {
+        return userService.updateBizConnection(bizConnId, ApplyStatus.valueOf(status.toString()))
     }
 
     @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.AppliedConnections)
@@ -104,33 +135,5 @@ class UserFetcher {
         context.receivedConnectionsInput.filter = filter
 
         return dataLoader.load(user.id)
-    }
-
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignUp)
-    fun signUp(@InputArgument input: SignUpInput): AuthTokenDto {
-        return userService.signUp(input)
-    }
-
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignIn)
-    fun signIn(@InputArgument input: SignInInput): AuthTokenDto {
-        return userService.signIn(input)
-    }
-
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ApplyBizConnection)
-    fun applyBizConnection(
-        @RequestHeader("Authorization") authorization: String,
-        @InputArgument wholesalerId: Long
-    ): BizConnection {
-        val token = jwtProvider.filterOnlyToken(authorization)
-        val userId = jwtProvider.parseUserId(token)
-        return userService.createBizConnection(userId, wholesalerId)
-    }
-
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateBizConnection)
-    fun updateBizConnection(
-        @InputArgument bizConnId: Long,
-        @InputArgument status: kr.co.marketbill.marketbillcoreserver.types.ApplyStatus
-    ): BizConnection {
-        return userService.updateBizConnection(bizConnId, ApplyStatus.valueOf(status.toString()))
     }
 }

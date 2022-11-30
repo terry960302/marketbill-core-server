@@ -84,10 +84,8 @@ class MockService {
     @Profile("local", "dev")
     @PostConstruct
     fun createAllMockToDB() {
-        createMockUsers()
         createMockFlowers()
-
-        // 소매상
+        createMockUsers()
         createMockCartItems()
         createMockOrderSheets()
     }
@@ -129,10 +127,10 @@ class MockService {
 
     @Transactional
     fun createMockBizConns() {
-        val conns = (1..100).map {
+        val conns = (1..3).map {
             BizConnection(
-                retailer = entityManager.getReference(User::class.java, (1..10).random().toLong()),
-                wholesaler = entityManager.getReference(User::class.java, (11..30).random().toLong()),
+                retailer = entityManager.getReference(User::class.java, (1..1).random().toLong()),
+                wholesaler = entityManager.getReference(User::class.java, (2..3).random().toLong()),
                 applyStatus = ApplyStatus.APPLYING,
             )
         }
@@ -141,9 +139,9 @@ class MockService {
 
     @Transactional
     fun createMockUsers() {
-        createMockOnlyUsers(1,10, AccountRole.RETAILER)
-        createMockOnlyUsers(11, 20, AccountRole.WHOLESALER_EMPR)
-        createMockOnlyUsers(21, 30, AccountRole.WHOLESALER_EMPE)
+        createMockOnlyUsers(1,1, AccountRole.RETAILER)
+        createMockOnlyUsers(2, 2, AccountRole.WHOLESALER_EMPR)
+        createMockOnlyUsers(3, 3, AccountRole.WHOLESALER_EMPE)
         createMockBizConns()
 
         logger.trace("createMockUsers completed")

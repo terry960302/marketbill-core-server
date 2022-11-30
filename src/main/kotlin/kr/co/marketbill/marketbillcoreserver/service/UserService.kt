@@ -78,7 +78,7 @@ class UserService {
             throw CustomException(NO_TOKEN_WITH_APPLY_STATUS_ERR)
         }
         if (role == AccountRole.RETAILER) {
-            val roles = listOf<AccountRole>(AccountRole.WHOLESALER_EMPR, AccountRole.WHOLESALER_EMPE)
+            val roles = listOf(AccountRole.WHOLESALER_EMPR) // 사장님과만 거래처 관계 생성 가능
             val users = userRepository.findAll(UserSpecs.hasRoles(roles).and(UserSpecs.exclude(userId)), pageable)
 
             return users.map { it ->

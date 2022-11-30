@@ -24,21 +24,27 @@ class OrderItemSpecs {
             }
         }
 
-        fun byWholesalerId(wholesalerId: Long?): Specification<OrderItem> {
-            return Specification<OrderItem> { root, query, builder ->
-                if (wholesalerId == null) {
-                    builder.conjunction()
-                } else {
-                    val wholesaler = root.join<OrderItem, User>("wholesaler")
-                    builder.equal(wholesaler.get<Long>("id"), wholesalerId)
-                }
-            }
-        }
-
         fun byOrderSheetIds(orderSheetIds: List<Long>): Specification<OrderItem> {
             return Specification<OrderItem> { root, query, builder ->
                 val orderSheet = root.join<OrderItem, OrderSheet>("orderSheet")
                 orderSheet.get<Long>("id").`in`(orderSheetIds)
+            }
+        }
+
+        fun byUserId(userId: Long?, role : AccountRole?): Specification<OrderItem> {
+            return Specification<OrderItem> { root, query, builder ->
+                if (userId == null || role == null) {
+                    builder.conjunction()
+                } else {
+                    if (role == AccountRole.RETAILER) {
+                        val retailer = root.join<OrderItem, User>("retailer")
+                        builder.equal(retailer.get<Long>("id"), userId)
+                    } else {
+                        val wholesaler = root.join<OrderItem, User>("wholesaler")
+                        builder.equal(wholesaler.get<Long>("id"), userId)
+                    }
+                }
+
             }
         }
 

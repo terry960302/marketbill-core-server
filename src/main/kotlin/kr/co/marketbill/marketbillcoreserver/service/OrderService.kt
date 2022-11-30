@@ -98,9 +98,9 @@ class OrderService {
         )
     }
 
-    fun getOrderItems(wholesalerId: Long?, date: LocalDate?, pageable: Pageable): Page<OrderItem> {
+    fun getOrderItems(wholesalerId: Long?, role : AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderItem> {
         return orderItemRepository.findAll(
-            OrderItemSpecs.atDate(date).and(OrderItemSpecs.byWholesalerId(wholesalerId)),
+            OrderItemSpecs.atDate(date).and(OrderItemSpecs.byUserId(wholesalerId, role)),
             pageable
         )
     }
