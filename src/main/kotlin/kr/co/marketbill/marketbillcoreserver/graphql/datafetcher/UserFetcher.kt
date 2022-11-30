@@ -65,7 +65,7 @@ class UserFetcher {
 
         val selection = dfe.selectionSet
 
-        return if (selection.contains("applyStatus")) {
+        return if (selection.contains("applyStatus") || selection.contains("bizConnectionId")) {
             userService.getUsersWithApplyStatus(userId, role, pageable)
         } else {
             userService.getAllUsers(pageable)
@@ -117,8 +117,13 @@ class UserFetcher {
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ApplyBizConnection)
-    fun applyBizConnection(@InputArgument retailerId: Long, @InputArgument wholesalerId: Long): BizConnection {
-        return userService.createBizConnection(retailerId, wholesalerId)
+    fun applyBizConnection(
+        @RequestHeader("Authorization") authorization: String,
+        @InputArgument wholesalerId: Long
+    ): BizConnection {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId = jwtProvider.parseUserId(token)
+        return userService.createBizConnection(userId, wholesalerId)
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateBizConnection)

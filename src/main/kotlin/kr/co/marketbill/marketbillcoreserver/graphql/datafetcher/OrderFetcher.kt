@@ -10,7 +10,7 @@ import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
-import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderStatisticOutput
+import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
@@ -21,7 +21,6 @@ import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
 import kr.co.marketbill.marketbillcoreserver.types.*
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
@@ -126,11 +125,11 @@ class OrderFetcher {
         return orderService.getOrderItems(date, pageable)
     }
 
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderStatistics)
-    fun getDailyOrderStatistics(
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllDailyOrderSheetAggregates)
+    fun getAllDailyOrderSheetAggregates(
         @RequestHeader authorization: String,
         @InputArgument pagination: PaginationInput?
-    ): Page<OrderStatisticOutput> {
+    ): Page<OrderSheetsAggregate> {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
         var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
@@ -139,7 +138,18 @@ class OrderFetcher {
             pageable = PageRequest.of(pagination.page!!, pagination.size!!)
         }
 
-        return orderService.getDailyOrderStatistics(userId, pageable)
+        return orderService.getAllDailyOrderSheetsAggregates(userId, pageable)
+    }
+
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderSheetAggregate)
+    fun getDailyOrderSheetAggregate(
+        @RequestHeader authorization: String,
+        @InputArgument date: String?,
+    ): OrderSheetsAggregate {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId = jwtProvider.parseUserId(token)
+
+        return orderService.getDailyOrderSheetsAggregate(userId, date)
     }
 
 

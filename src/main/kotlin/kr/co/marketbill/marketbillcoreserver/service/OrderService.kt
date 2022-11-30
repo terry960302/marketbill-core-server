@@ -2,12 +2,10 @@ package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
-import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderStatisticOutput
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetReceiptRepository
@@ -24,6 +22,7 @@ import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
+import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
@@ -135,21 +134,35 @@ class OrderService {
         return orderItemRepository.saveAll(orderItems)
     }
 
-    fun getDailyOrderStatistics(wholesalerId: Long, pageable: Pageable): Page<OrderStatisticOutput> {
+    fun getAllDailyOrderSheetsAggregates(wholesalerId: Long, pageable: Pageable): Page<OrderSheetsAggregate> {
         val monthsToSubtract: Long = 3.toLong()
 
         val curDate = Date()
         val dateBeforeThreeMonth = Date.from(
             LocalDate.now().minusMonths(monthsToSubtract).atStartOfDay(ZoneId.systemDefault()).toInstant()
         )
-        return orderSheetRepository.getAllDailyStatistics(wholesalerId, dateBeforeThreeMonth, curDate, pageable)
+        return orderSheetRepository.getAllDailyOrderSheetsAggregates(
+            wholesalerId,
+            dateBeforeThreeMonth,
+            curDate,
+            pageable
+        )
+    }
+
+    fun getDailyOrderSheetsAggregate(wholesalerId: Long, dateStr: String?): OrderSheetsAggregate {
+        var curDate = Date()
+        if (dateStr != null) {
+            val formatter = SimpleDateFormat("yyyy-MM-dd")
+            curDate = formatter.parse(dateStr)
+        }
+
+        println("@@@@ $curDate")
+        return orderSheetRepository.getDailyOrderSheetsAggregate(wholesalerId, curDate)
     }
 
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
         if (orderSheet.isEmpty) throw CustomException("There's no OrderSheet data whose id is $orderSheetId")
-
-        val orderItems = orderSheet.get().orderItems
 
         val orderSheetReceipt = OrderSheetReceipt(
             orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId),
