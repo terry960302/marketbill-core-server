@@ -1,6 +1,5 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.user
 
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
@@ -43,6 +42,14 @@ data class User(
 
     @OneToMany(mappedBy = "wholesaler", fetch = FetchType.LAZY)
     val receivedConnections: List<BizConnection>? = null,
+
+    // role = wholesaler 인 경우에만 해당
+    @OneToOne(mappedBy = "employer", fetch = FetchType.LAZY)
+    val employerConnection: WholesalerConnection? = null,
+
+    // role = wholesaler 인 경우에만 해당
+    @OneToMany(mappedBy = "employee", fetch = FetchType.LAZY)
+    val employeeConnections: List<WholesalerConnection>? = null,
 
     @OneToMany(mappedBy = "retailer")
     val retailerCartItems: List<CartItem>? = null,

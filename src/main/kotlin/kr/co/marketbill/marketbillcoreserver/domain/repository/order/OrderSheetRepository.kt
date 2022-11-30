@@ -47,7 +47,8 @@ interface OrderSheetRepository : JpaRepository<OrderSheet, Long>, JpaSpecificati
                 "\tJOIN flowers AS f ON f.id = oi.flower_id\n" +
                 "\tJOIN flower_types AS ft ON ft.id = f.flower_type_id\n" +
                 "WHERE os.wholesaler_id = :wholesalerId\n" +
-                "\tand CAST(os.created_at AS DATE) = :date\n", nativeQuery = true
+                "\tAND os.$SOFT_DELETE_CLAUSE\n " +
+                "\tAND CAST(os.created_at AS DATE) = :date\n", nativeQuery = true
     )
     fun getDailyOrderSheetsAggregate(wholesalerId: Long, date: Date): OrderSheetsAggregate
 
