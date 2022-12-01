@@ -16,6 +16,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
+import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -128,16 +129,18 @@ class CartService {
                 )
 
                 val orderSheet = OrderSheet(
-                    orderNo = UUID.randomUUID().toString(),
+                    orderNo = "",
                     retailer = retailer,
                     wholesaler = wholesaler,
                 )
                 newOrderSheets.add(orderSheet)
                 val savedOrderSheet = orderSheetRepository.save(orderSheet)
+                savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
+                val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
 
                 val orderItems = cartItems.map {
                     OrderItem(
-                        orderSheet = savedOrderSheet,
+                        orderSheet = updatedOrderSheet,
                         retailer = retailer,
                         wholesaler = wholesaler,
                         flower = it.flower,

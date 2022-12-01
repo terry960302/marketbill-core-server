@@ -17,6 +17,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.WholesalerConnSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
+import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -80,7 +81,7 @@ class OrderService {
         )
 
         val savedOrderSheet = orderSheetRepository.save(orderSheet)
-        savedOrderSheet.orderNo = generateOrderNo(savedOrderSheet.id!!)
+        savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
         val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
 
         val orderItems = cartItems.map {
@@ -203,22 +204,5 @@ class OrderService {
         return createdReceipt
     }
 
-    fun generateOrderNo(orderSheetId: Long, digit: Int = 4): String {
-        val symbolChar = "M"
-        val formatter = SimpleDateFormat("yyyyMMdd")
-        val dateStr = formatter.format(Date())
 
-        val id: Long = if (digit <= orderSheetId.toString().length) {
-            (orderSheetId % (10.toDouble().pow(digit))).toLong()
-        } else {
-            orderSheetId
-        }
-
-        var uniqueNum = id.toString()
-        for (i in (1..(digit - id.toString().length))) {
-            uniqueNum = "0$uniqueNum"
-        }
-
-        return "$dateStr$symbolChar$uniqueNum"
-    }
 }
