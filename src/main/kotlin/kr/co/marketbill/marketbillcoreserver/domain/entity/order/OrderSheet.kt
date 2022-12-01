@@ -16,7 +16,7 @@ data class OrderSheet(
     val id: Long? = null,
 
     @Column(name = "order_no")
-    val orderNo: String = "",
+    var orderNo: String = "",
 
     @ManyToOne
     @JoinColumn(name = "retailer_id")

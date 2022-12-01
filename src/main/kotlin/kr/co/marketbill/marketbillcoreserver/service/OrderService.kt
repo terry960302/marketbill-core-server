@@ -30,7 +30,9 @@ import java.time.LocalDate
 import java.time.LocalDateTime
 import java.time.ZoneId
 import java.util.*
+import javax.annotation.PostConstruct
 import javax.persistence.EntityManager
+import kotlin.math.pow
 
 
 @Service
@@ -72,17 +74,19 @@ class OrderService {
         val selectedWholesaler = cartItems[0].wholesaler
 
         val orderSheet = OrderSheet(
-            orderNo = UUID.randomUUID().toString(),
+            orderNo = "",
             retailer = selectedRetailer,
             wholesaler = selectedWholesaler,
         )
 
         val savedOrderSheet = orderSheetRepository.save(orderSheet)
+        savedOrderSheet.orderNo = generateOrderNo(savedOrderSheet.id!!)
+        val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
 
         val orderItems = cartItems.map {
             OrderItem(
                 retailer = it.retailer,
-                orderSheet = savedOrderSheet,
+                orderSheet = updatedOrderSheet,
                 wholesaler = selectedWholesaler,
                 flower = it.flower,
                 quantity = it.quantity,
@@ -92,7 +96,7 @@ class OrderService {
         }
 
         orderItemRepository.saveAll(orderItems)
-        return savedOrderSheet
+        return updatedOrderSheet
     }
 
     fun getOrderSheets(userId: Long?, role: AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderSheet> {
@@ -197,5 +201,24 @@ class OrderService {
         }
 
         return createdReceipt
+    }
+
+    fun generateOrderNo(orderSheetId: Long, digit: Int = 4): String {
+        val symbolChar = "M"
+        val formatter = SimpleDateFormat("yyyyMMdd")
+        val dateStr = formatter.format(Date())
+
+        val id: Long = if (digit <= orderSheetId.toString().length) {
+            (orderSheetId % (10.toDouble().pow(digit))).toLong()
+        } else {
+            orderSheetId
+        }
+
+        var uniqueNum = id.toString()
+        for (i in (1..(digit - id.toString().length))) {
+            uniqueNum = "0$uniqueNum"
+        }
+
+        return "$dateStr$symbolChar$uniqueNum"
     }
 }
