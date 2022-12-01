@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
+import kotlinx.coroutines.runBlocking
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
@@ -48,6 +49,9 @@ class OrderService {
 
     @Autowired
     private lateinit var orderSheetReceiptRepository: OrderSheetReceiptRepository
+
+    @Autowired
+    private lateinit var messagingService: MessagingService
 
     val logger: Logger = LoggerFactory.getLogger(OrderService::class.java)
 
@@ -98,7 +102,7 @@ class OrderService {
         )
     }
 
-    fun getOrderItems(wholesalerId: Long?, role : AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderItem> {
+    fun getOrderItems(wholesalerId: Long?, role: AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderItem> {
         return orderItemRepository.findAll(
             OrderItemSpecs.atDate(date).and(OrderItemSpecs.byUserId(wholesalerId, role)),
             pageable
@@ -175,6 +179,23 @@ class OrderService {
             fileFormat = "excel",
             metadata = "{volume : 128KB}"
         )
-        return orderSheetReceiptRepository.save(orderSheetReceipt)
+        val createdReceipt = orderSheetReceiptRepository.save(orderSheetReceipt)
+
+
+        val targetPhoneNo = orderSheet.get().retailer!!.userCredential!!.phoneNo
+        val wholesalerName = orderSheet.get().wholesaler!!.name!!
+        val orderNo = orderSheet.get().orderNo
+        val url = ""
+
+        runBlocking {
+            messagingService.sendIssueOrderSheetReceiptSMS(
+                to = targetPhoneNo,
+                wholesalerName = wholesalerName,
+                orderNo = orderNo,
+                url
+            )
+        }
+
+        return createdReceipt
     }
 }

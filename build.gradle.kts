@@ -48,6 +48,9 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-web")
 	implementation("io.jsonwebtoken:jjwt:0.9.1") // jwt
 	implementation("org.mindrot:jbcrypt:0.4") // hash
+
+	// api call
+	implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 
 tasks.withType<KotlinCompile> {

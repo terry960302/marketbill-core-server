@@ -9,7 +9,6 @@ input SignUpInput{
 input SignInInput{
     phoneNo : String!,
     password : String!,
-    role : AccountRole!,
 }
 
 input AddToCartInput{

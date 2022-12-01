@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
+import kotlinx.coroutines.runBlocking
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
@@ -48,6 +49,9 @@ class UserService {
 
     @Autowired
     private lateinit var jwtProvider: JwtProvider
+
+    @Autowired
+    private lateinit var messagingService: MessagingService
 
     companion object {
         const val NO_USER_ERR =
@@ -130,13 +134,13 @@ class UserService {
 
 
     /**
-     * <Case. 도매상 직원>
+     * <Case. 도매상(직원)>
      *
      * : 도매상 사장이 존재하는가?(같은 업체명의 WHOLESALER_EMPR 가 있는가?)
      * - 있으면 User 만들고 연결.
-     * - 없으면 바로 에러 반환(사장이 가입하지 않은 상태에서 가입불가)
+     * - 없으면 바로 에러 반환(사장이 가입하지 않은 상태에서 직원 혼자 가입불가)
      *
-     * <Case. 소매상, 도매상 사장>
+     * <Case. 소매상, 도매상(사장)>
      *
      * : 일반 방식으로 가입
      */
@@ -184,10 +188,12 @@ class UserService {
         val hasUserCred = userCred.isPresent
         if (!hasUserCred) throw CustomException(NO_USER_ERR)
 
-
         val isValidPassword = passwordEncoder.matches(input.password, userCred.get().password)
         if (!isValidPassword) throw CustomException(NO_USER_ERR)
-        return generateAuthToken(userCred.get().user!!, role = AccountRole.valueOf(input.role.name)) {
+
+        val role = userCred.get().role
+
+        return generateAuthToken(userCred.get().user!!, role = AccountRole.valueOf(role.toString())) {
             val authTokenId = userCred.get().user?.authToken?.id
             authTokenRepository.save(
                 AuthToken(
@@ -211,6 +217,17 @@ class UserService {
             wholesaler = entityManager.getReference(User::class.java, wholesalerId),
             applyStatus = ApplyStatus.APPLYING,
         )
+
+        val retailer = userRepository.findById(retailerId)
+        val wholesaler = userRepository.findById(wholesalerId)
+        if (wholesaler.isEmpty) throw CustomException("There's no user(wholesaler) that you hope to connect with.")
+        val retailerName = retailer.get().name!!
+        val targetPhoneNo = wholesaler.get().userCredential!!.phoneNo
+        val url = ""
+
+        runBlocking {
+            messagingService.sendApplyBizConnectionSMS(targetPhoneNo, retailerName, url)
+        }
         return bizConnectionRepository.save(bizConnection)
     }
 
@@ -219,7 +236,37 @@ class UserService {
         if (bizConnection.isEmpty) throw CustomException(NO_BIZ_CONNECTION_TO_UPDATE_ERR)
 
         bizConnection.get().applyStatus = status
-        return bizConnectionRepository.save(bizConnection.get())
+        val updatedBizConn = bizConnectionRepository.save(bizConnection.get())
+
+        val retailer = bizConnection.get().retailer
+        val wholesaler = bizConnection.get().wholesaler
+        val targetPhoneNo = retailer!!.userCredential!!.phoneNo
+        val wholesalerName = wholesaler!!.name!!
+
+        when (status) {
+            ApplyStatus.APPLYING -> {
+               logger.info("No need messaging API call on APPLYING status")
+            }
+            ApplyStatus.CONFIRMED -> {
+                val url = ""
+                runBlocking {
+                    messagingService.sendConfirmBizConnectionSMS(
+                        to = targetPhoneNo,
+                        wholesalerName = wholesalerName,
+                        url = url
+                    )
+                }
+            }
+            ApplyStatus.REJECTED -> {
+                runBlocking {
+                    messagingService.sendRejectBizConnectionSMS(
+                        to = targetPhoneNo,
+                        wholesalerName = wholesalerName,
+                    )
+                }
+            }
+        }
+        return updatedBizConn
     }
 
     @Transactional
@@ -273,13 +320,13 @@ class UserService {
         )
     }
 
-    fun getConnectedEmployerId(employeeId : Long) : Long{
-        try{
+    fun getConnectedEmployerId(employeeId: Long): Long {
+        try {
             val connections = wholesalerConnectionRepository.findAll(WholesalerConnSpecs.byEmployeeId(employeeId))
-            if(connections.isEmpty()) throw Error()
+            if (connections.isEmpty()) throw Error()
             val employer = connections[0].employer!!
             return employer.id!!
-        }catch (e : Exception){
+        } catch (e: Exception) {
             throw CustomException("There's no employer in same wholesale company.")
         }
     }

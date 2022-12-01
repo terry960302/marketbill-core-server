@@ -2,6 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.datafetcher
 
 import com.netflix.graphql.dgs.DgsQueryExecutor
 import com.netflix.graphql.dgs.autoconfig.DgsAutoConfiguration
+import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
@@ -43,22 +44,23 @@ class OrderFetcherTest {
 
     @BeforeEach
     fun before() {
-        Mockito.`when`(orderService.getOrderItems(null, PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE))).thenAnswer {
-            val list = listOf<OrderItem>(
-                OrderItem(
-                    id = 1,
-                    retailer = User(id = 1, name = "reatiler1"),
-                    wholesaler = User(id = 2, name = "wholesaler2")
-                ),
-                OrderItem(
-                    id = 2,
-                    retailer = User(id = 1, name = "reatiler1"),
-                    wholesaler = User(id = 2, name = "wholesaler2")
-                ),
-            )
-            val page: Page<OrderItem> = PageImpl(list)
-            page
-        }
+        Mockito.`when`(orderService.getOrderItems(null, null, null, PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)))
+            .thenAnswer {
+                val list = listOf<OrderItem>(
+                    OrderItem(
+                        id = 1,
+                        retailer = User(id = 1, name = "reatiler1"),
+                        wholesaler = User(id = 2, name = "wholesaler2")
+                    ),
+                    OrderItem(
+                        id = 2,
+                        retailer = User(id = 1, name = "reatiler1"),
+                        wholesaler = User(id = 2, name = "wholesaler2")
+                    ),
+                )
+                val page: Page<OrderItem> = PageImpl(list)
+                page
+            }
     }
 
     @Test

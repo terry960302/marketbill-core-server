@@ -12,10 +12,19 @@ enum class ApplyStatus {
     REJECTED,
 }
 
-enum class FlowerGrade{
+enum class FlowerGrade {
     UPPER,
     MIDDLE,
     LOWER,
+}
+
+enum class MessageType {
+    Default,
+    Verification,
+    ApplyBizConnection,
+    ConfirmBizConnection,
+    RejectBizConnection,
+    IssueOrderSheetReceipt,
 }
 
 // string -> enum
