@@ -22,6 +22,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
+import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
@@ -62,7 +63,7 @@ class CartService {
         return cartRepository.save(cartItem)
     }
 
-    fun updateCartItem(id : Long, quantity: Int, grade : FlowerGrade) : CartItem{
+    fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade): CartItem {
         val cartItem = cartRepository.findById(id)
         if (cartItem.isEmpty) throw CustomException("There's no cart_item whose ID is $id")
 
@@ -92,6 +93,12 @@ class CartService {
         return cartRepository.saveAll(updatedCartItems)
     }
 
+    /**
+     * <스케쥴러>
+     *
+     * : 매일 오후 11시에 자동 주문처리
+     */
+    @Scheduled(cron = "0 0 23 * * ?", zone = "Asia/Seoul")
     @Transactional
     fun batchCartToOrder() {
         val newOrderSheets = mutableListOf<OrderSheet>()
