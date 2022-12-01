@@ -6,6 +6,7 @@ import io.jsonwebtoken.SignatureAlgorithm
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.service.CustomUserDetailsService
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
@@ -18,10 +19,11 @@ class JwtProvider {
     @Autowired
     private lateinit var customUserDetailsService: CustomUserDetailsService
 
+    @Value("\${spring.security.jwt.secret}")
+    private lateinit var jwtSecret: String
 
     companion object {
         val SIGNATURE_ALG: SignatureAlgorithm = SignatureAlgorithm.HS256
-        private const val jwtSecret = "1234"
         const val accessExpiration = 30 * 60 * 1000L // 30min
         const val refreshExpiration = 7 * 24 * 60 * 60 * 1000L // 7day
     }

@@ -1,0 +1,12 @@
+type CommonResponse{
+    success : Boolean
+}
+
+extend type Mutation{
+    # 자유양식 SMS 전송
+    sendDefaultSms(to : String, message : String) : CommonResponse
+    # 인증문자 SMS 전송
+    sendVerificationSms(to : String, code : String) : CommonResponse
+
+}
+

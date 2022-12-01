@@ -28,7 +28,7 @@ extend type Query{
     # 꽃 목록 가져오기(기간별, 검색)
     # - 사입가능한 꽃 목록(기간별)
     # - 꽃 검색(검색)
-    # - 꽃 검색 결과 개수(개수 필드 추가 및 size(1)로 줄여서 활용가능)
+    # - 꽃 검색 결과 개수
     getFlowers(filter : FlowerFilterInput, pagination : PaginationInput) : [Flower!],
 }
 ## -------------- MUTATION ------------------
