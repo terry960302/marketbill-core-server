@@ -11,7 +11,9 @@ import kr.co.marketbill.marketbillcoreserver.graphql.datafetcher.OrderFetcher
 import kr.co.marketbill.marketbillcoreserver.graphql.scalars.DateTimeScalarType
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
+import kr.co.marketbill.marketbillcoreserver.service.MessagingService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
+import kr.co.marketbill.marketbillcoreserver.service.UserService
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -37,6 +39,12 @@ class OrderFetcherTest {
 
     @MockBean
     lateinit var cartService: CartService
+
+    @MockBean
+    lateinit var messagingService: MessagingService
+
+    @MockBean
+    lateinit var userService: UserService
 
     @MockBean
     lateinit var orderService: OrderService
