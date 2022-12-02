@@ -8,9 +8,5 @@ import java.util.Optional
 
 @Repository
 interface AuthTokenRepository : JpaRepository<AuthToken, Long> {
-//    fun findByUserId(userId : Long) : Optional<AuthToken>
-//
-//    @Modifying
-//    override fun deleteById(id: Long)
     fun findByUserId(userId : Long) : Optional<AuthToken>
 }

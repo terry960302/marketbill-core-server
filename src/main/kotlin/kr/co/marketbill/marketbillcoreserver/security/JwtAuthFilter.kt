@@ -4,6 +4,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
+import kr.co.marketbill.marketbillcoreserver.service.AuthService
 import kr.co.marketbill.marketbillcoreserver.service.UserService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -27,7 +28,7 @@ class JwtAuthFilter : OncePerRequestFilter() {
     private lateinit var jwtProvider: JwtProvider
 
     @Autowired
-    private lateinit var userService: UserService
+    private lateinit var authService: AuthService
 
     /**
      *
@@ -74,10 +75,12 @@ class JwtAuthFilter : OncePerRequestFilter() {
     fun processInvalidCase(token: String): Unit {
         val userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
-        val isValidRefreshToken = userService.validateRefreshToken(userId)
+
+        val isValidRefreshToken = authService.validateRefreshToken(userId)
+
         if (isValidRefreshToken) {
-            val newToken: AuthTokenDto = userService.generateAuthToken(userId, role)
-            userService.upsertAuthToken(userId, newToken)
+            val newToken: AuthTokenDto = authService.generateAuthToken(userId, role)
+            authService.upsertAuthToken(userId, newToken)
             val authentication = jwtProvider.getAuthentication(token)
             SecurityContextHolder.getContext().authentication = authentication
         } else {
