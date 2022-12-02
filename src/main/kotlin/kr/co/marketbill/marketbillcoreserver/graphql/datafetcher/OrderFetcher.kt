@@ -7,13 +7,12 @@ import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
@@ -21,11 +20,11 @@ import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
 import kr.co.marketbill.marketbillcoreserver.service.UserService
 import kr.co.marketbill.marketbillcoreserver.types.*
+import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestHeader
 import java.time.LocalDate
@@ -46,23 +45,24 @@ class OrderFetcher {
     @Autowired
     private lateinit var jwtProvider: JwtProvider
 
+    val logger: Logger = LoggerFactory.getLogger(OrderFetcher::class.java)
+
     // query
+    @PreAuthorize("hasRole('RETAILER')")
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetCartWholesaler)
+    fun getCartWholesaler(@RequestHeader("Authorization") authorization: String): User? {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId: Long = jwtProvider.parseUserId(token)
+        return cartService.getConnectedWholesalerOnCartItems(userId)
+    }
+
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllCartItems)
     fun getAllCartItems(
         @RequestHeader("Authorization") authorization: String,
         @InputArgument pagination: PaginationInput?
     ): Page<CartItem> {
-        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE, Sort.by("createdAt").ascending())
-        if (pagination != null) {
-            val sort = if (pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.ASCEND) {
-                Sort.by("createdAt").ascending()
-            } else {
-                Sort.by("createdAt").descending()
-            }
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
-
-        }
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getAllCartItems(userId, pageable)
@@ -83,22 +83,13 @@ class OrderFetcher {
     ): Page<OrderSheet> {
         var userId: Long? = null
         var role: AccountRole? = null
-        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
         var date: LocalDate? = null
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
         if (authorization != null) {
             val token = jwtProvider.filterOnlyToken(authorization)
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
-        }
-
-        if (pagination != null) {
-            val sort = if (pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.DESCEND) {
-                Sort.by("createdAt").descending()
-            } else {
-                Sort.by("createdAt").ascending()
-            }
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
         }
 
         if (filter != null) {
@@ -115,7 +106,6 @@ class OrderFetcher {
         @InputArgument filter: DateFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<OrderItem> {
-        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
         var date: LocalDate? = null
         var userId: Long? = null
         var role: AccountRole? = null
@@ -130,15 +120,8 @@ class OrderFetcher {
                 userId = userService.getConnectedEmployerId(userId)
             }
         }
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
-        if (pagination != null) {
-            val sort = if (pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.DESCEND) {
-                Sort.by("createdAt").descending()
-            } else {
-                Sort.by("createdAt").ascending()
-            }
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
-        }
 
         if (filter != null) {
             date = LocalDate.parse(filter.date)
@@ -157,11 +140,7 @@ class OrderFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         var userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
-        var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
-
-        if (pagination != null) {
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
-        }
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
         if (role == AccountRole.WHOLESALER_EMPE) {
             userId = userService.getConnectedEmployerId(userId)
@@ -217,8 +196,10 @@ class OrderFetcher {
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveCartItem)
-    fun removeCartItem(@InputArgument cartItemId: Long): Long {
-        return cartService.removeCartItem(cartItemId)
+    fun removeCartItem(@InputArgument cartItemId: Long): CommonResponse {
+        val removedCartItemId = cartService.removeCartItem(cartItemId)
+        logger.info("[removeCartItem] removed $removedCartItemId")
+        return CommonResponse(success = true)
     }
 
     @PreAuthorize("hasRole('RETAILER')")
@@ -242,8 +223,11 @@ class OrderFetcher {
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveOrderSheet)
-    fun removeOrderSheet(@InputArgument orderSheetId: Long): Int {
-        return orderService.removeOrderSheet(orderSheetId).toInt()
+    fun removeOrderSheet(@InputArgument orderSheetId: Long): CommonResponse {
+        val removedOrderSheetId = orderService.removeOrderSheet(orderSheetId).toInt()
+        logger.info("[removeOrderSheet] removed $removedOrderSheetId")
+        return CommonResponse(success = true)
+
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
@@ -260,13 +244,9 @@ class OrderFetcher {
 
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.BatchCartToOrder)
-    fun batchCartToOrder(): Boolean {
-        return try {
-            cartService.batchCartToOrder()
-            true
-        } catch (e: Exception) {
-            false
-        }
+    fun batchCartToOrder(): CommonResponse {
+        cartService.batchCartToOrder()
+        return CommonResponse(success = true)
     }
 
 

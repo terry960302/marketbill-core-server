@@ -8,6 +8,7 @@ import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.service.UserService
+import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.dataloader.BatchLoaderEnvironment
 import org.dataloader.MappedBatchLoaderWithContext
 import org.springframework.beans.factory.annotation.Autowired
@@ -28,16 +29,13 @@ class AppliedConnectionLoader : MappedBatchLoaderWithContext<Long, List<BizConne
         env: BatchLoaderEnvironment
     ): CompletionStage<MutableMap<Long, List<BizConnection>>> {
 
-        var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
         var applyStatus: ApplyStatus? = null
         val context =
             DgsContext.getCustomContext<CustomContext>(env)
         val pagination = context.appliedConnectionsInput.pagination
         val filter = context.appliedConnectionsInput.filter
 
-        if (pagination != null) {
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
-        }
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
         if (filter != null) {
             applyStatus = ApplyStatus.valueOf(filter.applyStatus.toString())
         }

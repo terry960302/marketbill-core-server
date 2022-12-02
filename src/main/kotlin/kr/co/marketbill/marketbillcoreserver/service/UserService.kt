@@ -73,8 +73,8 @@ class UserService {
         return userRepository.findById(userId)
     }
 
-    fun getAllUsers(pageable: Pageable): Page<User> {
-        return userRepository.findAll(pageable)
+    fun getAllUsers(roles: List<AccountRole>?, pageable: Pageable): Page<User> {
+        return userRepository.findAll(UserSpecs.hasRoles(roles), pageable)
     }
 
     fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
@@ -245,7 +245,7 @@ class UserService {
 
         when (status) {
             ApplyStatus.APPLYING -> {
-               logger.info("No need messaging API call on APPLYING status")
+                logger.info("No need messaging API call on APPLYING status")
             }
             ApplyStatus.CONFIRMED -> {
                 val url = ""
