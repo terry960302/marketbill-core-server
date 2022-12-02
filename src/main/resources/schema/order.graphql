@@ -24,8 +24,9 @@ type OrderSheet{
     totalFlowerTypeCount : Int,
     # 영수증 발행 여부
     hasReceipt : Boolean,
-    # 0 인덱스가 가장 최신 영수증
     orderSheetReceipts : [OrderSheetReceipt!],
+    # 최신 영수증(가장 늦게 발행한 영수증)
+    recentReceipt : OrderSheetReceipt,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,

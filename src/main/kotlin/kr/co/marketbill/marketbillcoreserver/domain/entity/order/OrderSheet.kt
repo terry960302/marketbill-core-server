@@ -40,6 +40,9 @@ data class OrderSheet(
 
     @Transient
     var hasReceipt: Boolean = false,
+
+    @Transient
+    var recentReceipt: OrderSheetReceipt? = null,
 ) : BaseTime() {
     @PostLoad
     fun postLoad() {
@@ -61,6 +64,14 @@ data class OrderSheet(
             false
         } else {
             orderSheetReceipts!!.isNotEmpty()
+        }
+
+        val orderSheetReceiptsSortByDesc: List<OrderSheetReceipt>? =
+            orderSheetReceipts?.sortedByDescending { it.createdAt }
+        recentReceipt = if (orderSheetReceiptsSortByDesc == null || orderSheetReceiptsSortByDesc.isEmpty()) {
+            null
+        } else {
+            orderSheetReceiptsSortByDesc[0]
         }
     }
 }
