@@ -16,7 +16,7 @@ data class AuthToken(
     val id: Long? = null,
 
     @Column(name = "refresh_token")
-    val refreshToken: String = "",
+    var refreshToken: String = "",
 
     @OneToOne
     @JoinColumn(name = "user_id")

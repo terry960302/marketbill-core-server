@@ -36,9 +36,6 @@ class UserService {
     private lateinit var userCredentialRepository: UserCredentialRepository
 
     @Autowired
-    private lateinit var authTokenRepository: AuthTokenRepository
-
-    @Autowired
     private lateinit var bizConnectionRepository: BizConnectionRepository
 
     @Autowired
@@ -48,10 +45,10 @@ class UserService {
     private lateinit var passwordEncoder: BCryptPasswordEncoder
 
     @Autowired
-    private lateinit var jwtProvider: JwtProvider
+    private lateinit var messagingService: MessagingService
 
     @Autowired
-    private lateinit var messagingService: MessagingService
+    private lateinit var authService: AuthService
 
     companion object {
         const val DEFAULT_WHOLESALER_BELONGS_TO = "양재" // 추후 경부선이나 다른 꽃시장명이 추가될 수 있으니 초기에만 하드코딩 처리
@@ -135,20 +132,17 @@ class UserService {
 
 
     /**
-     * <Case. 도매상(직원)>
-     *
+     * ### Case. 도매상(직원)
      *      : 도매상 사장이 존재하는가?(같은 업체명의 role=WHOLESALER_EMPR 가 있는가?)
      *      - 있으면 User 만들고 연결.
      *      - 없으면 바로 에러 반환(사장이 가입하지 않은 상태에서 직원 혼자 가입불가)
      *
-     * <Case. 소매상, 도매상(사장)>
-     *
+     * ### Case. 소매상, 도매상(사장)
      *      : 일반 방식으로 가입
      */
     @Transactional
     fun signUp(input: SignUpInput): AuthTokenDto {
         try {
-
             val isWholesalerEmployee =
                 input.role == kr.co.marketbill.marketbillcoreserver.types.AccountRole.WHOLESALER_EMPE
 
@@ -174,9 +168,10 @@ class UserService {
                 createUser(input)
             }
 
-            return generateAuthToken(user, role = AccountRole.valueOf(input.role.name)) {
-                authTokenRepository.save(it)
-            }
+            val authToken = authService.generateAuthToken(userId = user.id!!, role = AccountRole.valueOf(input.role.name))
+            authService.upsertAuthToken(user.id!!, authToken)
+
+            return authToken
         } catch (err: Exception) {
             throw err
         }
@@ -193,17 +188,12 @@ class UserService {
         if (!isValidPassword) throw CustomException(NO_USER_ERR)
 
         val role = userCred.get().role
+        val userId = userCred.get().user!!.id!!
 
-        return generateAuthToken(userCred.get().user!!, role = AccountRole.valueOf(role.toString())) {
-            val authTokenId = userCred.get().user?.authToken?.id
-            authTokenRepository.save(
-                AuthToken(
-                    id = authTokenId,
-                    refreshToken = it.refreshToken,
-                    user = userCred.get().user,
-                )
-            )
-        }
+
+        val authToken = authService.generateAuthToken(userId, AccountRole.valueOf(role.toString()))
+        authService.upsertAuthToken(userId, authToken)
+        return authToken
     }
 
 
@@ -282,7 +272,7 @@ class UserService {
             if (hasSameEmployer) throw CustomException(SAME_WHOLESALER_NAME_ERR)
         }
 
-        val belongsTo = when(AccountRole.valueOf(input.role.toString())){
+        val belongsTo = when (AccountRole.valueOf(input.role.toString())) {
             AccountRole.RETAILER -> null
             AccountRole.WHOLESALER_EMPR -> DEFAULT_WHOLESALER_BELONGS_TO
             AccountRole.WHOLESALER_EMPE -> DEFAULT_WHOLESALER_BELONGS_TO
@@ -305,30 +295,7 @@ class UserService {
         return savedUser
     }
 
-    fun generateAuthToken(
-        user: User,
-        role: AccountRole,
-        onGenerateRefreshToken: ((input: AuthToken) -> Unit)? = null
-    ): AuthTokenDto {
-        val accessToken =
-            jwtProvider.generateToken(user.id!!, role.toString(), JwtProvider.accessExpiration)
-        val refreshToken =
-            jwtProvider.generateToken(user.id!!, role.toString(), JwtProvider.refreshExpiration)
 
-        val authTokenInput = AuthToken(
-            refreshToken = refreshToken,
-            user = user,
-        )
-
-        if (onGenerateRefreshToken != null) {
-            onGenerateRefreshToken(authTokenInput)
-        }
-
-        return AuthTokenDto(
-            accessToken = accessToken,
-            refreshToken = refreshToken
-        )
-    }
 
     fun getConnectedEmployerId(employeeId: Long): Long {
         try {
