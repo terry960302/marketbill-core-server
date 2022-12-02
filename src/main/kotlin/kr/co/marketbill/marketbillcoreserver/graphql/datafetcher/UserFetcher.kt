@@ -18,11 +18,9 @@ import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.ReceivedConnecti
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.UserService
 import kr.co.marketbill.marketbillcoreserver.types.*
+import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
 import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Pageable
 import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestHeader
 import java.util.*
@@ -48,27 +46,31 @@ class UserFetcher {
     fun getUsers(
         dfe: DgsDataFetchingEnvironment,
         @RequestHeader("Authorization") authorization: String?,
+        @InputArgument filter: UserFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<User> {
         var userId: Long? = null
         var role: kr.co.marketbill.marketbillcoreserver.constants.AccountRole? = null
-        var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+        var roles: List<kr.co.marketbill.marketbillcoreserver.constants.AccountRole>? = null
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
         if (authorization != null) {
             val token = jwtProvider.filterOnlyToken(authorization)
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
         }
-        if (pagination != null) {
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
+        if (filter != null) {
+            roles =
+                filter.roles!!.map { kr.co.marketbill.marketbillcoreserver.constants.AccountRole.valueOf(it.toString()) }
         }
 
         val selection = dfe.selectionSet
+        val needFetchApplyStatus = selection.contains("applyStatus") || selection.contains("bizConnectionId")
 
-        return if (selection.contains("applyStatus") || selection.contains("bizConnectionId")) {
+        return if (needFetchApplyStatus) {
             userService.getUsersWithApplyStatus(userId, role, pageable)
         } else {
-            userService.getAllUsers(pageable)
+            userService.getAllUsers(roles, pageable)
         }
     }
 
@@ -110,9 +112,7 @@ class UserFetcher {
         @InputArgument filter: BizConnectionFilterInput?
     ): CompletableFuture<List<BizConnection>> {
         val user = dfe.getSource<User>()
-
         val context = DgsContext.getCustomContext<CustomContext>(dfe)
-
         val dataLoader = dfe.getDataLoader<Long, List<BizConnection>>(AppliedConnectionLoader::class.java)
 
         context.appliedConnectionsInput.pagination = pagination

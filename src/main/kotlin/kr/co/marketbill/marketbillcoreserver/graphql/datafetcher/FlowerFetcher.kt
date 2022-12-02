@@ -10,6 +10,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.service.FlowerService
 import kr.co.marketbill.marketbillcoreserver.types.FlowerFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
+import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -29,7 +30,7 @@ class FlowerFetcher {
         var fromDate: LocalDate? = null
         var toDate: LocalDate? = null
         var keyword: String? = null
-        var pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
         if (filter != null) {
             if (filter.dateRange != null) {
@@ -39,10 +40,6 @@ class FlowerFetcher {
             if (filter.keyword != null) {
                 keyword = filter.keyword
             }
-        }
-
-        if (pagination != null) {
-            pageable = PageRequest.of(pagination.page!!, pagination.size!!)
         }
 
         val res = flowerService.getFlowers(fromDate, toDate, keyword, pageable)

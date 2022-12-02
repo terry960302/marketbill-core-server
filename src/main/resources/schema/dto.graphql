@@ -31,6 +31,7 @@ input OrderCartItemsInput {
 input PaginationInput {
     page : Int = 0,
     size : Int = 15,
+    # 기본 : 오름차순
     sort : Sort = ASCEND,
 }
 
@@ -39,12 +40,12 @@ input BizConnectionFilterInput{
 }
 
 input UserFilterInput{
-    roles : [AccountRole!]
+    roles : [AccountRole!]!
 }
 
 input DateFilterInput{
     # 'yyyy-MM-dd' 포맷 날짜 문자열
-    date : String,
+    date : String!,
 }
 
 input OrderItemPriceInput{
