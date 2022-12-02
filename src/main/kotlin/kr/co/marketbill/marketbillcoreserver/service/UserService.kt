@@ -135,20 +135,17 @@ class UserService {
 
 
     /**
-     * <Case. 도매상(직원)>
-     *
+     * ### Case. 도매상(직원)
      *      : 도매상 사장이 존재하는가?(같은 업체명의 role=WHOLESALER_EMPR 가 있는가?)
      *      - 있으면 User 만들고 연결.
      *      - 없으면 바로 에러 반환(사장이 가입하지 않은 상태에서 직원 혼자 가입불가)
      *
-     * <Case. 소매상, 도매상(사장)>
-     *
+     * ### Case. 소매상, 도매상(사장)
      *      : 일반 방식으로 가입
      */
     @Transactional
     fun signUp(input: SignUpInput): AuthTokenDto {
         try {
-
             val isWholesalerEmployee =
                 input.role == kr.co.marketbill.marketbillcoreserver.types.AccountRole.WHOLESALER_EMPE
 
@@ -174,9 +171,10 @@ class UserService {
                 createUser(input)
             }
 
-            return generateAuthToken(user, role = AccountRole.valueOf(input.role.name)) {
-                authTokenRepository.save(it)
-            }
+            val authToken = generateAuthToken(userId = user.id!!, role = AccountRole.valueOf(input.role.name))
+            upsertAuthToken(user.id!!, authToken)
+
+            return authToken
         } catch (err: Exception) {
             throw err
         }
@@ -193,17 +191,12 @@ class UserService {
         if (!isValidPassword) throw CustomException(NO_USER_ERR)
 
         val role = userCred.get().role
+        val userId = userCred.get().user!!.id!!
 
-        return generateAuthToken(userCred.get().user!!, role = AccountRole.valueOf(role.toString())) {
-            val authTokenId = userCred.get().user?.authToken?.id
-            authTokenRepository.save(
-                AuthToken(
-                    id = authTokenId,
-                    refreshToken = it.refreshToken,
-                    user = userCred.get().user,
-                )
-            )
-        }
+
+        val authToken = generateAuthToken(userId, AccountRole.valueOf(role.toString()))
+        upsertAuthToken(userId, authToken)
+        return authToken
     }
 
 
@@ -282,7 +275,7 @@ class UserService {
             if (hasSameEmployer) throw CustomException(SAME_WHOLESALER_NAME_ERR)
         }
 
-        val belongsTo = when(AccountRole.valueOf(input.role.toString())){
+        val belongsTo = when (AccountRole.valueOf(input.role.toString())) {
             AccountRole.RETAILER -> null
             AccountRole.WHOLESALER_EMPR -> DEFAULT_WHOLESALER_BELONGS_TO
             AccountRole.WHOLESALER_EMPE -> DEFAULT_WHOLESALER_BELONGS_TO
@@ -305,29 +298,39 @@ class UserService {
         return savedUser
     }
 
+    fun validateRefreshToken(userId: Long): Boolean {
+        val token = authTokenRepository.findByUserId(userId)
+        if (token.isEmpty) throw CustomException("There's no available auth token.")
+        return jwtProvider.validateToken(token.get().refreshToken)
+    }
+
     fun generateAuthToken(
-        user: User,
+        userId: Long,
         role: AccountRole,
-        onGenerateRefreshToken: ((input: AuthToken) -> Unit)? = null
     ): AuthTokenDto {
         val accessToken =
-            jwtProvider.generateToken(user.id!!, role.toString(), JwtProvider.accessExpiration)
+            jwtProvider.generateToken(userId, role.toString(), JwtProvider.accessExpiration)
         val refreshToken =
-            jwtProvider.generateToken(user.id!!, role.toString(), JwtProvider.refreshExpiration)
-
-        val authTokenInput = AuthToken(
-            refreshToken = refreshToken,
-            user = user,
-        )
-
-        if (onGenerateRefreshToken != null) {
-            onGenerateRefreshToken(authTokenInput)
-        }
+            jwtProvider.generateToken(userId, role.toString(), JwtProvider.refreshExpiration)
 
         return AuthTokenDto(
             accessToken = accessToken,
             refreshToken = refreshToken
         )
+    }
+
+    fun upsertAuthToken(userId: Long, newToken: AuthTokenDto): AuthToken {
+        val token = authTokenRepository.findByUserId(userId)
+        val authToken = if (token.isEmpty) {
+            AuthToken(
+                user = entityManager.getReference(User::class.java, userId),
+                refreshToken = newToken.refreshToken
+            )
+        } else {
+            token.get().refreshToken = newToken.refreshToken
+            token.get()
+        }
+        return authTokenRepository.save(authToken)
     }
 
     fun getConnectedEmployerId(employeeId: Long): Long {

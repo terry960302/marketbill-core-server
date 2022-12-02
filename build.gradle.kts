@@ -49,7 +49,7 @@ dependencies {
 	implementation("io.jsonwebtoken:jjwt:0.9.1") // jwt
 	implementation("org.mindrot:jbcrypt:0.4") // hash
 
-	// api call
+	// api client
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 }
 

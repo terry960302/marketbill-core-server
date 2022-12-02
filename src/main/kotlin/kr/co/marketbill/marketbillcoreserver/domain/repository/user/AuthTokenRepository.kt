@@ -12,4 +12,5 @@ interface AuthTokenRepository : JpaRepository<AuthToken, Long> {
 //
 //    @Modifying
 //    override fun deleteById(id: Long)
+    fun findByUserId(userId : Long) : Optional<AuthToken>
 }
