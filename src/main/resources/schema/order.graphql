@@ -72,6 +72,8 @@ type OrderSheetsAggregate{
 
 ## -------------- QUERY ------------------
 extend type Query {
+    # [소매상] 장바구니 항목들에 기등록된 거래처 정보 가져오기
+    getCartWholesaler : User
     # [소매상] 장바구니 목록 가져오기
     getAllCartItems(pagination : PaginationInput) : [CartItem!]
     # [공통] 주문서 목록 가져오기
@@ -91,7 +93,7 @@ extend type Mutation {
     # [소매상] 장바구니 담기
     addToCart(input : AddToCartInput) : CartItem!,
     # [소매상] 장바구니 항목 삭제
-    removeCartItem(cartItemId : Int!) : Int!,
+    removeCartItem(cartItemId : Int!) : CommonResponse!,
     # [소매상] 장바구니 항목 수정
     updateCartItem(input : UpdateCartItemInput) : CartItem
     # [소매상] 장바구니 거래처 설정 및 수정
@@ -99,12 +101,12 @@ extend type Mutation {
     # [소매상] 장바구니 항목들 주문하기
     orderCartItems : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
-    removeOrderSheet(orderSheetId : Int!) : Int!,
+    removeOrderSheet(orderSheetId : Int!) : CommonResponse!,
     # [도매상] 주문 항목 수정
     updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem!]
     # [도매상] 영수증 발행
     # - 파일처리 구축 후 실제 로직 적용 예정
     issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt,
     # 배치 장바구니 주문처리
-    batchCartToOrder : Boolean!
+    batchCartToOrder : CommonResponse!
 }

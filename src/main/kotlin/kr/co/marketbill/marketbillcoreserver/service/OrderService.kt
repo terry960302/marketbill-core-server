@@ -7,6 +7,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetReceiptRepository
@@ -60,26 +61,27 @@ class OrderService {
 
     @Transactional
     fun orderCartItems(retailerId: Long): OrderSheet {
+
         val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
             .map {
                 it.orderedAt = LocalDateTime.now()
                 it
             }.get().toList()
 
-        if (cartItems.isEmpty()) {
-            throw CustomException("There's no cart items to order.")
-        }
+        if (cartItems.isEmpty()) throw CustomException("There's no cart items to order.")
         cartRepository.saveAll(cartItems)
 
-        val selectedRetailer = cartItems[0].retailer
-        val selectedWholesaler = cartItems[0].wholesaler
+        val isAllConnectedWithWholesaler = cartItems.mapNotNull { it.wholesaler }.size == cartItems.size
+        if (!isAllConnectedWithWholesaler) throw CustomException("There's no connected wholesaler on cart items.")
+
+        val selectedRetailer: User = cartItems[0].retailer!!
+        val selectedWholesaler: User = cartItems[0].wholesaler!!
 
         val orderSheet = OrderSheet(
             orderNo = "",
             retailer = selectedRetailer,
             wholesaler = selectedWholesaler,
         )
-
         val savedOrderSheet = orderSheetRepository.save(orderSheet)
         savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
         val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
@@ -95,7 +97,6 @@ class OrderService {
                 price = null,
             )
         }
-
         orderItemRepository.saveAll(orderItems)
         return updatedOrderSheet
     }
@@ -174,6 +175,7 @@ class OrderService {
         return orderSheetRepository.getDailyOrderSheetsAggregate(wholesalerId, curDate)
     }
 
+    @Transactional
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
         if (orderSheet.isEmpty) throw CustomException("There's no OrderSheet data whose id is $orderSheetId")

@@ -14,6 +14,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
@@ -21,6 +22,8 @@ import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
 import kr.co.marketbill.marketbillcoreserver.service.UserService
 import kr.co.marketbill.marketbillcoreserver.types.*
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
@@ -46,7 +49,17 @@ class OrderFetcher {
     @Autowired
     private lateinit var jwtProvider: JwtProvider
 
+    val logger: Logger = LoggerFactory.getLogger(OrderFetcher::class.java)
+
     // query
+    @PreAuthorize("hasRole('RETAILER')")
+    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetCartWholesaler)
+    fun getCartWholesaler(@RequestHeader("Authorization") authorization: String): User? {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId: Long = jwtProvider.parseUserId(token)
+        return cartService.getConnectedWholesalerOnCartItems(userId)
+    }
+
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllCartItems)
     fun getAllCartItems(
@@ -217,8 +230,10 @@ class OrderFetcher {
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveCartItem)
-    fun removeCartItem(@InputArgument cartItemId: Long): Long {
-        return cartService.removeCartItem(cartItemId)
+    fun removeCartItem(@InputArgument cartItemId: Long): CommonResponse {
+        val removedCartItemId = cartService.removeCartItem(cartItemId)
+        logger.info("[removeCartItem] removed $removedCartItemId")
+        return CommonResponse(success = true)
     }
 
     @PreAuthorize("hasRole('RETAILER')")
@@ -242,8 +257,11 @@ class OrderFetcher {
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveOrderSheet)
-    fun removeOrderSheet(@InputArgument orderSheetId: Long): Int {
-        return orderService.removeOrderSheet(orderSheetId).toInt()
+    fun removeOrderSheet(@InputArgument orderSheetId: Long): CommonResponse {
+        val removedOrderSheetId = orderService.removeOrderSheet(orderSheetId).toInt()
+        logger.info("[removeOrderSheet] removed $removedOrderSheetId")
+        return CommonResponse(success = true)
+
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
@@ -260,13 +278,9 @@ class OrderFetcher {
 
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.BatchCartToOrder)
-    fun batchCartToOrder(): Boolean {
-        return try {
-            cartService.batchCartToOrder()
-            true
-        } catch (e: Exception) {
-            false
-        }
+    fun batchCartToOrder(): CommonResponse {
+        cartService.batchCartToOrder()
+        return CommonResponse(success = true)
     }
 
 

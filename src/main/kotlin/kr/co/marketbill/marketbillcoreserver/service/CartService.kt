@@ -49,12 +49,27 @@ class CartService {
 
     val logger: Logger = LoggerFactory.getLogger(CartService::class.java)
 
+    fun getConnectedWholesalerOnCartItems(userId: Long): User? {
+        val cartItems = getAllCartItems(userId, PageRequest.of(DEFAULT_PAGE, 1))
+        val connectedWholesalers = cartItems.map { it.wholesaler }.filterNotNull()
+        return if (connectedWholesalers.isEmpty()) {
+            null
+        } else {
+            connectedWholesalers[0]
+        }
+    }
+
 
     fun getAllCartItems(userId: Long, pageable: Pageable): Page<CartItem> {
         return cartRepository.findAllByRetailerId(userId, pageable)
     }
 
     fun addToCart(userId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {
+        val hasCartItems =
+            cartRepository.findAll(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId))).size > 0
+        if (hasCartItems) {
+            throw CustomException("There's already a cart item which has same retailerId, flowerId.")
+        }
         val cartItem = CartItem(
             retailer = entityManager.getReference(User::class.java, userId),
             flower = entityManager.getReference(Flower::class.java, flowerId),
@@ -99,11 +114,12 @@ class CartService {
      *
      * : 매일 오후 11시에 자동 주문처리
      */
-    @Scheduled(cron = "0 0 23 * * ?", zone = "Asia/Seoul")
+    @Scheduled(cron = "0 0 14 * * ?")
     @Transactional
     fun batchCartToOrder() {
         val newOrderSheets = mutableListOf<OrderSheet>()
         val newOrderItems = mutableListOf<OrderItem>()
+
         val validCartItems = cartRepository.findAll(CartItemSpecs.hasWholesaler()).filter { it.wholesaler != null }
 
         val log = BatchCartToOrderLogs(
@@ -152,8 +168,6 @@ class CartService {
                 newOrderItems.addAll(orderItems)
                 orderItemRepository.saveAll(orderItems)
             }
-
-
 
             log.orderSheetCount = newOrderSheets.size
             log.orderItemCount = newOrderItems.size

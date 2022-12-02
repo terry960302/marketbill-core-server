@@ -7,6 +7,5 @@ extend type Mutation{
     sendDefaultSms(to : String, message : String) : CommonResponse
     # 인증문자 SMS 전송
     sendVerificationSms(to : String, code : String) : CommonResponse
-
 }
 

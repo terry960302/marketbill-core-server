@@ -38,6 +38,10 @@ input BizConnectionFilterInput{
     applyStatus : ApplyStatus!,
 }
 
+input UserFilterInput{
+    roles : [AccountRole!]
+}
+
 input DateFilterInput{
     # 'yyyy-MM-dd' 포맷 날짜 문자열
     date : String,
