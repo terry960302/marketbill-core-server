@@ -49,7 +49,7 @@ input DateFilterInput{
 }
 
 input OrderItemPriceInput{
-    # orderItem ID
+    # 주문항목(orderItem) ID
     id : Int!,
     # 판매가
     price : Int!,

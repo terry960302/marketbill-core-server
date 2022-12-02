@@ -1,6 +1,8 @@
 # 소매상, 도매상(대표, 직원)
 type User {
     id : Int!,
+    # 소속(도매상=시장명, 소매상=null)
+    belongsTo : String,
     name : String!,
     # 사업자번호(nullable)
     businessNo : String,

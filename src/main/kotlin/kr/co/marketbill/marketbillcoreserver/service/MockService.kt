@@ -92,13 +92,21 @@ class MockService {
 
     @Transactional
     fun createMockOnlyUsers(fromCount: Int = 1, toCount: Int = 100, role: AccountRole) {
+        val belongsTo = when(role){
+            AccountRole.RETAILER -> null
+            AccountRole.WHOLESALER_EMPR -> "양재"
+            AccountRole.WHOLESALER_EMPE -> "양재"
+        }
+
         val users = (fromCount..toCount).map {
             User(
                 id = it.toLong(),
                 name = generateRandomStr(),
-                businessNo = null
+                businessNo = null,
+                belongsTo=belongsTo
             )
         }
+
 
         val creds = (fromCount..toCount).map {
             UserCredential(

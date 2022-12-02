@@ -18,6 +18,17 @@ data class User(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
+    /**
+     * <도매상>
+     *
+     *     : 시장명이 들어감(양재, 경부선 등)
+     * <소매상>
+     *
+     *     : 빈값
+     */
+    @Column(name = "belongs_to", nullable = true)
+    val belongsTo : String? = null,
+
     @Column(name = "name")
     val name: String? = null,
 
