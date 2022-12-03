@@ -140,7 +140,6 @@ class JwtProvider(
             .secure(isCookieSecure.toBoolean())
             .httpOnly(isCookieHttpOnly.toBoolean())
             .sameSite("None")
-            .domain("localhost")
             .maxAge(maxAge)
             .path("/")
             .build()
