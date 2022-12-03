@@ -94,6 +94,19 @@ class UserFetcher {
         return AuthToken(accessToken = newToken.accessToken)
     }
 
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignOut)
+    fun signOut(
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
+        dfe: DgsDataFetchingEnvironment
+    ): CommonResponse {
+        val userId = jwtProvider.parseUserId(token)
+        val response = getHttpServletResponseFromDfe(dfe)
+        userService.signOut(response, userId)
+        return CommonResponse(
+            success = true
+        )
+    }
+
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ApplyBizConnection)
     fun applyBizConnection(

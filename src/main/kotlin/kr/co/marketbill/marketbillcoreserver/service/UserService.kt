@@ -23,6 +23,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
 import javax.persistence.EntityManager
+import javax.servlet.http.HttpServletResponse
 
 @Service
 class UserService {
@@ -296,6 +297,15 @@ class UserService {
         )
         userCredentialRepository.save(userCred)
         return savedUser
+    }
+
+    fun signOut(response: HttpServletResponse, userId: Long) {
+        val authToken = authTokenRepository.findByUserId(userId)
+        if (authToken.isPresent) {
+            authTokenRepository.deleteById(authToken.get().id!!)
+        }
+        jwtProvider.resetAllTokensInHttpOnlyCookie(response)
+        return
     }
 
     fun generateAuthTokenPair(
