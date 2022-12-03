@@ -23,7 +23,7 @@ spring:
       secret: 1234
     cookies:
       httpOnly: true
-      secure : false
+      secure : true
   jpa:
     open-in-view: true
     hibernate:
@@ -55,7 +55,7 @@ spring:
       secret: 1234
     cookies:
       httpOnly: true
-      secure: false
+      secure: true
   jpa:
     open-in-view: true
     hibernate:

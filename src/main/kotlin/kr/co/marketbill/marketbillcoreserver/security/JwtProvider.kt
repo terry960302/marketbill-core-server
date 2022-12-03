@@ -33,10 +33,10 @@ class JwtProvider(
     @Value("\${spring.security.jwt.secret}")
     private lateinit var jwtSecret: String
 
-    @Value("\${spring.security.cookies.httpOnly}')}")
+    @Value("\${spring.security.cookies.httpOnly}")
     private lateinit var isCookieHttpOnly: String
 
-    @Value("\${spring.security.cookies.secure}')}")
+    @Value("\${spring.security.cookies.secure}")
     private lateinit var isCookieSecure: String
 
 
@@ -135,10 +135,12 @@ class JwtProvider(
         value: String,
         maxAge: Long,
     ) {
+
         val cookie = ResponseCookie.from(key, value)
-            .secure(true)
-            .httpOnly(true)
+            .secure(isCookieSecure.toBoolean())
+            .httpOnly(isCookieHttpOnly.toBoolean())
             .sameSite("None")
+            .domain("localhost")
             .maxAge(maxAge)
             .path("/")
             .build()
