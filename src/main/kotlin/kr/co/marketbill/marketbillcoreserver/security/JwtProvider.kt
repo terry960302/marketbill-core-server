@@ -120,12 +120,12 @@ class JwtProvider(
     }
 
     fun resetAllTokensInHttpOnlyCookie(response: HttpServletResponse) {
-        setHttpOnlyCookie(response, ACCESS_TOKEN_COOKIE_NAME, "", ACCESS_MAX_AGE)
+        setHttpOnlyCookie(response, ACCESS_TOKEN_COOKIE_NAME, "", 0)
         setHttpOnlyCookie(
             response,
             REFRESH_TOKEN_COOKIE_NAME,
             "",
-            REFRESH_MAX_AGE
+            0
         )
     }
 

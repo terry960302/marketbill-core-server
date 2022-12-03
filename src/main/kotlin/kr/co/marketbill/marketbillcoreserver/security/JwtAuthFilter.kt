@@ -51,7 +51,6 @@ class JwtAuthFilter : OncePerRequestFilter() {
         filterChain: FilterChain
     ) {
         try {
-
             val hasTokens = existsToken(request)
 
             if (hasTokens) {
