@@ -137,9 +137,9 @@ class JwtProvider(
     ) {
 
         val cookie = ResponseCookie.from(key, value)
-//            .secure(isCookieSecure.toBoolean())
+            .secure(isCookieSecure.toBoolean())
             .httpOnly(isCookieHttpOnly.toBoolean())
-//            .sameSite("None")
+            .sameSite("None")
             .maxAge(maxAge)
             .path("/")
             .build()
