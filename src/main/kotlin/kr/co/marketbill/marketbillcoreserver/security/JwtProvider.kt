@@ -42,9 +42,10 @@ class JwtProvider(
 
     companion object {
         val SIGNATURE_ALG: SignatureAlgorithm = SignatureAlgorithm.HS256
-        const val ACCESS_TOKEN_COOKIE_NAME = "access_token"
-        const val REFRESH_TOKEN_COOKIE_NAME = "refresh_token"
-        const val ACCESS_EXPIRATION: Long = 30 * 60 * 1000L // 30min (response로 사용될 경우 1000L 곱셈, cookie의 age엔 필요없음)
+        const val AUTHORIZATION_HEADER_NAME = "Authorization"
+        const val ACCESS_TOKEN_COOKIE_NAME = "accessToken"
+        const val REFRESH_TOKEN_COOKIE_NAME = "refreshToken"
+        const val ACCESS_EXPIRATION: Long = 30 * 60 * 1000L // 30min (response 로 사용될 경우 1000L 곱셈, cookie 의 age 엔 필요없음)
         const val REFRESH_EXPIRATION: Long = 7 * 24 * 60 * 60 * 1000L // 7day
         const val ACCESS_MAX_AGE: Long = (ACCESS_EXPIRATION / 1000L)
         const val REFRESH_MAX_AGE: Long = (REFRESH_EXPIRATION / 1000L)
@@ -83,7 +84,7 @@ class JwtProvider(
     }
 
     fun resolveToken(request: HttpServletRequest): String {
-        val tokenWithType = request.getHeader("Authorization")
+        val tokenWithType = request.getHeader(AUTHORIZATION_HEADER_NAME)
         return filterOnlyToken(tokenWithType)
     }
 

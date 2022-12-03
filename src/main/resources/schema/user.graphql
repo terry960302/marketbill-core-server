@@ -73,6 +73,8 @@ type Mutation{
     updateBizConnection(bizConnId : Int!, status : ApplyStatus): BizConnection
     # 로그아웃
     signOut : CommonResponse
+    # 토큰 재발급
+    reissueToken : AuthToken
 }
 
 

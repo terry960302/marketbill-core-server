@@ -16,6 +16,7 @@ import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.AppliedConnectionLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.ReceivedConnectionLoader
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
+import kr.co.marketbill.marketbillcoreserver.service.TokenService
 import kr.co.marketbill.marketbillcoreserver.service.UserService
 import kr.co.marketbill.marketbillcoreserver.types.*
 import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
@@ -36,11 +37,20 @@ class UserFetcher {
     private lateinit var userService: UserService
 
     @Autowired
+    private lateinit var tokenService: TokenService
+
+    @Autowired
     private lateinit var jwtProvider: JwtProvider
 
     @PreAuthorize("isAuthenticated")
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.Me)
-    fun me(@CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String): Optional<User> {
+    fun me(
+        @RequestHeader(
+            value = JwtProvider.AUTHORIZATION_HEADER_NAME,
+            required = true
+        ) authorization: String
+    ): Optional<User> {
+        val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
         return userService.getUser(userId)
     }
@@ -48,7 +58,7 @@ class UserFetcher {
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetUsers)
     fun getUsers(
         dfe: DgsDataFetchingEnvironment,
-        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = false) token: Optional<String>,
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: Optional<String>,
         @InputArgument filter: UserFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<User> {
@@ -57,9 +67,10 @@ class UserFetcher {
         var roles: List<AccountRole>? = null
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
-        if (token.isPresent) {
-            userId = jwtProvider.parseUserId(token.get())
-            role = jwtProvider.parseUserRole(token.get())
+        if (authorization.isPresent) {
+            val token = jwtProvider.filterOnlyToken(authorization.get())
+            userId = jwtProvider.parseUserId(token)
+            role = jwtProvider.parseUserRole(token)
         }
         if (filter != null) {
             roles =
@@ -78,41 +89,59 @@ class UserFetcher {
 
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignUp)
-    fun signUp(@InputArgument input: SignUpInput, dfe: DgsDataFetchingEnvironment): AuthToken {
+    fun signUp(@InputArgument input: SignUpInput): AuthToken {
         val newToken = userService.signUp(input)
-        val response = getHttpServletResponseFromDfe(dfe)
-        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
+//        val response = getHttpServletResponseFromDfe(dfe)
+//        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
         return AuthToken(accessToken = newToken.accessToken)
-
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignIn)
-    fun signIn(@InputArgument input: SignInInput, dfe: DgsDataFetchingEnvironment): AuthToken {
+    fun signIn(@InputArgument input: SignInInput): AuthToken {
         val newToken = userService.signIn(input)
-        val response = getHttpServletResponseFromDfe(dfe)
-        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
+//        val response = getHttpServletResponseFromDfe(dfe)
+//        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
         return AuthToken(accessToken = newToken.accessToken)
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignOut)
     fun signOut(
-        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         dfe: DgsDataFetchingEnvironment
     ): CommonResponse {
+        val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
-        val response = getHttpServletResponseFromDfe(dfe)
-        userService.signOut(response, userId)
+//        val response = getHttpServletResponseFromDfe(dfe)
+        userService.signOut(userId)
         return CommonResponse(
             success = true
+        )
+    }
+
+
+    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ReissueToken)
+    fun reissueToken(
+        @RequestHeader(
+            value = JwtProvider.AUTHORIZATION_HEADER_NAME,
+            required = true
+        ) authorization: String
+    ): AuthToken {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId = jwtProvider.parseUserId(token)
+        val role = jwtProvider.parseUserRole(token)
+        val authTokenPair = tokenService.reissueToken(userId, role)
+        return AuthToken(
+            accessToken = authTokenPair.accessToken
         )
     }
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ApplyBizConnection)
     fun applyBizConnection(
-        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument wholesalerId: Long
     ): BizConnection {
+        val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
         return userService.createBizConnection(userId, wholesalerId)
     }
@@ -158,6 +187,7 @@ class UserFetcher {
         return dataLoader.load(user.id)
     }
 
+    @Deprecated(message = "This function for cookie jwt method.")
     fun getHttpServletResponseFromDfe(dfe: DgsDataFetchingEnvironment): HttpServletResponse {
         val requestData: DgsWebMvcRequestData = dfe.getDgsContext().requestData as DgsWebMvcRequestData
         val webRequest: ServletWebRequest = requestData.webRequest as ServletWebRequest

@@ -52,7 +52,7 @@ class UserService {
     private lateinit var authTokenRepository: AuthTokenRepository
 
     @Autowired
-    private lateinit var jwtProvider: JwtProvider
+    private lateinit var tokenService: TokenService
 
     companion object {
         const val DEFAULT_WHOLESALER_BELONGS_TO = "양재" // 추후 경부선이나 다른 꽃시장명이 추가될 수 있으니 초기에만 하드코딩 처리
@@ -161,10 +161,7 @@ class UserService {
                     val employer = wholesaleEmployers[0]
                     val employee = createUser(input)
 
-                    val connection = WholesalerConnection(
-                        employer = employer,
-                        employee = employee
-                    )
+                    val connection = WholesalerConnection(employer = employer, employee = employee)
                     wholesalerConnectionRepository.save(connection)
                     employee
                 }
@@ -172,8 +169,8 @@ class UserService {
                 createUser(input)
             }
 
-            val authToken = generateAuthTokenPair(userId = user.id!!, role = AccountRole.valueOf(input.role.name))
-            upsertAuthToken(user.id!!, authToken)
+            val authToken = tokenService.generateAuthTokenPair(userId = user.id!!, role = AccountRole.valueOf(input.role.name))
+            tokenService.upsertAuthToken(user.id!!, authToken)
 
             return authToken
         } catch (err: Exception) {
@@ -194,9 +191,8 @@ class UserService {
         val role = userCred.get().role
         val userId = userCred.get().user!!.id!!
 
-
-        val authToken = generateAuthTokenPair(userId, AccountRole.valueOf(role.toString()))
-        upsertAuthToken(userId, authToken)
+        val authToken = tokenService.generateAuthTokenPair(userId, AccountRole.valueOf(role.toString()))
+        tokenService.upsertAuthToken(userId, authToken)
         return authToken
     }
 
@@ -299,43 +295,15 @@ class UserService {
         return savedUser
     }
 
-    fun signOut(response: HttpServletResponse, userId: Long) {
+    fun signOut(userId: Long) {
         val authToken = authTokenRepository.findByUserId(userId)
         if (authToken.isPresent) {
             authTokenRepository.deleteById(authToken.get().id!!)
         }
-        jwtProvider.resetAllTokensInHttpOnlyCookie(response)
+//        jwtProvider.resetAllTokensInHttpOnlyCookie(response)
         return
     }
 
-    fun generateAuthTokenPair(
-        userId: Long,
-        role: AccountRole,
-    ): AuthTokenDto {
-        val accessToken =
-            jwtProvider.generateToken(userId, role.toString(), JwtProvider.ACCESS_EXPIRATION)
-        val refreshToken =
-            jwtProvider.generateToken(userId, role.toString(), JwtProvider.REFRESH_EXPIRATION)
-
-        return AuthTokenDto(
-            accessToken = accessToken,
-            refreshToken = refreshToken
-        )
-    }
-
-    fun upsertAuthToken(userId: Long, newToken: AuthTokenDto): AuthToken {
-        val token = authTokenRepository.findByUserId(userId)
-        val authToken = if (token.isEmpty) {
-            AuthToken(
-                user = entityManager.getReference(User::class.java, userId),
-                refreshToken = newToken.refreshToken
-            )
-        } else {
-            token.get().refreshToken = newToken.refreshToken
-            token.get()
-        }
-        return authTokenRepository.save(authToken)
-    }
 
 
     fun getConnectedEmployerId(employeeId: Long): Long {
