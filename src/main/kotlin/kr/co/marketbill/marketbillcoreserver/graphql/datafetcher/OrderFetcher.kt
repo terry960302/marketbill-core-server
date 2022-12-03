@@ -26,6 +26,7 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.security.access.prepost.PreAuthorize
+import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.RequestHeader
 import java.time.LocalDate
 import java.util.Optional
@@ -50,8 +51,9 @@ class OrderFetcher {
     // query
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetCartWholesaler)
-    fun getCartWholesaler(@RequestHeader("Authorization") authorization: String): User? {
-        val token = jwtProvider.filterOnlyToken(authorization)
+    fun getCartWholesaler(
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
+    ): User? {
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getConnectedWholesalerOnCartItems(userId)
     }
@@ -59,11 +61,10 @@ class OrderFetcher {
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllCartItems)
     fun getAllCartItems(
-        @RequestHeader("Authorization") authorization: String,
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
         @InputArgument pagination: PaginationInput?
     ): Page<CartItem> {
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
-        val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getAllCartItems(userId, pageable)
     }
@@ -77,7 +78,7 @@ class OrderFetcher {
     // 공용
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheets)
     fun getOrderSheets(
-        @RequestHeader("Authorization") authorization: String?,
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = false) token: Optional<String>,
         @InputArgument filter: DateFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<OrderSheet> {
@@ -86,10 +87,9 @@ class OrderFetcher {
         var date: LocalDate? = null
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
-        if (authorization != null) {
-            val token = jwtProvider.filterOnlyToken(authorization)
-            userId = jwtProvider.parseUserId(token)
-            role = jwtProvider.parseUserRole(token)
+        if (token.isPresent) {
+            userId = jwtProvider.parseUserId(token.get())
+            role = jwtProvider.parseUserRole(token.get())
         }
 
         if (filter != null) {
@@ -102,7 +102,7 @@ class OrderFetcher {
     // 공용
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderItems)
     fun getOrderItems(
-        @RequestHeader("Authorization") authorization: String?,
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = false) token: Optional<String>,
         @InputArgument filter: DateFilterInput?,
         @InputArgument pagination: PaginationInput?
     ): Page<OrderItem> {
@@ -111,10 +111,9 @@ class OrderFetcher {
         var role: AccountRole? = null
 
 
-        if (authorization != null) {
-            val token = jwtProvider.filterOnlyToken(authorization)
-            userId = jwtProvider.parseUserId(token)
-            role = jwtProvider.parseUserRole(token)
+        if (token.isPresent) {
+            userId = jwtProvider.parseUserId(token.get())
+            role = jwtProvider.parseUserRole(token.get())
 
             if (role == kr.co.marketbill.marketbillcoreserver.constants.AccountRole.WHOLESALER_EMPE) {
                 userId = userService.getConnectedEmployerId(userId)
@@ -134,10 +133,9 @@ class OrderFetcher {
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllDailyOrderSheetAggregates)
     fun getAllDailyOrderSheetAggregates(
-        @RequestHeader authorization: String,
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
         @InputArgument pagination: PaginationInput?
     ): Page<OrderSheetsAggregate> {
-        val token = jwtProvider.filterOnlyToken(authorization)
         var userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
@@ -152,10 +150,9 @@ class OrderFetcher {
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
     @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderSheetAggregate)
     fun getDailyOrderSheetAggregate(
-        @RequestHeader authorization: String,
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
         @InputArgument date: String?,
     ): OrderSheetsAggregate {
-        val token = jwtProvider.filterOnlyToken(authorization)
         var userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
 
@@ -171,10 +168,9 @@ class OrderFetcher {
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.AddToCart)
     fun addToCart(
-        @RequestHeader("Authorization") authorization: String,
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
         @InputArgument input: AddToCartInput
     ): CartItem {
-        val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.addToCart(
             userId,
@@ -205,18 +201,16 @@ class OrderFetcher {
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
     fun upsertWholesalerOnCartItems(
-        @RequestHeader("Authorization") authorization: String,
+        @CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String,
         @InputArgument wholesalerId: Long
     ): List<CartItem> {
-        val token = jwtProvider.filterOnlyToken(authorization)
         val retailerId = jwtProvider.parseUserId(token)
         return cartService.upsertWholesalerOnCartItems(retailerId, wholesalerId)
     }
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.OrderCartItems)
-    fun orderCartItems(@RequestHeader("Authorization") authorization: String): OrderSheet {
-        val token = jwtProvider.filterOnlyToken(authorization)
+    fun orderCartItems(@CookieValue(value = JwtProvider.ACCESS_TOKEN_COOKIE_NAME, required = true) token: String): OrderSheet {
         val retailerId = jwtProvider.parseUserId(token)
         return orderService.orderCartItems(retailerId)
     }
