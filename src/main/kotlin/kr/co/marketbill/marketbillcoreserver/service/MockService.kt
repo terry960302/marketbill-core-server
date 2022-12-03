@@ -123,7 +123,7 @@ class MockService {
                 refreshToken = jwtProvider.generateToken(
                     it.toLong(),
                     role.toString(),
-                    JwtProvider.refreshExpiration
+                    JwtProvider.REFRESH_EXPIRATION
                 )
             )
         }

@@ -21,6 +21,9 @@ spring:
   security:
     jwt:
       secret: 1234
+    cookies:
+      httpOnly: true
+      secure : false
   jpa:
     open-in-view: true
     hibernate:
@@ -50,6 +53,9 @@ spring:
   security:
     jwt:
       secret: 1234
+    cookies:
+      httpOnly: true
+      secure: false
   jpa:
     open-in-view: true
     hibernate:
@@ -78,6 +84,9 @@ spring:
   security:
     jwt:
       secret : marketbill1234!
+    cookies:
+      httpOnly: true
+      secure: true
   jpa:
     open-in-view: true
     hibernate:
