@@ -39,14 +39,19 @@ class JwtAuthFilter : OncePerRequestFilter() {
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
-        val token = jwtProvider.resolveToken(request)
-        val isValidToken = jwtProvider.validateToken(token)
 
-        if (isValidToken) {
-            val authentication = jwtProvider.getAuthentication(token)
-            SecurityContextHolder.getContext().authentication = authentication
-        } else {
-            throw JwtException(TOKEN_EXPIRED_ERR)
+
+        val token = jwtProvider.resolveToken(request)
+
+        if (token.isNotBlank()) {
+            val isValidToken = jwtProvider.validateToken(token)
+
+            if (isValidToken) {
+                val authentication = jwtProvider.getAuthentication(token)
+                SecurityContextHolder.getContext().authentication = authentication
+            } else {
+                throw JwtException(TOKEN_EXPIRED_ERR)
+            }
         }
         filterChain.doFilter(request, response)
     }
