@@ -46,6 +46,7 @@ type BizConnection {
 # AuthTokenDto와 동일
 type AuthToken{
     accessToken : String!,
+    refreshToken : String!,
 }
 
 ## -------------- QUERY ------------------

@@ -93,7 +93,7 @@ class UserFetcher {
         val newToken = userService.signUp(input)
 //        val response = getHttpServletResponseFromDfe(dfe)
 //        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
-        return AuthToken(accessToken = newToken.accessToken)
+        return AuthToken(accessToken = newToken.accessToken, refreshToken = newToken.refreshToken)
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignIn)
@@ -101,7 +101,7 @@ class UserFetcher {
         val newToken = userService.signIn(input)
 //        val response = getHttpServletResponseFromDfe(dfe)
 //        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
-        return AuthToken(accessToken = newToken.accessToken)
+        return AuthToken(accessToken = newToken.accessToken, refreshToken = newToken.refreshToken)
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignOut)
@@ -129,10 +129,9 @@ class UserFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
-        val authTokenPair = tokenService.reissueToken(userId, role)
-        return AuthToken(
-            accessToken = authTokenPair.accessToken
-        )
+        val newToken = tokenService.reissueToken(userId, role)
+        return AuthToken(accessToken = newToken.accessToken, refreshToken = newToken.refreshToken)
+
     }
 
     @PreAuthorize("hasRole('RETAILER')")
