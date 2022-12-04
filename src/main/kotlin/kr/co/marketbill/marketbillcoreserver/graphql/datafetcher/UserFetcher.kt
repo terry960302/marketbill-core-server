@@ -91,16 +91,12 @@ class UserFetcher {
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignUp)
     fun signUp(@InputArgument input: SignUpInput): AuthToken {
         val newToken = userService.signUp(input)
-//        val response = getHttpServletResponseFromDfe(dfe)
-//        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
         return AuthToken(accessToken = newToken.accessToken, refreshToken = newToken.refreshToken)
     }
 
     @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignIn)
     fun signIn(@InputArgument input: SignInInput): AuthToken {
         val newToken = userService.signIn(input)
-//        val response = getHttpServletResponseFromDfe(dfe)
-//        jwtProvider.setAllTokensToHttpOnlyCookie(response, newToken)
         return AuthToken(accessToken = newToken.accessToken, refreshToken = newToken.refreshToken)
     }
 
