@@ -3,12 +3,15 @@ package kr.co.marketbill.marketbillcoreserver.security
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData
 import io.jsonwebtoken.Claims
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.service.CustomUserDetailsService
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
@@ -39,13 +42,16 @@ class JwtProvider(
     @Value("\${spring.security.cookies.secure}")
     private lateinit var isCookieSecure: String
 
+    private val logger: Logger = LoggerFactory.getLogger(JwtProvider::class.java)
+
 
     companion object {
         val SIGNATURE_ALG: SignatureAlgorithm = SignatureAlgorithm.HS256
         const val AUTHORIZATION_HEADER_NAME = "Authorization"
         const val ACCESS_TOKEN_COOKIE_NAME = "accessToken"
         const val REFRESH_TOKEN_COOKIE_NAME = "refreshToken"
-        const val ACCESS_EXPIRATION: Long = 30 * 60 * 1000L // 30min (response 로 사용될 경우 1000L 곱셈, cookie 의 age 엔 필요없음)
+        const val ACCESS_EXPIRATION: Long =
+            3 * 60 * 60 * 1000L // 3hour (response 로 사용될 경우 1000L 곱셈, cookie 의 age 엔 필요없음)
         const val REFRESH_EXPIRATION: Long = 7 * 24 * 60 * 60 * 1000L // 7day
         const val ACCESS_MAX_AGE: Long = (ACCESS_EXPIRATION / 1000L)
         const val REFRESH_MAX_AGE: Long = (REFRESH_EXPIRATION / 1000L)
@@ -61,9 +67,14 @@ class JwtProvider(
     }
 
     fun validateToken(token: String): Boolean {
-        val claims: Claims = getAllClaims(token)
-        val exp: Date = claims.expiration
-        return exp.after(Date())
+        return try {
+            val claims: Claims = getAllClaims(token)
+            val exp: Date = claims.expiration
+            exp.after(Date())
+        } catch (e: ExpiredJwtException) {
+            logger.error(e.message)
+            false
+        }
     }
 
     fun parseUserId(token: String): Long {
@@ -89,7 +100,9 @@ class JwtProvider(
     }
 
     fun getAllClaims(token: String): Claims {
-        return Jwts.parser().setSigningKey(jwtSecret).parseClaimsJws(token).body
+        val parser = Jwts.parser().setSigningKey(jwtSecret)
+        val jws = parser.parseClaimsJws(token)
+        return jws.body
     }
 
     fun filterOnlyToken(fullToken: String?): String {
@@ -103,6 +116,7 @@ class JwtProvider(
         }
     }
 
+    @Deprecated(message = "This function for cookie-based jwt authentication.")
     fun getTokenFromCookie(request: HttpServletRequest, cookieName: String): String {
         val cookies = request.cookies
         val tokens = cookies.filter { it.name == cookieName }
@@ -110,6 +124,7 @@ class JwtProvider(
         return tokens[0].value
     }
 
+    @Deprecated(message = "This function for cookie-based jwt authentication.")
     fun setAllTokensToHttpOnlyCookie(response: HttpServletResponse, newToken: AuthTokenDto) {
         setHttpOnlyCookie(response, ACCESS_TOKEN_COOKIE_NAME, newToken.accessToken, ACCESS_MAX_AGE)
         setHttpOnlyCookie(
@@ -120,6 +135,7 @@ class JwtProvider(
         )
     }
 
+    @Deprecated(message = "This function for cookie-based jwt authentication.")
     fun resetAllTokensInHttpOnlyCookie(response: HttpServletResponse) {
         setHttpOnlyCookie(response, ACCESS_TOKEN_COOKIE_NAME, "", 0)
         setHttpOnlyCookie(
@@ -130,13 +146,22 @@ class JwtProvider(
         )
     }
 
+    /**
+     * ## 'Cookie-based Auth' Issue
+     *
+     * - Safari 브라우저에서 same-site=None 버그 이슈 (same-site=None이 적용이 안됨)
+     * - HttpOnly, Secure 모두 true를 해야 보안상 작동하는데, local 로 테스트하기 까다로워짐.(로컬에서 항상 mock https를 가동할 수는 없는 노릇)
+     * - Same-site 이슈로 인해 같은 도메인으로 font와 back을 매핑하면 되겠지만 배보다 배꼽이 더 커짐.
+     *
+     * => 'Authorization Header Token 교환' 방식으로 프론트에서 토큰을 헤러에 담아 주는 방식으로 하기로 함.
+     */
+    @Deprecated(message = "This function for cookie-based jwt authentication.")
     fun setHttpOnlyCookie(
         response: HttpServletResponse,
         key: String,
         value: String,
         maxAge: Long,
     ) {
-
         val cookie = ResponseCookie.from(key, value)
             .secure(isCookieSecure.toBoolean())
             .httpOnly(isCookieHttpOnly.toBoolean())
@@ -144,8 +169,6 @@ class JwtProvider(
             .maxAge(maxAge)
             .path("/")
             .build()
-
-        response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
-        return
+        return response.addHeader(HttpHeaders.SET_COOKIE, cookie.toString())
     }
 }
