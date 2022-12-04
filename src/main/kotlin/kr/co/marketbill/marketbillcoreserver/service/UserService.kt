@@ -300,7 +300,6 @@ class UserService {
         if (authToken.isPresent) {
             authTokenRepository.deleteById(authToken.get().id!!)
         }
-//        jwtProvider.resetAllTokensInHttpOnlyCookie(response)
         return
     }
 

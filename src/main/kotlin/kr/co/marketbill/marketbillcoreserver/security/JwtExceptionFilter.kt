@@ -2,6 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.JwtException
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
@@ -23,8 +24,8 @@ class JwtExceptionFilter : OncePerRequestFilter() {
 
         val map: MutableMap<String, String> = HashMap()
 
-        map["status"] = HttpServletResponse.SC_UNAUTHORIZED.toString()
-        map["error"] = "UnAuthorized"
+        map["status"] = res.status.toString()
+        map["error"] = status.name
         map["message"] = ex.message.toString()
 
         val objectMapper = ObjectMapper()
@@ -32,7 +33,6 @@ class JwtExceptionFilter : OncePerRequestFilter() {
     }
 
     @Throws(ServletException::class, IOException::class)
-
     override fun doFilterInternal(
         request: HttpServletRequest,
         response: HttpServletResponse,
@@ -42,6 +42,8 @@ class JwtExceptionFilter : OncePerRequestFilter() {
             filterChain.doFilter(request, response) // go to 'JwtAuthenticationFilter'
         } catch (ex: JwtException) {
             setErrorResponse(HttpStatus.UNAUTHORIZED, response, ex)
+        } catch (ex : CustomException){
+            setErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, response, ex)
         }
     }
 }

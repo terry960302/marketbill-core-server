@@ -1,17 +1,16 @@
 package kr.co.marketbill.marketbillcoreserver.security
 
+import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
+import io.jsonwebtoken.MalformedJwtException
+import io.jsonwebtoken.UnsupportedJwtException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.http.HttpStatus
 import org.springframework.security.core.context.SecurityContextHolder
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
-import org.springframework.web.servlet.HandlerExceptionResolver
-import java.util.*
 import javax.servlet.FilterChain
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
@@ -22,9 +21,9 @@ class JwtAuthFilter : OncePerRequestFilter() {
 
     private val log: Logger = LoggerFactory.getLogger(javaClass)
 
-    @Autowired
-    @Qualifier("handlerExceptionResolver")
-    private lateinit var resolver: HandlerExceptionResolver
+//    @Autowired
+//    @Qualifier("handlerExceptionResolver")
+//    private lateinit var resolver: HandlerExceptionResolver
 
     @Autowired
     private lateinit var jwtProvider: JwtProvider
@@ -32,6 +31,7 @@ class JwtAuthFilter : OncePerRequestFilter() {
     companion object {
         const val NO_TOKEN_ERR = "There's no token to authenticate."
         const val TOKEN_EXPIRED_ERR = "TOKEN EXPIRED"
+        const val INVALID_TOKEN_ERR = "INVALID_TOKEN"
     }
 
     override fun doFilterInternal(
@@ -39,21 +39,28 @@ class JwtAuthFilter : OncePerRequestFilter() {
         response: HttpServletResponse,
         filterChain: FilterChain
     ) {
+        try {
+            val token = jwtProvider.resolveToken(request)
 
-
-        val token = jwtProvider.resolveToken(request)
-
-        if (token.isNotBlank()) {
-            val isValidToken = jwtProvider.validateToken(token)
-
-            if (isValidToken) {
+            if (token.isNotBlank()) {
+                jwtProvider.validateToken(token)
                 val authentication = jwtProvider.getAuthentication(token)
                 SecurityContextHolder.getContext().authentication = authentication
-            } else {
-                throw JwtException(TOKEN_EXPIRED_ERR)
             }
+            filterChain.doFilter(request, response)
+        } catch (ex: ExpiredJwtException) {
+            throw JwtException(TOKEN_EXPIRED_ERR)
+        } catch (ex: UnsupportedJwtException) {
+            throw JwtException(INVALID_TOKEN_ERR)
+        } catch (ex: MalformedJwtException) {
+            throw JwtException(INVALID_TOKEN_ERR)
+        } catch (ex: io.jsonwebtoken.SignatureException) {
+            throw JwtException(INVALID_TOKEN_ERR)
+        } catch (ex: IllegalArgumentException) {
+            throw JwtException(INVALID_TOKEN_ERR)
+        } catch (e: CustomException) {
+            throw CustomException(e.message)
         }
-        filterChain.doFilter(request, response)
     }
 
 

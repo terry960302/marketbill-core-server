@@ -67,14 +67,9 @@ class JwtProvider(
     }
 
     fun validateToken(token: String): Boolean {
-        return try {
-            val claims: Claims = getAllClaims(token)
-            val exp: Date = claims.expiration
-            exp.after(Date())
-        } catch (e: ExpiredJwtException) {
-            logger.error(e.message)
-            false
-        }
+        val claims: Claims = getAllClaims(token)
+        val exp: Date = claims.expiration
+        return exp.after(Date())
     }
 
     fun parseUserId(token: String): Long {
