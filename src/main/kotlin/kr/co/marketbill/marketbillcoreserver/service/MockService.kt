@@ -85,9 +85,9 @@ class MockService {
     @PostConstruct
     fun createAllMockToDB() {
         createMockFlowers()
-//        createMockUsers()
-//        createMockCartItems()
-//        createMockOrderSheets()
+        createMockUsers()
+        createMockCartItems()
+        createMockOrderSheets()
     }
 
     @Transactional
