@@ -27,7 +27,7 @@ data class User(
      *     : 빈값
      */
     @Column(name = "belongs_to", nullable = true)
-    val belongsTo : String? = null,
+    val belongsTo: String? = null,
 
     @Column(name = "name")
     val name: String? = null,
@@ -49,10 +49,10 @@ data class User(
     val authToken: AuthToken? = null,
 
     @OneToMany(mappedBy = "retailer", fetch = FetchType.LAZY)
-    val appliedConnections: List<BizConnection>? = null,
+    val appliedConnections: List<BizConnection> = listOf(),
 
     @OneToMany(mappedBy = "wholesaler", fetch = FetchType.LAZY)
-    val receivedConnections: List<BizConnection>? = null,
+    val receivedConnections: List<BizConnection> = listOf(),
 
     // role = wholesaler 인 경우에만 해당
     @OneToOne(mappedBy = "employer", fetch = FetchType.LAZY)
@@ -60,31 +60,31 @@ data class User(
 
     // role = wholesaler 인 경우에만 해당
     @OneToMany(mappedBy = "employee", fetch = FetchType.LAZY)
-    val employeeConnections: List<WholesalerConnection>? = null,
+    val employeeConnections: List<WholesalerConnection> = listOf(),
 
     @OneToMany(mappedBy = "retailer")
-    val retailerCartItems: List<CartItem>? = null,
+    val retailerCartItems: List<CartItem> = listOf(),
 
     @OneToMany(mappedBy = "wholesaler")
-    val wholesalerCartItems: List<CartItem>? = null,
+    val wholesalerCartItems: List<CartItem> = listOf(),
 
     @OneToMany(mappedBy = "retailer")
-    val orderSheetsByRetailer: List<OrderSheet>? = null,
+    val orderSheetsByRetailer: List<OrderSheet> = listOf(),
 
     @OneToMany(mappedBy = "wholesaler")
-    val orderSheetsByWholesaler: List<OrderSheet>? = null,
+    val orderSheetsByWholesaler: List<OrderSheet> = listOf(),
 
     @OneToMany(mappedBy = "retailer")
-    val orderItemsByRetailer: List<OrderItem>? = null,
+    val orderItemsByRetailer: List<OrderItem> = listOf(),
 
     @OneToMany(mappedBy = "wholesaler")
-    val orderItemsByWholesaler: List<OrderItem>? = null,
+    val orderItemsByWholesaler: List<OrderItem> = listOf(),
 
     @Transient
     var applyStatus: ApplyStatus? = null,
 
     @Transient
-    var bizConnectionId : Long? = null,
+    var bizConnectionId: Long? = null,
 
 
     ) : BaseTime() {
