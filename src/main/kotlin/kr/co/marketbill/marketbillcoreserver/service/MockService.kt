@@ -7,20 +7,14 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.FlowerType
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.AuthToken
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.UserCredential
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.BiddingFlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerTypeRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.AuthTokenRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BizConnectionRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
@@ -79,15 +73,18 @@ class MockService {
     @Autowired
     private lateinit var orderSheetRepository: OrderSheetRepository
 
+    @Autowired
+    private lateinit var wholesalerConnectionRepository: WholesalerConnectionRepository
+
     val logger: Logger = LoggerFactory.getLogger(MockService::class.java)
 
     @Profile("local", "dev")
     @PostConstruct
     fun createAllMockToDB() {
         createMockFlowers()
-//        createMockUsers()
-//        createMockCartItems()
-//        createMockOrderSheets()
+        createMockUsers()
+        createMockCartItems()
+        createMockOrderSheets()
     }
 
     @Transactional
@@ -146,10 +143,23 @@ class MockService {
     }
 
     @Transactional
+    fun createWholesalerConns(employerId : Long, employeeIds : List<Long>){
+        val conns = employeeIds.map {
+            WholesalerConnection(
+                employer = entityManager.getReference(User::class.java, employerId),
+                employee = entityManager.getReference(User::class.java, it)
+            )
+        }
+        wholesalerConnectionRepository.saveAll(conns)
+
+    }
+
+    @Transactional
     fun createMockUsers() {
         createMockOnlyUsers(1,1, AccountRole.RETAILER)
         createMockOnlyUsers(2, 2, AccountRole.WHOLESALER_EMPR)
-        createMockOnlyUsers(3, 3, AccountRole.WHOLESALER_EMPE)
+        createMockOnlyUsers(3, 4, AccountRole.WHOLESALER_EMPE)
+        createWholesalerConns(employerId = 2, employeeIds = listOf(3, 4))
         createMockBizConns()
 
         logger.trace("createMockUsers completed")

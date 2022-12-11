@@ -12,6 +12,10 @@ type User {
     appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
     # 받은 거래처 신청
     receivedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
+    # [도매상] 연결된 직원 목록
+    connectedEmployees : [User!],
+    # [도매상] 연결된 사장(업체)
+    connectedEmployer : User,
     # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
     applyStatus : ApplyStatus,
     # 거래처 신청 테이블 고유값
@@ -37,7 +41,16 @@ type BizConnection {
     # 거래처 신청 수취자(=도매상)
     wholesaler : User,
     # 거래처 신청 상태
-    applyStatus : ApplyStatus,
+    applyStatus : ApplyStatus!,
+    createdAt : LocalDate!,
+    deletedAt : LocalDate,
+    updatedAt : LocalDate!,
+}
+
+type WholesalerConnection{
+    id : Int!,
+    employer : User!,
+    employee : User!,
     createdAt : LocalDate!,
     deletedAt : LocalDate,
     updatedAt : LocalDate!,
@@ -58,24 +71,26 @@ type Query {
     # 유저 목록 가져오기
     # - 거래처 목록 가져오기(전체 목록) : User > applyStatus 필드를 추가할 경우(내가 소매상이면 도매상 목록을 가져옴)
     # - 유저 전체 목록 가져오기 : User > applyStatus 필드 없는 경우
-    getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User!]
+    getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User!]!
 }
 
 ## -------------- MUTATION ------------------
 
 type Mutation{
     # 회원가입
-    signUp(input : SignUpInput) : AuthToken
+    signUp(input : SignUpInput) : AuthToken!
     # 로그인
-    signIn(input : SignInInput) : AuthToken
+    signIn(input : SignInInput) : AuthToken!
     # 소매상 -> 도매상 거래처 신청
-    applyBizConnection(wholesalerId : Int!) : BizConnection
+    applyBizConnection(wholesalerId : Int!) : BizConnection!
     # 도매상 -> 소매상 거래처 신청처리(승낙, 거절)
-    updateBizConnection(bizConnId : Int!, status : ApplyStatus): BizConnection
+    updateBizConnection(bizConnId : Int!, status : ApplyStatus): BizConnection!
     # 로그아웃
-    signOut : CommonResponse
-    # 토큰 재발급
-    reissueToken : AuthToken
+    signOut : CommonResponse!
+    # 토큰 재발급(리토큰)
+    reissueToken : AuthToken!
+    # [관리자] 유저 삭제
+    removeUser(userId : Int!) : CommonResponse!
 }
 
 

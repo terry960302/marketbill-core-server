@@ -7,6 +7,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
+import javax.annotation.PostConstruct
 import javax.persistence.*
 
 @Entity
@@ -27,7 +28,7 @@ data class User(
      *     : 빈값
      */
     @Column(name = "belongs_to", nullable = true)
-    val belongsTo : String? = null,
+    val belongsTo: String? = null,
 
     @Column(name = "name")
     val name: String? = null,
@@ -44,48 +45,113 @@ data class User(
     val userCredential: UserCredential? = null,
 
     @OneToOne(
-        mappedBy = "user", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY,
+        mappedBy = "user",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY,
     )
     val authToken: AuthToken? = null,
 
-    @OneToMany(mappedBy = "retailer", fetch = FetchType.LAZY)
-    val appliedConnections: List<BizConnection>? = null,
+    @OneToMany(
+        mappedBy = "retailer",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    val appliedConnections: List<BizConnection> = listOf(),
 
-    @OneToMany(mappedBy = "wholesaler", fetch = FetchType.LAZY)
-    val receivedConnections: List<BizConnection>? = null,
+    @OneToMany(
+        mappedBy = "wholesaler",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    val receivedConnections: List<BizConnection> = listOf(),
 
-    // role = wholesaler 인 경우에만 해당
-    @OneToOne(mappedBy = "employer", fetch = FetchType.LAZY)
-    val employerConnection: WholesalerConnection? = null,
+    // 내가 사장일 경우의 직원과의 관계
+    @OneToMany(
+        mappedBy = "employer",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    val wholesalerConnectionsByEmployer: List<WholesalerConnection> = listOf(),
 
-    // role = wholesaler 인 경우에만 해당
-    @OneToMany(mappedBy = "employee", fetch = FetchType.LAZY)
-    val employeeConnections: List<WholesalerConnection>? = null,
+    // 내가 직원일 경우의 사장과의 관계
+    @OneToMany(
+        mappedBy = "employee",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY,
+    )
+    val wholesalerConnectionsByEmployee: List<WholesalerConnection> = listOf(),
 
-    @OneToMany(mappedBy = "retailer")
-    val retailerCartItems: List<CartItem>? = null,
+    @OneToMany(
+        mappedBy = "retailer",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    val retailerCartItems: List<CartItem> = listOf(),
 
-    @OneToMany(mappedBy = "wholesaler")
-    val wholesalerCartItems: List<CartItem>? = null,
+    @OneToMany(
+        mappedBy = "wholesaler",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY
+    )
+    val wholesalerCartItems: List<CartItem> = listOf(),
 
-    @OneToMany(mappedBy = "retailer")
-    val orderSheetsByRetailer: List<OrderSheet>? = null,
+    @OneToMany(
+        mappedBy = "retailer",
+        fetch = FetchType.LAZY
+    )
+    val orderSheetsByRetailer: List<OrderSheet> = listOf(),
 
-    @OneToMany(mappedBy = "wholesaler")
-    val orderSheetsByWholesaler: List<OrderSheet>? = null,
+    @OneToMany(
+        mappedBy = "wholesaler",
+        fetch = FetchType.LAZY
+    )
+    val orderSheetsByWholesaler: List<OrderSheet> = listOf(),
 
-    @OneToMany(mappedBy = "retailer")
-    val orderItemsByRetailer: List<OrderItem>? = null,
+    @OneToMany(
+        mappedBy = "retailer",
+        fetch = FetchType.LAZY
+    )
+    val orderItemsByRetailer: List<OrderItem> = listOf(),
 
-    @OneToMany(mappedBy = "wholesaler")
-    val orderItemsByWholesaler: List<OrderItem>? = null,
+    @OneToMany(
+        mappedBy = "wholesaler",
+        fetch = FetchType.LAZY
+    )
+    val orderItemsByWholesaler: List<OrderItem> = listOf(),
 
     @Transient
     var applyStatus: ApplyStatus? = null,
 
     @Transient
-    var bizConnectionId : Long? = null,
+    var bizConnectionId: Long? = null,
 
+    @Transient
+    var connectedEmployer: User? = null,
 
-    ) : BaseTime() {
+    @Transient
+    var connectedEmployees: List<User> = listOf(),
+) : BaseTime() {
+
+    fun mapConnectedEmployer() {
+        if (wholesalerConnectionsByEmployee.isNotEmpty()) {
+            val conns = wholesalerConnectionsByEmployee.mapNotNull { it.employer }
+            if (conns.isNotEmpty()) {
+                connectedEmployer = wholesalerConnectionsByEmployee.mapNotNull { it.employer }[0]
+            }
+        }
+    }
+
+    fun mapConnectedEmployees() {
+        if (wholesalerConnectionsByEmployer.isNotEmpty()) {
+            connectedEmployees = wholesalerConnectionsByEmployer.mapNotNull { it.employee }
+        }
+    }
+
 }

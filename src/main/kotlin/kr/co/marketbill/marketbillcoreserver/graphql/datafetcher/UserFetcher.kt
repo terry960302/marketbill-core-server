@@ -3,10 +3,11 @@ package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
+import com.netflix.graphql.dgs.DgsMutation
+import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.dgs.context.DgsContext
 import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData
-import io.netty.handler.codec.http.cookie.Cookie
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
@@ -15,6 +16,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.AppliedConnectionLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.ReceivedConnectionLoader
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.TokenService
 import kr.co.marketbill.marketbillcoreserver.service.UserService
@@ -23,7 +25,6 @@ import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.context.request.ServletWebRequest
 import java.util.*
@@ -43,7 +44,7 @@ class UserFetcher {
     private lateinit var jwtProvider: JwtProvider
 
     @PreAuthorize("isAuthenticated")
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.Me)
+    @DgsQuery(field = DgsConstants.QUERY.Me)
     fun me(
         @RequestHeader(
             value = JwtProvider.AUTHORIZATION_HEADER_NAME,
@@ -55,7 +56,7 @@ class UserFetcher {
         return userService.getUser(userId)
     }
 
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetUsers)
+    @DgsQuery(field = DgsConstants.QUERY.GetUsers)
     fun getUsers(
         dfe: DgsDataFetchingEnvironment,
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: Optional<String>,
@@ -87,27 +88,36 @@ class UserFetcher {
         }
     }
 
+    @DgsMutation(field = DgsConstants.MUTATION.RemoveUser)
+    fun removeUser(@InputArgument userId: Long): CommonResponse {
+        try {
+            userService.deleteUser(userId)
+            return CommonResponse(success = true)
+        } catch (e: Exception) {
+            throw CustomException(message = e.message!!)
+        }
+    }
 
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignUp)
+
+    @DgsMutation(field = DgsConstants.MUTATION.SignUp)
     fun signUp(@InputArgument input: SignUpInput): AuthToken {
         val newToken = userService.signUp(input)
         return AuthToken(accessToken = newToken.accessToken, refreshToken = newToken.refreshToken)
     }
 
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignIn)
+    @DgsMutation(field = DgsConstants.MUTATION.SignIn)
     fun signIn(@InputArgument input: SignInInput): AuthToken {
         val newToken = userService.signIn(input)
         return AuthToken(accessToken = newToken.accessToken, refreshToken = newToken.refreshToken)
     }
 
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.SignOut)
+    @DgsMutation(field = DgsConstants.MUTATION.SignOut)
     fun signOut(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         dfe: DgsDataFetchingEnvironment
     ): CommonResponse {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
-//        val response = getHttpServletResponseFromDfe(dfe)
         userService.signOut(userId)
         return CommonResponse(
             success = true
@@ -115,7 +125,7 @@ class UserFetcher {
     }
 
 
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ReissueToken)
+    @DgsMutation(field = DgsConstants.MUTATION.ReissueToken)
     fun reissueToken(
         @RequestHeader(
             value = JwtProvider.AUTHORIZATION_HEADER_NAME,
@@ -131,7 +141,7 @@ class UserFetcher {
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.ApplyBizConnection)
+    @DgsMutation(field = DgsConstants.MUTATION.ApplyBizConnection)
     fun applyBizConnection(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument wholesalerId: Long
@@ -142,7 +152,7 @@ class UserFetcher {
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateBizConnection)
+    @DgsMutation(field = DgsConstants.MUTATION.UpdateBizConnection)
     fun updateBizConnection(
         @InputArgument bizConnId: Long,
         @InputArgument status: kr.co.marketbill.marketbillcoreserver.types.ApplyStatus
@@ -180,6 +190,20 @@ class UserFetcher {
         context.receivedConnectionsInput.filter = filter
 
         return dataLoader.load(user.id)
+    }
+
+    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.ConnectedEmployer)
+    fun connectedEmployer(dfe: DgsDataFetchingEnvironment): Optional<User> {
+        val user = dfe.getSource<User>()
+        user.mapConnectedEmployer()
+        return Optional.ofNullable(user.connectedEmployer)
+    }
+
+    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.ConnectedEmployees)
+    fun connectedEmployees(dfe: DgsDataFetchingEnvironment): List<User> {
+        val user = dfe.getSource<User>()
+        user.mapConnectedEmployees()
+        return user.connectedEmployees
     }
 
     @Deprecated(message = "This function for cookie jwt method.")

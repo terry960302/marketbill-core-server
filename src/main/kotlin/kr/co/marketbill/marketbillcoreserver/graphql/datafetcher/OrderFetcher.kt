@@ -157,7 +157,7 @@ class OrderFetcher {
     fun getDailyOrderSheetAggregate(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument date: String?,
-    ): OrderSheetsAggregate {
+    ): Optional<OrderSheetsAggregate> {
         val token = jwtProvider.filterOnlyToken(authorization)
         var userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
