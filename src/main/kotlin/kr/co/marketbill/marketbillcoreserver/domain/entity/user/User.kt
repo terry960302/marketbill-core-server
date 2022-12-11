@@ -68,7 +68,7 @@ data class User(
     )
     val receivedConnections: List<BizConnection> = listOf(),
 
-    // 내가 사장일 경우의 직원과의 관계(직원은 여러명이 될 수 있기에 배열)
+    // 내가 사장일 경우의 직원과의 관계
     @OneToMany(
         mappedBy = "employer",
         cascade = [CascadeType.ALL],
@@ -77,7 +77,7 @@ data class User(
     )
     val wholesalerConnectionsByEmployer: List<WholesalerConnection> = listOf(),
 
-    // 내가 직원일 경우의 사장과의 관계(사장은 한명이므로 단일 객체)
+    // 내가 직원일 경우의 사장과의 관계
     @OneToMany(
         mappedBy = "employee",
         cascade = [CascadeType.ALL],
