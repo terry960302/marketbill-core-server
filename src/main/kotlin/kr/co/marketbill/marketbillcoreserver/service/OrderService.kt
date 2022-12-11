@@ -164,15 +164,19 @@ class OrderService {
         )
     }
 
-    fun getDailyOrderSheetsAggregate(wholesalerId: Long, dateStr: String?): OrderSheetsAggregate {
+    fun getDailyOrderSheetsAggregate(wholesalerId: Long, dateStr: String?): Optional<OrderSheetsAggregate> {
         var curDate = Date()
         if (dateStr != null) {
             val formatter = SimpleDateFormat("yyyy-MM-dd")
             curDate = formatter.parse(dateStr)
         }
+        val aggregate = orderSheetRepository.getDailyOrderSheetsAggregate(wholesalerId, curDate)
+        return if (aggregate.getDate() == null) {
+            Optional.empty()
+        } else {
+            Optional.of(aggregate)
+        }
 
-        println("@@@@ $curDate")
-        return orderSheetRepository.getDailyOrderSheetsAggregate(wholesalerId, curDate)
     }
 
     @Transactional

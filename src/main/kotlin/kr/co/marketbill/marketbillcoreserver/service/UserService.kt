@@ -79,6 +79,11 @@ class UserService {
         return userRepository.findAll(UserSpecs.hasRoles(roles), pageable)
     }
 
+    fun deleteUser(userId : Long) : User{
+        userRepository.deleteById(userId)
+        return entityManager.getReference(User::class.java, userId)
+    }
+
     fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
         if (userId == null || role == null) {
             throw CustomException(NO_TOKEN_WITH_APPLY_STATUS_ERR)
