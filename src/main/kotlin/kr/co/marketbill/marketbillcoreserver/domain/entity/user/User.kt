@@ -133,20 +133,25 @@ data class User(
     var bizConnectionId: Long? = null,
 
     @Transient
-    var connectedEmployer : User? = null,
+    var connectedEmployer: User? = null,
 
     @Transient
-    var connectedEmployees : List<User> = listOf(),
+    var connectedEmployees: List<User> = listOf(),
 ) : BaseTime() {
-    fun mapWholesalerConnections(){
-        if(wholesalerConnectionsByEmployer.isNotEmpty()){
-            connectedEmployees = wholesalerConnectionsByEmployer.mapNotNull { it.employee }
-        }
-        if(wholesalerConnectionsByEmployee.isNotEmpty()){
-            val conns = wholesalerConnectionsByEmployee.mapNotNull { it.employee }
-            if(conns.isNotEmpty()){
-                connectedEmployer = wholesalerConnectionsByEmployee.mapNotNull { it.employee }[0]
+
+    fun mapConnectedEmployer() {
+        if (wholesalerConnectionsByEmployee.isNotEmpty()) {
+            val conns = wholesalerConnectionsByEmployee.mapNotNull { it.employer }
+            if (conns.isNotEmpty()) {
+                connectedEmployer = wholesalerConnectionsByEmployee.mapNotNull { it.employer }[0]
             }
         }
     }
+
+    fun mapConnectedEmployees() {
+        if (wholesalerConnectionsByEmployer.isNotEmpty()) {
+            connectedEmployees = wholesalerConnectionsByEmployer.mapNotNull { it.employee }
+        }
+    }
+
 }

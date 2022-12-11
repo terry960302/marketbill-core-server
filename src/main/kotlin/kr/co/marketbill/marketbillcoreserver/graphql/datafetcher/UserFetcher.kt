@@ -192,6 +192,20 @@ class UserFetcher {
         return dataLoader.load(user.id)
     }
 
+    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.ConnectedEmployer)
+    fun connectedEmployer(dfe: DgsDataFetchingEnvironment): Optional<User> {
+        val user = dfe.getSource<User>()
+        user.mapConnectedEmployer()
+        return Optional.ofNullable(user.connectedEmployer)
+    }
+
+    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.ConnectedEmployees)
+    fun connectedEmployees(dfe: DgsDataFetchingEnvironment): List<User> {
+        val user = dfe.getSource<User>()
+        user.mapConnectedEmployees()
+        return user.connectedEmployees
+    }
+
     @Deprecated(message = "This function for cookie jwt method.")
     fun getHttpServletResponseFromDfe(dfe: DgsDataFetchingEnvironment): HttpServletResponse {
         val requestData: DgsWebMvcRequestData = dfe.getDgsContext().requestData as DgsWebMvcRequestData
