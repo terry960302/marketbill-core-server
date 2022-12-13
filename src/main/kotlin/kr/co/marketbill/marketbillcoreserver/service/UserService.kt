@@ -9,8 +9,8 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.UserSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.WholesalerConnSpecs
-import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
-import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
+import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
+import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
 import org.slf4j.Logger
@@ -23,7 +23,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
 import javax.persistence.EntityManager
-import javax.servlet.http.HttpServletResponse
 
 @Service
 class UserService {
@@ -71,22 +70,31 @@ class UserService {
     val logger: Logger = LoggerFactory.getLogger(UserService::class.java)
 
 
-    fun getUser(userId: Long): Optional<User> {
-        return userRepository.findById(userId)
+    fun getUser(userId: Long): User {
+        val user: Optional<User> = userRepository.findById(userId)
+        if (user.isEmpty) {
+            throw NotFoundException(message = "There's no user whose id is $userId")
+        } else {
+            return user.get()
+        }
     }
 
     fun getAllUsers(roles: List<AccountRole>?, pageable: Pageable): Page<User> {
         return userRepository.findAll(UserSpecs.hasRoles(roles), pageable)
     }
 
-    fun deleteUser(userId : Long) : User{
+    fun deleteUser(userId: Long): User {
+        val user : Optional<User> = userRepository.findById(userId)
+        if(user.isEmpty){
+            throw NotFoundException(message = "There's no user data want to delete")
+        }
         userRepository.deleteById(userId)
         return entityManager.getReference(User::class.java, userId)
     }
 
     fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
         if (userId == null || role == null) {
-            throw CustomException(NO_TOKEN_WITH_APPLY_STATUS_ERR)
+            throw InternalErrorException(NO_TOKEN_WITH_APPLY_STATUS_ERR)
         }
         if (role == AccountRole.RETAILER) {
             val roles = listOf(AccountRole.WHOLESALER_EMPR) // 사장님과만 거래처 관계 생성 가능
@@ -161,7 +169,7 @@ class UserService {
                     UserSpecs.hasRoles(listOf(AccountRole.WHOLESALER_EMPR)).and(UserSpecs.isName(input.name))
                 )
                 if (wholesaleEmployers.isEmpty()) {
-                    throw CustomException(EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR)
+                    throw InternalErrorException(EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR)
                 } else {
                     val employer = wholesaleEmployers[0]
                     val employee = createUser(input)
@@ -174,7 +182,8 @@ class UserService {
                 createUser(input)
             }
 
-            val authToken = tokenService.generateAuthTokenPair(userId = user.id!!, role = AccountRole.valueOf(input.role.name))
+            val authToken =
+                tokenService.generateAuthTokenPair(userId = user.id!!, role = AccountRole.valueOf(input.role.name))
             tokenService.upsertAuthToken(user.id!!, authToken)
 
             return authToken
@@ -188,10 +197,10 @@ class UserService {
         val userCred = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo)
 
         val hasUserCred = userCred.isPresent
-        if (!hasUserCred) throw CustomException(NO_USER_ERR)
+        if (!hasUserCred) throw NotFoundException(NO_USER_ERR)
 
         val isValidPassword = passwordEncoder.matches(input.password, userCred.get().password)
-        if (!isValidPassword) throw CustomException(NO_USER_ERR)
+        if (!isValidPassword) throw NotFoundException(message=NO_USER_ERR)
 
         val role = userCred.get().role
         val userId = userCred.get().user!!.id!!
@@ -206,7 +215,7 @@ class UserService {
         val bizConnections: List<BizConnection> = bizConnectionRepository.findAll(
             BizConnSpecs.isRetailerId(retailerId).and(BizConnSpecs.isWholesalerId(wholesalerId))
         )
-        if (bizConnections.isNotEmpty()) throw CustomException(HAS_BIZ_CONNECTION_ERR)
+        if (bizConnections.isNotEmpty()) throw InternalErrorException(HAS_BIZ_CONNECTION_ERR)
 
         val bizConnection = BizConnection(
             retailer = entityManager.getReference(User::class.java, retailerId),
@@ -216,7 +225,7 @@ class UserService {
 
         val retailer = userRepository.findById(retailerId)
         val wholesaler = userRepository.findById(wholesalerId)
-        if (wholesaler.isEmpty) throw CustomException("There's no user(wholesaler) that you hope to connect with.")
+        if (wholesaler.isEmpty) throw NotFoundException("There's no user(wholesaler) that you hope to connect with.")
         val retailerName = retailer.get().name!!
         val targetPhoneNo = wholesaler.get().userCredential!!.phoneNo
         val url = ""
@@ -229,7 +238,7 @@ class UserService {
 
     fun updateBizConnection(bizConnId: Long, status: ApplyStatus): BizConnection {
         val bizConnection: Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
-        if (bizConnection.isEmpty) throw CustomException(NO_BIZ_CONNECTION_TO_UPDATE_ERR)
+        if (bizConnection.isEmpty) throw NotFoundException(NO_BIZ_CONNECTION_TO_UPDATE_ERR)
 
         bizConnection.get().applyStatus = status
         val updatedBizConn = bizConnectionRepository.save(bizConnection.get())
@@ -268,13 +277,13 @@ class UserService {
     @Transactional
     fun createUser(input: SignUpInput): User {
         val hasUserCred: Boolean = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo).isPresent
-        if (hasUserCred) throw CustomException(SAME_PHONE_NO_ERR)
+        if (hasUserCred) throw InternalErrorException(SAME_PHONE_NO_ERR)
 
         if (input.role == kr.co.marketbill.marketbillcoreserver.types.AccountRole.WHOLESALER_EMPR) {
             val hasSameEmployer = userRepository.findAll(
                 UserSpecs.hasRoles(listOf(AccountRole.WHOLESALER_EMPR)).and(UserSpecs.isName(input.name))
             ).size > 0
-            if (hasSameEmployer) throw CustomException(SAME_WHOLESALER_NAME_ERR)
+            if (hasSameEmployer) throw InternalErrorException(SAME_WHOLESALER_NAME_ERR)
         }
 
         val belongsTo = when (AccountRole.valueOf(input.role.toString())) {
@@ -308,16 +317,14 @@ class UserService {
         return
     }
 
-
-
     fun getConnectedEmployerId(employeeId: Long): Long {
         try {
             val connections = wholesalerConnectionRepository.findAll(WholesalerConnSpecs.byEmployeeId(employeeId))
-            if (connections.isEmpty()) throw Error()
+            if (connections.isEmpty()) throw NotFoundException(message="There's no connection data between employer and employees")
             val employer = connections[0].employer!!
             return employer.id!!
         } catch (e: Exception) {
-            throw CustomException("There's no employer in same wholesale company.")
+            throw NotFoundException("There's no employer in same wholesale company.")
         }
     }
 }

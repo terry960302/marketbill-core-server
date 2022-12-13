@@ -26,11 +26,11 @@ data class OrderSheet(
     @JoinColumn(name = "wholesaler_id")
     val wholesaler: User? = null,
 
-    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val orderItems: List<OrderItem> = arrayListOf(),
+    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    val orderItems: List<OrderItem> = listOf(),
 
-    @OneToMany(mappedBy = "orderSheet", fetch = FetchType.EAGER)
-    val orderSheetReceipts: List<OrderSheetReceipt>? = null,
+    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    val orderSheetReceipts: List<OrderSheetReceipt> = listOf(),
 
     @Transient
     var totalFlowerQuantity: Int = 0,
@@ -44,8 +44,8 @@ data class OrderSheet(
     @Transient
     var recentReceipt: OrderSheetReceipt? = null,
 ) : BaseTime() {
-    @PostLoad
-    fun postLoad() {
+
+    fun mapOrderItemRelatedFields() {
         totalFlowerQuantity = if (orderItems.isNotEmpty()) {
             val quantities: List<Int> = orderItems.map { if (it.quantity == null) 0 else it.quantity!! }
             quantities.reduce { acc, i -> acc + i }
@@ -59,19 +59,23 @@ data class OrderSheet(
         } else {
             0
         }
+    }
 
-        hasReceipt = if (orderSheetReceipts == null) {
-            false
-        } else {
-            orderSheetReceipts!!.isNotEmpty()
-        }
+    fun mapReceiptRelatedFields() {
+        hasReceipt = orderSheetReceipts.isEmpty()
 
         val orderSheetReceiptsSortByDesc: List<OrderSheetReceipt>? =
-            orderSheetReceipts?.sortedByDescending { it.createdAt }
+            orderSheetReceipts.sortedByDescending { it.createdAt }
         recentReceipt = if (orderSheetReceiptsSortByDesc == null || orderSheetReceiptsSortByDesc.isEmpty()) {
             null
         } else {
             orderSheetReceiptsSortByDesc[0]
         }
     }
+
+//    @PostLoad
+//    fun postLoad() {
+//        mapOrderItemRelatedFields()
+//        mapReceiptRelatedFields()
+//    }
 }

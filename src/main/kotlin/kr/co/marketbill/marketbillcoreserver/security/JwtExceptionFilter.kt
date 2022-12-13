@@ -2,8 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.security
 
 import com.fasterxml.jackson.databind.ObjectMapper
 import io.jsonwebtoken.JwtException
-import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
-import org.springframework.beans.factory.annotation.Autowired
+import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import org.springframework.http.HttpStatus
 import org.springframework.stereotype.Component
 import org.springframework.web.filter.OncePerRequestFilter
@@ -42,7 +41,7 @@ class JwtExceptionFilter : OncePerRequestFilter() {
             filterChain.doFilter(request, response) // go to 'JwtAuthenticationFilter'
         } catch (ex: JwtException) {
             setErrorResponse(HttpStatus.UNAUTHORIZED, response, ex)
-        } catch (ex : CustomException){
+        } catch (ex : InternalErrorException){
             setErrorResponse(HttpStatus.INTERNAL_SERVER_ERROR, response, ex)
         }
     }

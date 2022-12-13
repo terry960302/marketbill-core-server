@@ -3,6 +3,8 @@ package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
+import com.netflix.graphql.dgs.DgsMutation
+import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
@@ -48,19 +50,18 @@ class OrderFetcher {
 
     val logger: Logger = LoggerFactory.getLogger(OrderFetcher::class.java)
 
-    // query
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetCartWholesaler)
+    @DgsQuery(field = DgsConstants.QUERY.GetCartWholesaler)
     fun getCartWholesaler(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String
-    ): User? {
+    ): Optional<User> {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getConnectedWholesalerOnCartItems(userId)
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllCartItems)
+    @DgsQuery(field = DgsConstants.QUERY.GetAllCartItems)
     fun getAllCartItems(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument pagination: PaginationInput?
@@ -72,13 +73,13 @@ class OrderFetcher {
     }
 
     // 공용
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheet)
-    fun getOrderSheet(@InputArgument orderSheetId: Long): Optional<OrderSheet> {
+    @DgsQuery(field = DgsConstants.QUERY.GetOrderSheet)
+    fun getOrderSheet(@InputArgument orderSheetId: Long): OrderSheet {
         return orderService.getOrderSheet(orderSheetId)
     }
 
     // 공용
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheets)
+    @DgsQuery(field = DgsConstants.QUERY.GetOrderSheets)
     fun getOrderSheets(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: Optional<String>,
         @InputArgument filter: DateFilterInput?,
@@ -103,7 +104,7 @@ class OrderFetcher {
     }
 
     // 공용
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderItems)
+    @DgsQuery(field = DgsConstants.QUERY.GetOrderItems)
     fun getOrderItems(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: Optional<String>,
         @InputArgument filter: DateFilterInput?,
@@ -135,7 +136,7 @@ class OrderFetcher {
 
     // 도매상
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllDailyOrderSheetAggregates)
+    @DgsQuery(field = DgsConstants.QUERY.GetAllDailyOrderSheetAggregates)
     fun getAllDailyOrderSheetAggregates(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument pagination: PaginationInput?
@@ -143,7 +144,7 @@ class OrderFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         var userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
-        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination, fieldToSort = "date")
 
         if (role == AccountRole.WHOLESALER_EMPE) {
             userId = userService.getConnectedEmployerId(userId)
@@ -153,7 +154,7 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderSheetAggregate)
+    @DgsQuery(field = DgsConstants.QUERY.GetDailyOrderSheetAggregate)
     fun getDailyOrderSheetAggregate(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument date: String?,
@@ -165,14 +166,13 @@ class OrderFetcher {
         if (role == AccountRole.WHOLESALER_EMPE) {
             userId = userService.getConnectedEmployerId(userId)
         }
-
         return orderService.getDailyOrderSheetsAggregate(userId, date)
     }
 
 
     // mutation
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.AddToCart)
+    @DgsMutation(field = DgsConstants.MUTATION.AddToCart)
     fun addToCart(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument input: AddToCartInput
@@ -188,7 +188,7 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateCartItem)
+    @DgsMutation(field = DgsConstants.MUTATION.UpdateCartItem)
     fun updateCartItem(@InputArgument input: UpdateCartItemInput): CartItem {
         return cartService.updateCartItem(
             input.id.toLong(),
@@ -198,7 +198,7 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveCartItem)
+    @DgsMutation(field = DgsConstants.MUTATION.RemoveCartItem)
     fun removeCartItem(@InputArgument cartItemId: Long): CommonResponse {
         val removedCartItemId = cartService.removeCartItem(cartItemId)
         logger.info("[removeCartItem] removed $removedCartItemId")
@@ -206,7 +206,7 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
+    @DgsMutation(field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
     fun upsertWholesalerOnCartItems(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument wholesalerId: Long
@@ -217,17 +217,17 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.OrderCartItems)
+    @DgsMutation( field = DgsConstants.MUTATION.OrderCartItems)
     fun orderCartItems(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
-        ): OrderSheet {
+    ): OrderSheet {
         val token = jwtProvider.filterOnlyToken(authorization)
         val retailerId = jwtProvider.parseUserId(token)
         return orderService.orderCartItems(retailerId)
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.RemoveOrderSheet)
+    @DgsMutation(field = DgsConstants.MUTATION.RemoveOrderSheet)
     fun removeOrderSheet(@InputArgument orderSheetId: Long): CommonResponse {
         val removedOrderSheetId = orderService.removeOrderSheet(orderSheetId).toInt()
         logger.info("[removeOrderSheet] removed $removedOrderSheetId")
@@ -236,37 +236,21 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateOrderItemsPrice)
+    @DgsMutation(field = DgsConstants.MUTATION.UpdateOrderItemsPrice)
     fun updateOrderItemsPrice(@InputArgument items: List<OrderItemPriceInput>): List<OrderItem> {
         return orderService.updateOrderItemsPrice(items)
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR')")
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.IssueOrderSheetReceipt)
+    @DgsMutation(field = DgsConstants.MUTATION.IssueOrderSheetReceipt)
     fun issueOrderSheetReceipt(@InputArgument orderSheetId: Long): kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt {
         return orderService.issueOrderSheetReceipt(orderSheetId)
     }
 
 
-    @DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.BatchCartToOrder)
+    @DgsMutation(field = DgsConstants.MUTATION.BatchCartToOrder)
     fun batchCartToOrder(): CommonResponse {
         cartService.batchCartToOrder()
         return CommonResponse(success = true)
-    }
-
-
-    // field
-    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
-    fun orderItems(
-        dfe: DgsDataFetchingEnvironment,
-        @InputArgument pagination: PaginationInput?
-    ): CompletableFuture<List<OrderItem>> {
-        val orderSheet = dfe.getSource<OrderSheet>()
-        val dataLoader = dfe.getDataLoader<Long, List<OrderItem>>(OrderItemLoader::class.java)
-
-        val context = DgsContext.Companion.getCustomContext<CustomContext>(dfe)
-        context.orderItemsInput.pagination = pagination
-
-        return dataLoader.load(orderSheet.id)
     }
 }

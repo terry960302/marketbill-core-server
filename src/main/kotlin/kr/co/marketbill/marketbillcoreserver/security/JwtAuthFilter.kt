@@ -4,7 +4,7 @@ import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.MalformedJwtException
 import io.jsonwebtoken.UnsupportedJwtException
-import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
+import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -58,8 +58,8 @@ class JwtAuthFilter : OncePerRequestFilter() {
             throw JwtException(INVALID_TOKEN_ERR)
         } catch (ex: IllegalArgumentException) {
             throw JwtException(INVALID_TOKEN_ERR)
-        } catch (e: CustomException) {
-            throw CustomException(e.message)
+        } catch (e: InternalErrorException) {
+            throw InternalErrorException(e.message)
         }
     }
 
@@ -84,7 +84,7 @@ class JwtAuthFilter : OncePerRequestFilter() {
                     SecurityContextHolder.getContext().authentication = authentication
                 } else {
                     jwtProvider.resetAllTokensInHttpOnlyCookie(response)
-                    throw CustomException("All tokens are expired.")
+                    throw InternalErrorException("All tokens are expired.")
                 }
             }
         }
