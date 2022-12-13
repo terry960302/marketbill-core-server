@@ -16,7 +16,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.AppliedConnectionLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.ReceivedConnectionLoader
-import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
+import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.TokenService
 import kr.co.marketbill.marketbillcoreserver.service.UserService
@@ -50,7 +50,7 @@ class UserFetcher {
             value = JwtProvider.AUTHORIZATION_HEADER_NAME,
             required = true
         ) authorization: String
-    ): Optional<User> {
+    ): User {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
         return userService.getUser(userId)
@@ -94,7 +94,7 @@ class UserFetcher {
             userService.deleteUser(userId)
             return CommonResponse(success = true)
         } catch (e: Exception) {
-            throw CustomException(message = e.message!!)
+            throw InternalErrorException(message = e.message!!)
         }
     }
 
@@ -160,51 +160,7 @@ class UserFetcher {
         return userService.updateBizConnection(bizConnId, ApplyStatus.valueOf(status.toString()))
     }
 
-    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.AppliedConnections)
-    fun appliedConnections(
-        dfe: DgsDataFetchingEnvironment,
-        @InputArgument pagination: PaginationInput?,
-        @InputArgument filter: BizConnectionFilterInput?
-    ): CompletableFuture<List<BizConnection>> {
-        val user = dfe.getSource<User>()
-        val context = DgsContext.getCustomContext<CustomContext>(dfe)
-        val dataLoader = dfe.getDataLoader<Long, List<BizConnection>>(AppliedConnectionLoader::class.java)
 
-        context.appliedConnectionsInput.pagination = pagination
-        context.appliedConnectionsInput.filter = filter
-
-        return dataLoader.load(user.id)
-    }
-
-    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.ReceivedConnections)
-    fun receivedConnections(
-        dfe: DgsDataFetchingEnvironment,
-        @InputArgument pagination: PaginationInput?,
-        @InputArgument filter: BizConnectionFilterInput?
-    ): CompletableFuture<List<BizConnection>> {
-        val user = dfe.getSource<User>()
-        val context = DgsContext.getCustomContext<CustomContext>(dfe)
-        val dataLoader = dfe.getDataLoader<Long, List<BizConnection>>(ReceivedConnectionLoader::class.java)
-
-        context.receivedConnectionsInput.pagination = pagination
-        context.receivedConnectionsInput.filter = filter
-
-        return dataLoader.load(user.id)
-    }
-
-    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.ConnectedEmployer)
-    fun connectedEmployer(dfe: DgsDataFetchingEnvironment): Optional<User> {
-        val user = dfe.getSource<User>()
-        user.mapConnectedEmployer()
-        return Optional.ofNullable(user.connectedEmployer)
-    }
-
-    @DgsData(parentType = DgsConstants.USER.TYPE_NAME, field = DgsConstants.USER.ConnectedEmployees)
-    fun connectedEmployees(dfe: DgsDataFetchingEnvironment): List<User> {
-        val user = dfe.getSource<User>()
-        user.mapConnectedEmployees()
-        return user.connectedEmployees
-    }
 
     @Deprecated(message = "This function for cookie jwt method.")
     fun getHttpServletResponseFromDfe(dfe: DgsDataFetchingEnvironment): HttpServletResponse {

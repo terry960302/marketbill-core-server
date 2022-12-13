@@ -13,8 +13,8 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartReposit
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
-import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
-import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
+import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
+import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import org.slf4j.Logger
@@ -49,13 +49,13 @@ class CartService {
 
     val logger: Logger = LoggerFactory.getLogger(CartService::class.java)
 
-    fun getConnectedWholesalerOnCartItems(userId: Long): User? {
+    fun getConnectedWholesalerOnCartItems(userId: Long): Optional<User> {
         val cartItems = getAllCartItems(userId, PageRequest.of(DEFAULT_PAGE, 1))
         val connectedWholesalers = cartItems.map { it.wholesaler }.filterNotNull()
         return if (connectedWholesalers.isEmpty()) {
-            null
+            Optional.empty()
         } else {
-            connectedWholesalers[0]
+            Optional.of(connectedWholesalers[0])
         }
     }
 
@@ -68,7 +68,7 @@ class CartService {
         val hasCartItems =
             cartRepository.findAll(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId))).size > 0
         if (hasCartItems) {
-            throw CustomException("There's already a cart item which has same retailerId, flowerId.")
+            throw InternalErrorException("There's already a cart item which has same retailerId, flowerId.")
         }
         val cartItem = CartItem(
             retailer = entityManager.getReference(User::class.java, userId),
@@ -81,7 +81,7 @@ class CartService {
 
     fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade): CartItem {
         val cartItem = cartRepository.findById(id)
-        if (cartItem.isEmpty) throw CustomException("There's no cart_item whose ID is $id")
+        if (cartItem.isEmpty) throw NotFoundException("There's no cart_item whose ID is $id")
 
         val item = cartItem.get()
         item.quantity = quantity
@@ -92,6 +92,10 @@ class CartService {
 
     fun removeCartItem(cartItemId: Long): Long {
         try {
+            val cartItem: Optional<CartItem> = cartRepository.findById(cartItemId)
+            if (cartItem.isEmpty) {
+                throw NotFoundException(message = "There's no cart item data want to delete.")
+            }
             cartRepository.deleteById(cartItemId)
             return cartItemId
         } catch (e: Exception) {

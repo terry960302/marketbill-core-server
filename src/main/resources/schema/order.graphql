@@ -24,7 +24,7 @@ type OrderSheet{
     totalFlowerTypeCount : Int,
     # 영수증 발행 여부
     hasReceipt : Boolean,
-    orderSheetReceipts : [OrderSheetReceipt!],
+    orderSheetReceipts (pagination: PaginationInput): [OrderSheetReceipt!],
     # 최신 영수증(가장 근래 발행한 영수증)
     recentReceipt : OrderSheetReceipt,
     createdAt : LocalDate!,
@@ -80,7 +80,7 @@ extend type Query {
     # [공통] 주문서 목록 가져오기
     getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!]!,
     # [공통] 주문서 단건(상세) 가져오기
-    getOrderSheet(orderSheetId : Int!) : OrderSheet,
+    getOrderSheet(orderSheetId : Int!) : OrderSheet!,
     # [공통] 주문 항목 가져오기
     getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!]!,
     # [도매상] 일자별 주문 집계 목록

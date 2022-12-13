@@ -2,6 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
+import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
@@ -22,7 +23,7 @@ class FlowerFetcher {
     @Autowired
     private lateinit var flowerService: FlowerService
 
-    @DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetFlowers)
+    @DgsQuery(field = DgsConstants.QUERY.GetFlowers)
     fun getFlowers(
         @InputArgument filter: FlowerFilterInput?,
         @InputArgument pagination: PaginationInput?

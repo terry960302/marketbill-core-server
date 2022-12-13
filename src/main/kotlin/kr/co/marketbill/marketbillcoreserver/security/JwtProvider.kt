@@ -1,14 +1,11 @@
 package kr.co.marketbill.marketbillcoreserver.security
 
-import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
-import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData
 import io.jsonwebtoken.Claims
-import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
-import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
+import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.service.CustomUserDetailsService
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -19,9 +16,7 @@ import org.springframework.http.ResponseCookie
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken
 import org.springframework.security.core.Authentication
 import org.springframework.stereotype.Component
-import org.springframework.web.context.request.ServletWebRequest
 import java.util.*
-import javax.servlet.http.Cookie
 import javax.servlet.http.HttpServletRequest
 import javax.servlet.http.HttpServletResponse
 
@@ -115,7 +110,7 @@ class JwtProvider(
     fun getTokenFromCookie(request: HttpServletRequest, cookieName: String): String {
         val cookies = request.cookies
         val tokens = cookies.filter { it.name == cookieName }
-        if (cookies.isEmpty() || tokens.isEmpty()) throw CustomException(JwtAuthFilter.NO_TOKEN_ERR)
+        if (cookies.isEmpty() || tokens.isEmpty()) throw InternalErrorException(JwtAuthFilter.NO_TOKEN_ERR)
         return tokens[0].value
     }
 

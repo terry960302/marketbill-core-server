@@ -5,11 +5,9 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.AuthToken
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.AuthTokenRepository
-import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
-import java.util.*
 import javax.persistence.EntityManager
 
 @Service
@@ -23,15 +21,6 @@ class TokenService {
 
     @Autowired
     private lateinit var authTokenRepository: AuthTokenRepository
-
-    fun getRefreshToken(userId: Long): Optional<String> {
-        val authToken = authTokenRepository.findByUserId(userId)
-        return if (authToken.isPresent) {
-            Optional.of(authToken.get().refreshToken)
-        } else {
-            Optional.empty<String>()
-        }
-    }
 
     fun generateAuthTokenPair(
         userId: Long,
