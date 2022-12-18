@@ -42,19 +42,5 @@ class CustomDataFetchingExceptionHandler : DataFetcherExceptionHandler {
                 super.handleException(handlerParameters)
             }
         }
-//        return if (handlerParameters.exception is CustomException) {
-//            val debugInfo: MutableMap<String, Any> = HashMap()
-//            debugInfo["cause"] = handlerParameters.exception.cause.toString()
-//            val graphqlError: GraphQLError = TypedGraphQLError.newInternalErrorBuilder()
-//                .message(handlerParameters.exception.message)
-//                .debugInfo(debugInfo)
-//                .path(handlerParameters.path).build()
-//            val result: DataFetcherExceptionHandlerResult = DataFetcherExceptionHandlerResult.newResult()
-//                .error(graphqlError)
-//                .build()
-//            CompletableFuture.completedFuture<DataFetcherExceptionHandlerResult>(result)
-//        } else {
-//            super.handleException(handlerParameters)
-//        }
     }
 }

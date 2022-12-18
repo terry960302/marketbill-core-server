@@ -238,7 +238,8 @@ class MockService {
                 wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
                 flower = entityManager.getReference(Flower::class.java, it.toLong()),
                 quantity = (1..100).random(),
-                grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER)
+                grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER),
+                price = (100..10000).random()
             )
         }
         orderItemRepository.saveAll(orderItems)

@@ -19,11 +19,7 @@ import javax.servlet.http.HttpServletResponse
 @Component
 class JwtAuthFilter : OncePerRequestFilter() {
 
-    private val log: Logger = LoggerFactory.getLogger(javaClass)
-
-//    @Autowired
-//    @Qualifier("handlerExceptionResolver")
-//    private lateinit var resolver: HandlerExceptionResolver
+    private val log: Logger = LoggerFactory.getLogger(JwtAuthFilter::class.java)
 
     @Autowired
     private lateinit var jwtProvider: JwtProvider
