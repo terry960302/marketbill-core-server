@@ -7,7 +7,7 @@ type User {
     # 사업자번호(nullable)
     businessNo : String,
     deletedAt : LocalDate,
-    userCredential : UserCredential,
+    userCredential : UserCredential!,
     # 보낸 거래처 신청
     appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
     # 받은 거래처 신청
@@ -42,15 +42,6 @@ type BizConnection {
     wholesaler : User,
     # 거래처 신청 상태
     applyStatus : ApplyStatus!,
-    createdAt : LocalDate!,
-    deletedAt : LocalDate,
-    updatedAt : LocalDate!,
-}
-
-type WholesalerConnection{
-    id : Int!,
-    employer : User!,
-    employee : User!,
     createdAt : LocalDate!,
     deletedAt : LocalDate,
     updatedAt : LocalDate!,

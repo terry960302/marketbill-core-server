@@ -18,6 +18,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
+import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -222,7 +223,7 @@ class MockService {
 
         val orderSheets = (1..3).map {
             OrderSheet(
-                orderNo = UUID.randomUUID().toString(),
+                orderNo = StringGenerator.generateOrderNo(it.toLong()),
                 retailer = entityManager.getReference(User::class.java, 1.toLong()),
                 wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
             )
@@ -237,7 +238,8 @@ class MockService {
                 wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
                 flower = entityManager.getReference(Flower::class.java, it.toLong()),
                 quantity = (1..100).random(),
-                grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER)
+                grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER),
+                price = (100..10000).random()
             )
         }
         orderItemRepository.saveAll(orderItems)

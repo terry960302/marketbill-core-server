@@ -116,13 +116,13 @@ data class User(
 
     @OneToMany(
         mappedBy = "retailer",
-        fetch = FetchType.LAZY
+        fetch = FetchType.LAZY,
     )
     val orderItemsByRetailer: List<OrderItem> = listOf(),
 
     @OneToMany(
         mappedBy = "wholesaler",
-        fetch = FetchType.LAZY
+        fetch = FetchType.LAZY,
     )
     val orderItemsByWholesaler: List<OrderItem> = listOf(),
 

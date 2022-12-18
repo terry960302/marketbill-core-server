@@ -40,6 +40,8 @@ spring:
 serverless:
   messaging:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/messaging/dev
+  file-process:
+    host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/dev
 ---
 spring:
   config:
@@ -59,7 +61,7 @@ spring:
   jpa:
     open-in-view: true
     hibernate:
-      ddl-auto: create # create-drop, create, update, validate, none
+      ddl-auto: validate # create-drop, create, update, validate, none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       use-new-id-generator-mappings: false
@@ -71,6 +73,8 @@ spring:
 serverless:
   messaging:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/messaging/dev
+  file-process:
+    host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/dev
 ---
 spring:
   config:
@@ -102,6 +106,8 @@ spring:
 serverless:
   messaging:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/messaging/prod
+  file-process:
+    host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/prod
 
 logging:
   level:

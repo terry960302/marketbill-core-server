@@ -3,9 +3,9 @@ type CartItem{
     id : Int!,
     retailer : User,
     wholesaler : User,
-    flower : Flower,
+    flower : Flower!,
     quantity : Int!,
-    grade : String!,
+    grade : FlowerGrade!,
     orderedAt : LocalDate,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
@@ -19,11 +19,11 @@ type OrderSheet{
     wholesaler : User,
     orderItems(pagination: PaginationInput) : [OrderItem!],
     # 주문서에 해당하는 꽃의 총 개수
-    totalFlowerQuantity : Int,
+    totalFlowerQuantity : Int!,
     # 주문서에 해당하는 꽃의 품종 개수(중복x)
-    totalFlowerTypeCount : Int,
+    totalFlowerTypeCount : Int!,
     # 영수증 발행 여부
-    hasReceipt : Boolean,
+    hasReceipt : Boolean!,
     orderSheetReceipts (pagination: PaginationInput): [OrderSheetReceipt!],
     # 최신 영수증(가장 근래 발행한 영수증)
     recentReceipt : OrderSheetReceipt,
@@ -34,12 +34,12 @@ type OrderSheet{
 
 type OrderItem{
     id : Int!,
-    orderSheet : OrderSheet,
+    orderSheet : OrderSheet!,
     retailer : User,
     wholesaler : User,
-    flower : Flower,
+    flower : Flower!,
     quantity : Int!,
-    grade : String!,
+    grade : FlowerGrade!,
     price : Int,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
@@ -48,13 +48,13 @@ type OrderItem{
 
 type OrderSheetReceipt{
     id : Int!,
-    orderSheet : OrderSheet,
+    orderSheet : OrderSheet!,
     # 파일경로
     filePath : String!,
     # 확장자명
-    fileFormat : String,
+    fileFormat : String!,
     # 그외 메타데이터
-    metadata : String,
+    metadata : String!,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
@@ -65,9 +65,9 @@ type OrderSheetsAggregate{
     # 날짜(date)
     date : LocalDate,
     # 꽃 종류 개수(중복x)
-    flowerTypesCount  :Int,
+    flowerTypesCount  :Int!,
     # 주문 수
-    orderSheetsCount : Int,
+    orderSheetsCount : Int!,
 }
 
 
