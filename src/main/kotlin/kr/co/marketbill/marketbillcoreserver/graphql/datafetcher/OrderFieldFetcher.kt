@@ -6,6 +6,8 @@ import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
+import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
@@ -45,5 +47,17 @@ class OrderFieldFetcher {
         context.orderItemsInput.pagination = pagination
 
         return dataLoader.load(orderSheet.id)
+    }
+
+    @DgsData(parentType = DgsConstants.CARTITEM.TYPE_NAME, field = DgsConstants.CARTITEM.Grade)
+    fun cartItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
+        val cartItem = dfe.getSource<CartItem>()
+        return cartItem.gradeValue!!
+    }
+
+    @DgsData(parentType = DgsConstants.ORDERITEM.TYPE_NAME, field = DgsConstants.ORDERITEM.Grade)
+    fun orderItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
+        val orderItem = dfe.getSource<OrderItem>()
+        return orderItem.gradeValue!!
     }
 }
