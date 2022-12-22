@@ -1,7 +1,10 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
+import com.netflix.graphql.types.errors.ErrorType
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.MessageType
 import kr.co.marketbill.marketbillcoreserver.domain.dto.MessageReqDto
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
@@ -40,7 +43,11 @@ class MessagingService {
         if (res.contains("requestId") || res.contains("requestTime")) {
             return req
         } else {
-            throw InternalErrorException("Error occurred while sending 'Default' type of SMS.")
+            throw CustomException(
+                message = "Error occurred while sending 'Default' type of SMS.",
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.SMS_NOT_REACHED
+            )
         }
     }
 
@@ -58,7 +65,11 @@ class MessagingService {
         if (res.contains("requestId") || res.contains("requestTime")) {
             return req
         } else {
-            throw InternalErrorException("Error occurred while sending 'Verification' type of SMS.")
+            throw CustomException(
+                message = "Error occurred while sending 'Verification' type of SMS.",
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.SMS_NOT_REACHED
+            )
         }
     }
 
@@ -76,7 +87,11 @@ class MessagingService {
         if (res.contains("requestId") || res.contains("requestTime")) {
             return req
         } else {
-            throw InternalErrorException("Error occurred while sending 'ApplyBizConnection' type of SMS.")
+            throw CustomException(
+                message = "Error occurred while sending 'ApplyBizConnection' type of SMS.",
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.SMS_NOT_REACHED
+            )
         }
     }
 
@@ -94,7 +109,11 @@ class MessagingService {
         if (res.contains("requestId") || res.contains("requestTime")) {
             return req
         } else {
-            throw InternalErrorException("Error occurred while sending 'ConfirmBizConnection' type of SMS.")
+            throw CustomException(
+                message = "Error occurred while sending 'ConfirmBizConnection' type of SMS.",
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.SMS_NOT_REACHED
+            )
         }
     }
 
@@ -112,7 +131,11 @@ class MessagingService {
         if (res.contains("requestId") || res.contains("requestTime")) {
             return req
         } else {
-            throw InternalErrorException("Error occurred while sending 'RejectBizConnection' type of SMS.")
+            throw CustomException(
+                message = "Error occurred while sending 'RejectBizConnection' type of SMS.",
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.SMS_NOT_REACHED
+            )
         }
     }
 
@@ -135,7 +158,11 @@ class MessagingService {
         if (res.contains("requestId") || res.contains("requestTime")) {
             return req
         } else {
-            throw InternalErrorException("Error occurred while sending 'IssueOrderSheetReceipt' type of SMS.")
+            throw CustomException(
+                message = "Error occurred while sending 'IssueOrderSheetReceipt' type of SMS.",
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.SMS_NOT_REACHED
+            )
         }
     }
 

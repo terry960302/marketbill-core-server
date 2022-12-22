@@ -1,5 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
+import com.netflix.graphql.types.errors.ErrorType
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
@@ -13,6 +15,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartReposit
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
@@ -81,7 +84,11 @@ class CartService {
 
     fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade): CartItem {
         val cartItem = cartRepository.findById(id)
-        if (cartItem.isEmpty) throw NotFoundException("There's no cart_item whose ID is $id")
+        if (cartItem.isEmpty) throw CustomException(
+            message = "There's no cart_item whose ID is $id",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_CART_ITEM
+        )
 
         val item = cartItem.get()
         item.quantity = quantity
@@ -94,7 +101,11 @@ class CartService {
         try {
             val cartItem: Optional<CartItem> = cartRepository.findById(cartItemId)
             if (cartItem.isEmpty) {
-                throw NotFoundException(message = "There's no cart item data want to delete.")
+                throw CustomException(
+                    message = "There's no cart item data want to delete.",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_CART_ITEM
+                )
             }
             cartRepository.deleteById(cartItemId)
             return cartItemId

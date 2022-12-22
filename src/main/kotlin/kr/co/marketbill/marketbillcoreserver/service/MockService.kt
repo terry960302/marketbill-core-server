@@ -79,7 +79,7 @@ class MockService {
 
     val logger: Logger = LoggerFactory.getLogger(MockService::class.java)
 
-    @Profile("local", "dev")
+    @Profile("local")
     @PostConstruct
     fun createAllMockToDB() {
         createMockFlowers()
