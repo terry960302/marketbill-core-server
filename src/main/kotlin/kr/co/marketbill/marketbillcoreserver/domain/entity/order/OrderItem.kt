@@ -1,15 +1,12 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
-import kr.co.marketbill.marketbillcoreserver.constants.SOFT_DELETE_CLAUSE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
-import org.hibernate.annotations.FilterJoinTable
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
-import org.hibernate.annotations.WhereJoinTable
 import javax.persistence.*
 
 @Entity
