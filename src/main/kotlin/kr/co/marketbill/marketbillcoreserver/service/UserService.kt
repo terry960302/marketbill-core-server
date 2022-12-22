@@ -1,14 +1,17 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
+import com.netflix.graphql.types.errors.ErrorType
 import kotlinx.coroutines.runBlocking
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.UserSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.WholesalerConnSpecs
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
@@ -58,7 +61,7 @@ class UserService {
         const val NO_USER_ERR =
             "There's no user who has this phone number and password. Please check your phone number again."
         const val NO_TOKEN_WITH_APPLY_STATUS_ERR =
-            "There must be token in cookie when using 'applyStatus' field or 'bizConnectionId' field"
+            "There must be token in header when using 'applyStatus' field or 'bizConnectionId' field"
         const val EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR =
             "Wholesale Employer need to sign up first. Employee could not sign up without employer account."
         const val HAS_BIZ_CONNECTION_ERR = "There's already a bizConnection"
@@ -73,7 +76,11 @@ class UserService {
     fun getUser(userId: Long): User {
         val user: Optional<User> = userRepository.findById(userId)
         if (user.isEmpty) {
-            throw NotFoundException(message = "There's no user whose id is $userId")
+            throw CustomException(
+                message = "There's no user whose id is $userId",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_USER
+            )
         } else {
             return user.get()
         }
@@ -84,9 +91,13 @@ class UserService {
     }
 
     fun deleteUser(userId: Long): User {
-        val user : Optional<User> = userRepository.findById(userId)
-        if(user.isEmpty){
-            throw NotFoundException(message = "There's no user data want to delete")
+        val user: Optional<User> = userRepository.findById(userId)
+        if (user.isEmpty) {
+            throw CustomException(
+                message = "There's no user data want to delete",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_USER
+            )
         }
         userRepository.deleteById(userId)
         return entityManager.getReference(User::class.java, userId)
@@ -94,7 +105,11 @@ class UserService {
 
     fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
         if (userId == null || role == null) {
-            throw InternalErrorException(NO_TOKEN_WITH_APPLY_STATUS_ERR)
+            throw CustomException(
+                message = NO_TOKEN_WITH_APPLY_STATUS_ERR,
+                errorType = ErrorType.UNAUTHENTICATED,
+                errorCode = CustomErrorCode.TOKEN_NEEDED
+            )
         }
         if (role == AccountRole.RETAILER) {
             val roles = listOf(AccountRole.WHOLESALER_EMPR) // 사장님과만 거래처 관계 생성 가능
@@ -169,7 +184,11 @@ class UserService {
                     UserSpecs.hasRoles(listOf(AccountRole.WHOLESALER_EMPR)).and(UserSpecs.isName(input.name))
                 )
                 if (wholesaleEmployers.isEmpty()) {
-                    throw InternalErrorException(EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR)
+                    throw CustomException(
+                        message = EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR,
+                        errorType = ErrorType.INTERNAL,
+                        errorCode = CustomErrorCode.EMPLOYER_SIGNUP_NEEDED
+                    )
                 } else {
                     val employer = wholesaleEmployers[0]
                     val employee = createUser(input)
@@ -197,10 +216,18 @@ class UserService {
         val userCred = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo)
 
         val hasUserCred = userCred.isPresent
-        if (!hasUserCred) throw NotFoundException(NO_USER_ERR)
+        if (!hasUserCred) throw CustomException(
+            message = NO_USER_ERR,
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_USER
+        )
 
         val isValidPassword = passwordEncoder.matches(input.password, userCred.get().password)
-        if (!isValidPassword) throw NotFoundException(message=NO_USER_ERR)
+        if (!isValidPassword) throw CustomException(
+            message = NO_USER_ERR,
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_USER
+        )
 
         val role = userCred.get().role
         val userId = userCred.get().user!!.id!!
@@ -210,12 +237,16 @@ class UserService {
         return authToken
     }
 
-
+    // TODO : 거절하면 내역 삭제하고 다시금 신청할 수 있어야함.
     fun createBizConnection(retailerId: Long, wholesalerId: Long): BizConnection {
         val bizConnections: List<BizConnection> = bizConnectionRepository.findAll(
             BizConnSpecs.isRetailerId(retailerId).and(BizConnSpecs.isWholesalerId(wholesalerId))
         )
-        if (bizConnections.isNotEmpty()) throw InternalErrorException(HAS_BIZ_CONNECTION_ERR)
+        if (bizConnections.isNotEmpty()) throw CustomException(
+            message = HAS_BIZ_CONNECTION_ERR,
+            errorType = ErrorType.INTERNAL,
+            errorCode = CustomErrorCode.BIZ_CONNECTION_DUPLICATED
+        )
 
         val bizConnection = BizConnection(
             retailer = entityManager.getReference(User::class.java, retailerId),
@@ -225,7 +256,11 @@ class UserService {
 
         val retailer = userRepository.findById(retailerId)
         val wholesaler = userRepository.findById(wholesalerId)
-        if (wholesaler.isEmpty) throw NotFoundException("There's no user(wholesaler) that you hope to connect with.")
+        if (wholesaler.isEmpty) throw CustomException(
+            message = "There's no user(wholesaler) that you hope to connect with.",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_USER
+        )
         val retailerName = retailer.get().name!!
         val targetPhoneNo = wholesaler.get().userCredential!!.phoneNo
         val url = ""
@@ -238,7 +273,11 @@ class UserService {
 
     fun updateBizConnection(bizConnId: Long, status: ApplyStatus): BizConnection {
         val bizConnection: Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
-        if (bizConnection.isEmpty) throw NotFoundException(NO_BIZ_CONNECTION_TO_UPDATE_ERR)
+        if (bizConnection.isEmpty) throw CustomException(
+            message = NO_BIZ_CONNECTION_TO_UPDATE_ERR,
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_BIZ_CONNECTION
+        )
 
         bizConnection.get().applyStatus = status
         val updatedBizConn = bizConnectionRepository.save(bizConnection.get())
@@ -277,13 +316,21 @@ class UserService {
     @Transactional
     fun createUser(input: SignUpInput): User {
         val hasUserCred: Boolean = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo).isPresent
-        if (hasUserCred) throw InternalErrorException(SAME_PHONE_NO_ERR)
+        if (hasUserCred) throw CustomException(
+            message = SAME_PHONE_NO_ERR,
+            errorType = ErrorType.INTERNAL,
+            errorCode = CustomErrorCode.PHONE_NO_DUPLICATED
+        )
 
         if (input.role == kr.co.marketbill.marketbillcoreserver.types.AccountRole.WHOLESALER_EMPR) {
             val hasSameEmployer = userRepository.findAll(
                 UserSpecs.hasRoles(listOf(AccountRole.WHOLESALER_EMPR)).and(UserSpecs.isName(input.name))
             ).size > 0
-            if (hasSameEmployer) throw InternalErrorException(SAME_WHOLESALER_NAME_ERR)
+            if (hasSameEmployer) throw CustomException(
+                message = SAME_WHOLESALER_NAME_ERR,
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.USER_NAME_DUPLICATED
+            )
         }
 
         val belongsTo = when (AccountRole.valueOf(input.role.toString())) {
@@ -318,13 +365,13 @@ class UserService {
     }
 
     fun getConnectedEmployerId(employeeId: Long): Long {
-        try {
-            val connections = wholesalerConnectionRepository.findAll(WholesalerConnSpecs.byEmployeeId(employeeId))
-            if (connections.isEmpty()) throw NotFoundException(message="There's no connection data between employer and employees")
-            val employer = connections[0].employer!!
-            return employer.id!!
-        } catch (e: Exception) {
-            throw NotFoundException("There's no employer in same wholesale company.")
-        }
+        val connections = wholesalerConnectionRepository.findAll(WholesalerConnSpecs.byEmployeeId(employeeId))
+        if (connections.isEmpty()) throw CustomException(
+            message = "There's no connection data between employer and employees",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_WHOLESALE_CONNECTION
+        )
+        val employer = connections[0].employer!!
+        return employer.id!!
     }
 }

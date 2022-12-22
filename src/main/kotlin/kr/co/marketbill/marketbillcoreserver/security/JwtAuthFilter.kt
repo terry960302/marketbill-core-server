@@ -4,6 +4,7 @@ import io.jsonwebtoken.ExpiredJwtException
 import io.jsonwebtoken.JwtException
 import io.jsonwebtoken.MalformedJwtException
 import io.jsonwebtoken.UnsupportedJwtException
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -54,7 +55,7 @@ class JwtAuthFilter : OncePerRequestFilter() {
             throw JwtException(INVALID_TOKEN_ERR)
         } catch (ex: IllegalArgumentException) {
             throw JwtException(INVALID_TOKEN_ERR)
-        } catch (e: InternalErrorException) {
+        } catch (e: CustomException) {
             throw InternalErrorException(e.message)
         }
     }

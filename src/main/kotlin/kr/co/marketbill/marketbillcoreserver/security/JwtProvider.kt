@@ -1,10 +1,13 @@
 package kr.co.marketbill.marketbillcoreserver.security
 
+import com.netflix.graphql.types.errors.ErrorType
 import io.jsonwebtoken.Claims
 import io.jsonwebtoken.Jwts
 import io.jsonwebtoken.SignatureAlgorithm
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.service.CustomUserDetailsService
 import org.slf4j.Logger
@@ -110,7 +113,11 @@ class JwtProvider(
     fun getTokenFromCookie(request: HttpServletRequest, cookieName: String): String {
         val cookies = request.cookies
         val tokens = cookies.filter { it.name == cookieName }
-        if (cookies.isEmpty() || tokens.isEmpty()) throw InternalErrorException(JwtAuthFilter.NO_TOKEN_ERR)
+        if (cookies.isEmpty() || tokens.isEmpty()) throw CustomException(
+            message = JwtAuthFilter.NO_TOKEN_ERR,
+            errorType = ErrorType.UNAUTHENTICATED,
+            errorCode = CustomErrorCode.TOKEN_NEEDED
+        )
         return tokens[0].value
     }
 

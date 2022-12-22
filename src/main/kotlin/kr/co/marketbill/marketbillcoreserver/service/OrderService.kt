@@ -1,9 +1,11 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
+import com.netflix.graphql.types.errors.ErrorType
 import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.MessageType
 import kr.co.marketbill.marketbillcoreserver.domain.dto.MessageReqDto
@@ -21,6 +23,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetR
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetReceiptSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
@@ -82,11 +85,19 @@ class OrderService {
                 it
             }.get().toList()
 
-        if (cartItems.isEmpty()) throw NotFoundException("There's no cart items to order.")
+        if (cartItems.isEmpty()) throw CustomException(
+            message = "There's no cart items to order.",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_CART_ITEM
+        )
         cartRepository.saveAll(cartItems)
 
         val isAllConnectedWithWholesaler = cartItems.mapNotNull { it.wholesaler }.size == cartItems.size
-        if (!isAllConnectedWithWholesaler) throw NotFoundException("There's no connected wholesaler on cart items.")
+        if (!isAllConnectedWithWholesaler) throw CustomException(
+            message = "There's no connected wholesaler on cart items.",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_CART_WHOLESALER
+        )
 
         val selectedRetailer: User = cartItems[0].retailer!!
         val selectedWholesaler: User = cartItems[0].wholesaler!!
@@ -152,7 +163,11 @@ class OrderService {
     fun getOrderSheet(orderSheetId: Long): OrderSheet {
         val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
         if (orderSheet.isEmpty) {
-            throw NotFoundException(message = "There's no order sheet data whose id is $orderSheetId")
+            throw CustomException(
+                message = "There's no order sheet data whose id is $orderSheetId",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_ORDER_SHEET
+            )
         } else {
             return orderSheet.get()
         }
@@ -162,7 +177,11 @@ class OrderService {
         try {
             val orderSheet = orderSheetRepository.findById(orderSheetId)
             if (orderSheet.isEmpty) {
-                throw NotFoundException(message = "There's no order sheet data want to delete")
+                throw CustomException(
+                    message = "There's no order sheet data want to delete",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                )
             }
             orderSheetRepository.deleteById(orderSheetId)
             return orderSheetId
@@ -214,12 +233,20 @@ class OrderService {
     @Transactional
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
-        if (orderSheet.isEmpty) throw NotFoundException("There's no OrderSheet data whose id is $orderSheetId")
+        if (orderSheet.isEmpty) throw CustomException(
+            message = "There's no OrderSheet data whose id is $orderSheetId",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_ORDER_SHEET
+        )
 
 
         val hasNullPrice = orderSheet.get().orderItems.any { it.price == null }
-        if(hasNullPrice){
-            throw InternalErrorException(message = "Not able to process receipt with order item which has no price data.")
+        if (hasNullPrice) {
+            throw CustomException(
+                message = "Not able to process receipt with order item which has no price data.",
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.NO_PRICE_ORDER_ITEM
+            )
         }
         val input = ReceiptProcessInput(
             orderNo = orderSheet.get().orderNo,
