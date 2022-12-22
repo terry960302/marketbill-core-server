@@ -16,28 +16,28 @@ import java.util.concurrent.CompletableFuture
 class CustomDataFetchingExceptionHandler : DataFetcherExceptionHandler {
     override fun handleException(handlerParameters: DataFetcherExceptionHandlerParameters): CompletableFuture<DataFetcherExceptionHandlerResult> {
         return when (handlerParameters.exception) {
-//            is InternalErrorException -> {
-//                val debugInfo: MutableMap<String, Any> = HashMap()
-//                val graphqlError: GraphQLError = TypedGraphQLError.newInternalErrorBuilder()
-//                    .message(handlerParameters.exception.message)
-//                    .debugInfo(debugInfo)
-//                    .path(handlerParameters.path).build()
-//                val result: DataFetcherExceptionHandlerResult = DataFetcherExceptionHandlerResult.newResult()
-//                    .error(graphqlError)
-//                    .build()
-//                CompletableFuture.completedFuture(result)
-//            }
-//            is NotFoundException -> {
-//                val debugInfo: MutableMap<String, Any> = HashMap()
-//                val graphqlError: GraphQLError = TypedGraphQLError.newNotFoundBuilder()
-//                    .message(handlerParameters.exception.message)
-//                    .debugInfo(debugInfo)
-//                    .path(handlerParameters.path).build()
-//                val result: DataFetcherExceptionHandlerResult = DataFetcherExceptionHandlerResult.newResult()
-//                    .error(graphqlError)
-//                    .build()
-//                CompletableFuture.completedFuture(result)
-//            }
+            is InternalErrorException -> {
+                val debugInfo: MutableMap<String, Any> = HashMap()
+                val graphqlError: GraphQLError = TypedGraphQLError.newInternalErrorBuilder()
+                    .message(handlerParameters.exception.message)
+                    .debugInfo(debugInfo)
+                    .path(handlerParameters.path).build()
+                val result: DataFetcherExceptionHandlerResult = DataFetcherExceptionHandlerResult.newResult()
+                    .error(graphqlError)
+                    .build()
+                CompletableFuture.completedFuture(result)
+            }
+            is NotFoundException -> {
+                val debugInfo: MutableMap<String, Any> = HashMap()
+                val graphqlError: GraphQLError = TypedGraphQLError.newNotFoundBuilder()
+                    .message(handlerParameters.exception.message)
+                    .debugInfo(debugInfo)
+                    .path(handlerParameters.path).build()
+                val result: DataFetcherExceptionHandlerResult = DataFetcherExceptionHandlerResult.newResult()
+                    .error(graphqlError)
+                    .build()
+                CompletableFuture.completedFuture(result)
+            }
             is CustomException -> {
                 val exp = handlerParameters.exception as CustomException
                 val extensions: MutableMap<String, Any> = HashMap()

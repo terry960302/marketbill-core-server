@@ -4,7 +4,7 @@ enum class CustomErrorCode {
     /**
      * Common
      */
-    SMS_NOT_REACHED,
+    SMS_NOT_REACHED, // SMS 발송하는데 오류 발생
     /**
      * User
      */
