@@ -88,6 +88,20 @@ class UserFetcher {
         }
     }
 
+    @DgsQuery(field = DgsConstants.QUERY.GetConnectableUsers)
+    fun getConnectableUsers(
+        dfe: DgsDataFetchingEnvironment,
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: String,
+        @InputArgument pagination: PaginationInput?
+    ): Page<User> {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId = jwtProvider.parseUserId(token)
+        val role = jwtProvider.parseUserRole(token)
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
+
+        return userService.getUsersWithApplyStatus(userId, role, pageable)
+    }
+
     @DgsMutation(field = DgsConstants.MUTATION.RemoveUser)
     fun removeUser(@InputArgument userId: Long): CommonResponse {
         try {
@@ -159,7 +173,6 @@ class UserFetcher {
     ): BizConnection {
         return userService.updateBizConnection(bizConnId, ApplyStatus.valueOf(status.toString()))
     }
-
 
 
     @Deprecated(message = "This function for cookie jwt method.")

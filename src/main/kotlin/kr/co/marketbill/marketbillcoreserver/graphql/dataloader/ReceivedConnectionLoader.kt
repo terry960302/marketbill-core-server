@@ -27,7 +27,7 @@ class ReceivedConnectionLoader : MappedBatchLoaderWithContext<Long, List<BizConn
         env: BatchLoaderEnvironment
     ): CompletionStage<MutableMap<Long, List<BizConnection>>> {
 
-        var applyStatus: ApplyStatus? = null
+        var applyStatus: List<ApplyStatus>? = null
 
         val context =
             DgsContext.Companion.getCustomContext<CustomContext>(env)
@@ -36,7 +36,7 @@ class ReceivedConnectionLoader : MappedBatchLoaderWithContext<Long, List<BizConn
 
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
         if (filter != null) {
-            applyStatus = ApplyStatus.valueOf(filter.applyStatus.toString())
+            applyStatus = filter.applyStatus.map { ApplyStatus.valueOf(it.toString()) }
         }
         return if (keys == null) {
             CompletableFuture.completedFuture(emptyMap<Long, List<BizConnection>>().toMutableMap())

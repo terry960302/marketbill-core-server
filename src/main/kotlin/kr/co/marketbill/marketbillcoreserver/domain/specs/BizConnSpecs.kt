@@ -1,8 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.domain.specs
 
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
-import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import org.springframework.data.jpa.domain.Specification
@@ -45,6 +43,17 @@ class BizConnSpecs {
                 }
             }
         }
+
+        fun hasApplyStatus(statuses: List<ApplyStatus>?): Specification<BizConnection> {
+            return Specification<BizConnection> { root, query, builder ->
+                if (statuses == null || statuses.isEmpty()) {
+                    builder.conjunction()
+                } else {
+                    root.get<ApplyStatus>("applyStatus").`in`(statuses)
+                }
+            }
+        }
+
 
         fun isRetailerId(retailerId: Long?): Specification<BizConnection> {
             return Specification<BizConnection> { root, query, builder ->
