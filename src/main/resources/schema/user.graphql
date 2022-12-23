@@ -63,6 +63,9 @@ type Query {
     # - 거래처 목록 가져오기(전체 목록) : User > applyStatus 필드를 추가할 경우(내가 소매상이면 도매상 목록을 가져옴)
     # - 유저 전체 목록 가져오기 : User > applyStatus 필드 없는 경우
     getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User!]!
+    # 거래관계를 맺을 수 있는 유저 전체 목록 가져오기
+    # : 본인의 role 과 반대인 유저의 목록을 가져옵니다.
+    getConnectableUsers(pagination : PaginationInput) : [User!]!
 }
 
 ## -------------- MUTATION ------------------

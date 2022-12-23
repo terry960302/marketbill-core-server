@@ -29,7 +29,7 @@ class AppliedConnectionLoader : MappedBatchLoaderWithContext<Long, List<BizConne
         env: BatchLoaderEnvironment
     ): CompletionStage<MutableMap<Long, List<BizConnection>>> {
 
-        var applyStatus: ApplyStatus? = null
+        var applyStatus: List<ApplyStatus>? = null
         val context =
             DgsContext.getCustomContext<CustomContext>(env)
         val pagination = context.appliedConnectionsInput.pagination
@@ -37,12 +37,12 @@ class AppliedConnectionLoader : MappedBatchLoaderWithContext<Long, List<BizConne
 
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
         if (filter != null) {
-            applyStatus = ApplyStatus.valueOf(filter.applyStatus.toString())
+            applyStatus = filter.applyStatus.map { ApplyStatus.valueOf(it.toString()) }
         }
 
-        return if(keys == null){
+        return if (keys == null) {
             CompletableFuture.completedFuture(emptyMap<Long, List<BizConnection>>().toMutableMap())
-        }else{
+        } else {
             CompletableFuture.supplyAsync {
                 userService.getAppliedConnectionsByRetailerIds(keys.stream().toList(), applyStatus, pageable)
             }
