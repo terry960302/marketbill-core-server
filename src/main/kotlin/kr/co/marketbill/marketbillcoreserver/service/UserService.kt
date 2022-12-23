@@ -90,19 +90,7 @@ class UserService {
         return userRepository.findAll(UserSpecs.hasRoles(roles), pageable)
     }
 
-    fun deleteUser(userId: Long): User {
-        val user: Optional<User> = userRepository.findById(userId)
-        if (user.isEmpty) {
-            throw CustomException(
-                message = "There's no user data want to delete",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
-            )
-        }
-        userRepository.deleteById(userId)
-        return entityManager.getReference(User::class.java, userId)
-    }
-
+    @Transactional(readOnly = true)
     fun getUsersWithApplyStatus(userId: Long?, role: AccountRole?, pageable: Pageable): Page<User> {
         if (userId == null || role == null) {
             throw CustomException(
@@ -116,7 +104,7 @@ class UserService {
             val users = userRepository.findAll(UserSpecs.hasRoles(roles).and(UserSpecs.exclude(userId)), pageable)
 
             return users.map { it ->
-                val connections = it.receivedConnections!!.filter { conn -> conn.retailer!!.id == userId }
+                val connections = it.receivedConnections.filter { conn -> conn.retailer!!.id == userId }
                 if (connections.isNotEmpty()) {
                     it.applyStatus = connections[0].applyStatus
                     it.bizConnectionId = connections[0].id
@@ -128,7 +116,7 @@ class UserService {
             val users = userRepository.findAll(UserSpecs.hasRoles(roles).and(UserSpecs.exclude(userId)), pageable)
 
             return users.map { it ->
-                val connections = it.appliedConnections!!.filter { conn -> conn.wholesaler!!.id == userId }
+                val connections = it.appliedConnections.filter { conn -> conn.wholesaler!!.id == userId }
                 if (connections.isNotEmpty()) {
                     it.applyStatus = connections[0].applyStatus
                     it.bizConnectionId = connections[0].id
@@ -138,26 +126,37 @@ class UserService {
         }
     }
 
-    @Transactional(readOnly = true)
+    fun deleteUser(userId: Long): User {
+        val user: Optional<User> = userRepository.findById(userId)
+        if (user.isEmpty) {
+            throw CustomException(
+                message = "There's no user data want to delete",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_USER
+            )
+        }
+        userRepository.deleteById(userId)
+        return entityManager.getReference(User::class.java, userId)
+    }
+
     fun getAppliedConnectionsByRetailerIds(
         retailerIds: List<Long>,
-        status: ApplyStatus?,
+        status: List<ApplyStatus>?,
         pageable: Pageable
     ): MutableMap<Long, List<BizConnection>> {
         val bizConnections = bizConnectionRepository.findAll(
-            BizConnSpecs.isApplyStatus(status).and(BizConnSpecs.byRetailerIds(retailerIds)), pageable
+            BizConnSpecs.hasApplyStatus(status).and(BizConnSpecs.byRetailerIds(retailerIds)), pageable
         )
         return bizConnections.groupBy { it.retailer!!.id!! }.toMutableMap()
     }
 
-    @Transactional(readOnly = true)
     fun getReceivedConnectionsByWholesalerIds(
         wholesalerIds: List<Long>,
-        status: ApplyStatus?,
+        status: List<ApplyStatus>?,
         pageable: Pageable
     ): MutableMap<Long, List<BizConnection>> {
         val bizConnections = bizConnectionRepository.findAll(
-            BizConnSpecs.isApplyStatus(status).and(BizConnSpecs.byWholesalerIds(wholesalerIds)), pageable
+            BizConnSpecs.hasApplyStatus(status).and(BizConnSpecs.byWholesalerIds(wholesalerIds)), pageable
         )
         return bizConnections.groupBy { it.wholesaler!!.id!! }.toMutableMap()
     }
@@ -237,16 +236,19 @@ class UserService {
         return authToken
     }
 
-    // TODO : 거절하면 내역 삭제하고 다시금 신청할 수 있어야함.
+    @Transactional
     fun createBizConnection(retailerId: Long, wholesalerId: Long): BizConnection {
         val bizConnections: List<BizConnection> = bizConnectionRepository.findAll(
             BizConnSpecs.isRetailerId(retailerId).and(BizConnSpecs.isWholesalerId(wholesalerId))
         )
-        if (bizConnections.isNotEmpty()) throw CustomException(
-            message = HAS_BIZ_CONNECTION_ERR,
-            errorType = ErrorType.INTERNAL,
-            errorCode = CustomErrorCode.BIZ_CONNECTION_DUPLICATED
-        )
+        val validBizConnections = bizConnections.filter { it.applyStatus != ApplyStatus.REJECTED }
+        if (bizConnections.isNotEmpty() && validBizConnections.isNotEmpty()) {
+            throw CustomException(
+                message = HAS_BIZ_CONNECTION_ERR,
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.BIZ_CONNECTION_DUPLICATED
+            )
+        }
 
         val bizConnection = BizConnection(
             retailer = entityManager.getReference(User::class.java, retailerId),
@@ -271,6 +273,7 @@ class UserService {
         return bizConnectionRepository.save(bizConnection)
     }
 
+    @Transactional
     fun updateBizConnection(bizConnId: Long, status: ApplyStatus): BizConnection {
         val bizConnection: Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
         if (bizConnection.isEmpty) throw CustomException(
@@ -356,6 +359,7 @@ class UserService {
         return savedUser
     }
 
+    @Transactional
     fun signOut(userId: Long) {
         val authToken = authTokenRepository.findByUserId(userId)
         if (authToken.isPresent) {
@@ -364,6 +368,7 @@ class UserService {
         return
     }
 
+    @Transactional
     fun getConnectedEmployerId(employeeId: Long): Long {
         val connections = wholesalerConnectionRepository.findAll(WholesalerConnSpecs.byEmployeeId(employeeId))
         if (connections.isEmpty()) throw CustomException(
