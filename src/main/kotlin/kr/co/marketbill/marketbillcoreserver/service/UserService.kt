@@ -126,6 +126,7 @@ class UserService {
         }
     }
 
+    @Transactional
     fun deleteUser(userId: Long): User {
         val user: Optional<User> = userRepository.findById(userId)
         if (user.isEmpty) {

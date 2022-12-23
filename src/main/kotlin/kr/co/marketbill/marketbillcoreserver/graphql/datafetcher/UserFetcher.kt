@@ -91,7 +91,7 @@ class UserFetcher {
     @DgsQuery(field = DgsConstants.QUERY.GetConnectableUsers)
     fun getConnectableUsers(
         dfe: DgsDataFetchingEnvironment,
-        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: String,
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument pagination: PaginationInput?
     ): Page<User> {
         val token = jwtProvider.filterOnlyToken(authorization)
