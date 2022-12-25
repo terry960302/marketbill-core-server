@@ -320,17 +320,17 @@ class UserService {
     @Transactional
     fun createUser(input: SignUpInput): User {
         val hasUserCred: Boolean = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo).isPresent
-        if (hasUserCred) throw CustomException(
-            message = SAME_PHONE_NO_ERR,
-            errorType = ErrorType.INTERNAL,
-            errorCode = CustomErrorCode.PHONE_NO_DUPLICATED
-        )
+        if (hasUserCred) {
+            throw CustomException(
+                message = SAME_PHONE_NO_ERR,
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.PHONE_NO_DUPLICATED
+            )
+        }
 
-        if (input.role == kr.co.marketbill.marketbillcoreserver.types.AccountRole.WHOLESALER_EMPR) {
-            val hasSameEmployer = userRepository.findAll(
-                UserSpecs.hasRoles(listOf(AccountRole.WHOLESALER_EMPR)).and(UserSpecs.isName(input.name))
-            ).size > 0
-            if (hasSameEmployer) throw CustomException(
+        val hasSameNameUser = userRepository.findAll(UserSpecs.isName(input.name)).isNotEmpty()
+        if (hasSameNameUser) {
+            throw CustomException(
                 message = SAME_WHOLESALER_NAME_ERR,
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.USER_NAME_DUPLICATED
