@@ -2,15 +2,18 @@ package kr.co.marketbill.marketbillcoreserver.service
 
 import com.netflix.graphql.types.errors.ErrorType
 import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
-import kr.co.marketbill.marketbillcoreserver.constants.MessageType
+import kr.co.marketbill.marketbillcoreserver.constants.MessageTemplate
 import kr.co.marketbill.marketbillcoreserver.domain.dto.MessageReqDto
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
-import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
+import org.slf4j.Logger
+import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
@@ -21,6 +24,8 @@ class MessagingService {
     @Value("\${serverless.messaging.host}")
     private lateinit var baseUrl: String
 
+    private val logger: Logger = LoggerFactory.getLogger(MessagingService::class.java)
+
     private fun createClient(): WebClient {
         return WebClient
             .builder()
@@ -29,22 +34,22 @@ class MessagingService {
             .build()
     }
 
-    suspend fun sendDefaultSMS(to: String, message: String): MessageReqDto {
-        val client = createClient()
-        val req = MessageReqDto(
-            to = to,
-            messageType = MessageType.Default.toString(),
-            args = listOf(message)
-        )
-        val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-            it.awaitBody<String>()
-        }
 
-        if (res.contains("requestId") || res.contains("requestTime")) {
+    suspend fun sendDefaultSMS(to: String, message: String): MessageReqDto {
+        try {
+            val client = createClient()
+            val req = MessageReqDto(
+                to = to,
+                template = MessageTemplate.Default.toString(),
+                args = listOf(message)
+            )
+
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
+            logger.info(res)
             return req
-        } else {
+        } catch (e: Exception) {
             throw CustomException(
-                message = "Error occurred while sending 'Default' type of SMS.",
+                message = "Error occurred while sending 'Default' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.SMS_NOT_REACHED
             )
@@ -52,21 +57,19 @@ class MessagingService {
     }
 
     suspend fun sendVerificationSMS(to: String, code: String): MessageReqDto {
-        val client = createClient()
-        val req = MessageReqDto(
-            to = to,
-            messageType = MessageType.Verification.toString(),
-            args = listOf(code)
-        )
-        val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-            it.awaitBody<String>()
-        }
-
-        if (res.contains("requestId") || res.contains("requestTime")) {
+        try {
+            val client = createClient()
+            val req = MessageReqDto(
+                to = to,
+                template = MessageTemplate.Verification.toString(),
+                args = listOf(code)
+            )
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
+            logger.info(res)
             return req
-        } else {
+        } catch (e: Exception) {
             throw CustomException(
-                message = "Error occurred while sending 'Verification' type of SMS.",
+                message = "Error occurred while sending 'Verification' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.SMS_NOT_REACHED
             )
@@ -74,21 +77,19 @@ class MessagingService {
     }
 
     suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String, url: String): MessageReqDto {
-        val client = createClient()
-        val req = MessageReqDto(
-            to = to,
-            messageType = MessageType.ApplyBizConnection.toString(),
-            args = listOf(retailerName, url)
-        )
-        val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-            it.awaitBody<String>()
-        }
-
-        if (res.contains("requestId") || res.contains("requestTime")) {
+        try {
+            val client = createClient()
+            val req = MessageReqDto(
+                to = to,
+                template = MessageTemplate.ApplyBizConnection.toString(),
+                args = listOf(retailerName, url)
+            )
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
+            logger.info(res)
             return req
-        } else {
+        } catch (e: Exception) {
             throw CustomException(
-                message = "Error occurred while sending 'ApplyBizConnection' type of SMS.",
+                message = "Error occurred while sending 'ApplyBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.SMS_NOT_REACHED
             )
@@ -96,21 +97,19 @@ class MessagingService {
     }
 
     suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String, url: String): MessageReqDto {
-        val client = createClient()
-        val req = MessageReqDto(
-            to = to,
-            messageType = MessageType.ConfirmBizConnection.toString(),
-            args = listOf(wholesalerName, wholesalerName, url)
-        )
-        val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-            it.awaitBody<String>()
-        }
-
-        if (res.contains("requestId") || res.contains("requestTime")) {
+        try {
+            val client = createClient()
+            val req = MessageReqDto(
+                to = to,
+                template = MessageTemplate.ConfirmBizConnection.toString(),
+                args = listOf(wholesalerName, wholesalerName, url)
+            )
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
+            logger.info(res)
             return req
-        } else {
+        } catch (e: Exception) {
             throw CustomException(
-                message = "Error occurred while sending 'ConfirmBizConnection' type of SMS.",
+                message = "Error occurred while sending 'ConfirmBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.SMS_NOT_REACHED
             )
@@ -118,21 +117,19 @@ class MessagingService {
     }
 
     suspend fun sendRejectBizConnectionSMS(to: String, wholesalerName: String): MessageReqDto {
-        val client = createClient()
-        val req = MessageReqDto(
-            to = to,
-            messageType = MessageType.RejectBizConnection.toString(),
-            args = listOf(wholesalerName, wholesalerName)
-        )
-        val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-            it.awaitBody<String>()
-        }
-
-        if (res.contains("requestId") || res.contains("requestTime")) {
+        try {
+            val client = createClient()
+            val req = MessageReqDto(
+                to = to,
+                template = MessageTemplate.RejectBizConnection.toString(),
+                args = listOf(wholesalerName, wholesalerName)
+            )
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
+            logger.info(res)
             return req
-        } else {
+        } catch (e: Exception) {
             throw CustomException(
-                message = "Error occurred while sending 'RejectBizConnection' type of SMS.",
+                message = "Error occurred while sending 'RejectBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.SMS_NOT_REACHED
             )
@@ -145,26 +142,30 @@ class MessagingService {
         orderNo: String,
         url: String
     ): MessageReqDto {
-        val client = createClient()
-        val req = MessageReqDto(
-            to = to,
-            messageType = MessageType.IssueOrderSheetReceipt.toString(),
-            args = listOf(wholesalerName, orderNo, url)
-        )
-        val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-            it.awaitBody<String>()
-        }
-
-        if (res.contains("requestId") || res.contains("requestTime")) {
+        try {
+            val client = createClient()
+            val req = MessageReqDto(
+                to = to,
+                template = MessageTemplate.IssueOrderSheetReceipt.toString(),
+                args = listOf(wholesalerName, orderNo, url)
+            )
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
+            logger.info(res)
             return req
-        } else {
+        } catch (e: Exception) {
             throw CustomException(
-                message = "Error occurred while sending 'IssueOrderSheetReceipt' type of SMS.",
+                message = "Error occurred while sending 'IssueOrderSheetReceipt' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.SMS_NOT_REACHED
             )
         }
     }
 
-
+    suspend fun onMessagingResponse(res: ClientResponse): String {
+        return if (res.statusCode() == HttpStatus.OK) {
+            res.awaitBody<String>()
+        } else {
+            throw Exception(res.awaitBody<String>())
+        }
+    }
 }
