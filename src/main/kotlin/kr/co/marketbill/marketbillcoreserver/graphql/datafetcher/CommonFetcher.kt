@@ -4,6 +4,8 @@ import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.InputArgument
+import kotlinx.coroutines.async
+import kotlinx.coroutines.launch
 import kotlinx.coroutines.runBlocking
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.service.MessagingService
@@ -17,17 +19,25 @@ class CommonFetcher {
 
     @DgsMutation(field = DgsConstants.MUTATION.SendDefaultSms)
     fun sendDefaultSms(@InputArgument to: String, @InputArgument message: String): CommonResponse {
-        return runBlocking {
-            messagingService.sendDefaultSMS(to, message)
-            CommonResponse(success = true)
+        try {
+            runBlocking {
+                messagingService.sendDefaultSMS(to, message)
+            }
+            return CommonResponse(success = true)
+        } catch (e: Exception) {
+            throw e
         }
     }
 
     @DgsMutation(field = DgsConstants.MUTATION.SendVerificationSms)
-    fun sendVerificationSms(@InputArgument to: String, @InputArgument code: String): CommonResponse {
-        return runBlocking {
-            messagingService.sendVerificationSMS(to, code)
-            CommonResponse(success = true)
+    fun sendVerificationSms(@InputArgument to: String, @InputArgument code: String) : CommonResponse {
+        try {
+            runBlocking {
+                messagingService.sendVerificationSMS(to, code)
+            }
+            return CommonResponse(success = true)
+        } catch (e: Exception) {
+            throw e
         }
     }
 }

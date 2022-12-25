@@ -9,9 +9,11 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Value
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.web.reactive.function.BodyInserters
+import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
@@ -42,9 +44,7 @@ class MessagingService {
                 args = listOf(message)
             )
 
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-                it.awaitBody<String>()
-            }
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info(res)
             return req
         } catch (e: Exception) {
@@ -64,9 +64,7 @@ class MessagingService {
                 template = MessageTemplate.Verification.toString(),
                 args = listOf(code)
             )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-                it.awaitBody<String>()
-            }
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info(res)
             return req
         } catch (e: Exception) {
@@ -86,9 +84,7 @@ class MessagingService {
                 template = MessageTemplate.ApplyBizConnection.toString(),
                 args = listOf(retailerName, url)
             )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-                it.awaitBody<String>()
-            }
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info(res)
             return req
         } catch (e: Exception) {
@@ -108,9 +104,7 @@ class MessagingService {
                 template = MessageTemplate.ConfirmBizConnection.toString(),
                 args = listOf(wholesalerName, wholesalerName, url)
             )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-                it.awaitBody<String>()
-            }
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info(res)
             return req
         } catch (e: Exception) {
@@ -130,9 +124,7 @@ class MessagingService {
                 template = MessageTemplate.RejectBizConnection.toString(),
                 args = listOf(wholesalerName, wholesalerName)
             )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-                it.awaitBody<String>()
-            }
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info(res)
             return req
         } catch (e: Exception) {
@@ -157,9 +149,7 @@ class MessagingService {
                 template = MessageTemplate.IssueOrderSheetReceipt.toString(),
                 args = listOf(wholesalerName, orderNo, url)
             )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange {
-                it.awaitBody<String>()
-            }
+            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info(res)
             return req
         } catch (e: Exception) {
@@ -171,5 +161,11 @@ class MessagingService {
         }
     }
 
-
+    suspend fun onMessagingResponse(res: ClientResponse): String {
+        return if (res.statusCode() == HttpStatus.OK) {
+            res.awaitBody<String>()
+        } else {
+            throw Exception(res.awaitBody<String>())
+        }
+    }
 }
