@@ -20,22 +20,23 @@ class CommonFetcher {
     @DgsMutation(field = DgsConstants.MUTATION.SendDefaultSms)
     fun sendDefaultSms(@InputArgument to: String, @InputArgument message: String): CommonResponse {
         try {
-            runBlocking {
+            return runBlocking {
                 messagingService.sendDefaultSMS(to, message)
+                CommonResponse(success = true)
             }
-            return CommonResponse(success = true)
+
         } catch (e: Exception) {
             throw e
         }
     }
 
     @DgsMutation(field = DgsConstants.MUTATION.SendVerificationSms)
-    fun sendVerificationSms(@InputArgument to: String, @InputArgument code: String) : CommonResponse {
+    fun sendVerificationSms(@InputArgument to: String, @InputArgument code: String): CommonResponse {
         try {
-            runBlocking {
+            return runBlocking {
                 messagingService.sendVerificationSMS(to, code)
+                CommonResponse(success = true)
             }
-            return CommonResponse(success = true)
         } catch (e: Exception) {
             throw e
         }
