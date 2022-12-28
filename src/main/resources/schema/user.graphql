@@ -4,9 +4,8 @@ type User {
     # 소속(도매상=시장명, 소매상=null)
     belongsTo : String,
     name : String!,
-    # 사업자번호(nullable)
-    businessNo : String,
-    deletedAt : LocalDate,
+    # 본인이 속한 업체 비즈니스 정보
+    businessInfo : BusinessInfo,
     userCredential : UserCredential!,
     # 보낸 거래처 신청
     appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
@@ -19,7 +18,8 @@ type User {
     # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
     applyStatus : ApplyStatus,
     # 거래처 신청 테이블 고유값
-    bizConnectionId : Int
+    bizConnectionId : Int,
+    deletedAt : LocalDate,
 }
 
 # 유저의 로그인, 회원가입 정보
@@ -51,6 +51,27 @@ type BizConnection {
 type AuthToken{
     accessToken : String!,
     refreshToken : String!,
+}
+
+# 본인이 속한 업체의 비즈니스 정보
+type BusinessInfo{
+    id : Int!,
+    companyName : String!,
+    companyPhoneNo : String!,
+    # 대표자명
+    employerName : String!,
+    address : String!,
+    # 사업자번호
+    businessNo : String!,
+    # 업종 1차 카테고리
+    businessMainCategory : String!,
+    # 업종 2차 카테고리
+    businessSubCategory : String!,
+    # 인감도장
+    sealStampImgUrl : String!,
+    createdAt : LocalDate!,
+    deletedAt : LocalDate,
+    updatedAt : LocalDate!,
 }
 
 ## -------------- QUERY ------------------
