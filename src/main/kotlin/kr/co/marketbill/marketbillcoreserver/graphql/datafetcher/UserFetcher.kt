@@ -56,6 +56,11 @@ class UserFetcher {
         return userService.getUser(userId)
     }
 
+    @DgsQuery(field = DgsConstants.QUERY.GetUser)
+    fun getUser(@InputArgument id : Long): User {
+        return userService.getUser(id)
+    }
+
     @DgsQuery(field = DgsConstants.QUERY.GetUsers)
     fun getUsers(
         dfe: DgsDataFetchingEnvironment,
