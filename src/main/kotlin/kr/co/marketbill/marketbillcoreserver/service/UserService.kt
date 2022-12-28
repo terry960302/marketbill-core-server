@@ -14,6 +14,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.WholesalerConnSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
+import kr.co.marketbill.marketbillcoreserver.types.CreateBusinessInfoInput
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
 import org.slf4j.Logger
@@ -52,6 +53,9 @@ class UserService {
 
     @Autowired
     private lateinit var authTokenRepository: AuthTokenRepository
+
+    @Autowired
+    private lateinit var businessInfoRepository: BusinessInfoRepository
 
     @Autowired
     private lateinit var tokenService: TokenService
@@ -160,6 +164,21 @@ class UserService {
             BizConnSpecs.hasApplyStatus(status).and(BizConnSpecs.byWholesalerIds(wholesalerIds)), pageable
         )
         return bizConnections.groupBy { it.wholesaler!!.id!! }.toMutableMap()
+    }
+
+    fun createBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
+        val businessInfo = BusinessInfo(
+            user = entityManager.getReference(User::class.java, input.userId),
+            companyName = input.companyName,
+            companyPhoneNo = input.companyPhoneNo,
+            businessMainCategory = input.businessMainCategory,
+            businessSubCategory = input.businessSubCategory,
+            employerName = input.employerName,
+            businessNo = input.businessNo,
+            sealStampImgUrl = input.businessNo,
+            bankAccount = input.bankAccount,
+        )
+        return businessInfoRepository.save(businessInfo)
     }
 
 

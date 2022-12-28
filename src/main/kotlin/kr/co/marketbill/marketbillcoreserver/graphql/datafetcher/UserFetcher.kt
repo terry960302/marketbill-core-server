@@ -57,7 +57,7 @@ class UserFetcher {
     }
 
     @DgsQuery(field = DgsConstants.QUERY.GetUser)
-    fun getUser(@InputArgument id : Long): User {
+    fun getUser(@InputArgument id: Long): User {
         return userService.getUser(id)
     }
 
@@ -177,6 +177,11 @@ class UserFetcher {
         @InputArgument status: kr.co.marketbill.marketbillcoreserver.types.ApplyStatus
     ): BizConnection {
         return userService.updateBizConnection(bizConnId, ApplyStatus.valueOf(status.toString()))
+    }
+
+    @DgsMutation(field = DgsConstants.MUTATION.CreateBusinessInfo)
+    fun createBusinessInfo(@InputArgument input: CreateBusinessInfoInput): kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo {
+        return userService.createBusinessInfo(input)
     }
 
 
