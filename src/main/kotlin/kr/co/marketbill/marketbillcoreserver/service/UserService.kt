@@ -345,7 +345,6 @@ class UserService {
 
         val user = User(
             name = input.name,
-            businessNo = null,
             belongsTo = belongsTo,
         )
         val savedUser = userRepository.save(user)

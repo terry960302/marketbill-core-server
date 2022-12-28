@@ -11,11 +11,13 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetReceiptRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BusinessInfoRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetReceiptSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
@@ -61,6 +63,9 @@ class OrderService {
 
     @Autowired
     private lateinit var orderSheetReceiptRepository: OrderSheetReceiptRepository
+
+    @Autowired
+    private lateinit var businessInfoRepository: BusinessInfoRepository
 
     @Autowired
     private lateinit var messagingService: MessagingService
@@ -242,10 +247,29 @@ class OrderService {
                 errorCode = CustomErrorCode.NO_PRICE_ORDER_ITEM
             )
         }
+
+        val wholesalerBusinessInfo: Optional<BusinessInfo> =
+            businessInfoRepository.findByUserId(orderSheet.get().wholesaler!!.id!!)
+        if (wholesalerBusinessInfo.isEmpty) throw CustomException(
+            message = "There's no business info data on wholesaler. Need to upload business info to wholesaler first. Not able to process receipt without business info data.",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_BUSINESS_INFO
+        )
+
         val input = ReceiptProcessInput(
             orderNo = orderSheet.get().orderNo,
-            retailer = ReceiptProcessInput.Username(name = orderSheet.get().retailer!!.name!!),
-            wholesaler = ReceiptProcessInput.Username(name = orderSheet.get().wholesaler!!.name!!),
+            retailer = ReceiptProcessInput.Retailer(name = orderSheet.get().retailer!!.name!!),
+            wholesaler = ReceiptProcessInput.Wholesaler(
+                businessNo = orderSheet.get().wholesaler!!.businessInfo!!.businessNo,
+                companyName = orderSheet.get().wholesaler!!.businessInfo!!.companyName,
+                employerName = orderSheet.get().wholesaler!!.businessInfo!!.employerName,
+                sealStampImgUrl = orderSheet.get().wholesaler!!.businessInfo!!.sealStampImgUrl,
+                address = orderSheet.get().wholesaler!!.businessInfo!!.address,
+                companyPhoneNo = orderSheet.get().wholesaler!!.businessInfo!!.companyPhoneNo,
+                businessMainCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessMainCategory,
+                businessSubCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessSubCategory,
+                bankAccount = orderSheet.get().wholesaler!!.businessInfo!!.bankAccount,
+            ),
             orderItems = orderSheet.get().orderItems.map {
                 ReceiptProcessInput.OrderItem(
                     flower = ReceiptProcessInput.Flower(

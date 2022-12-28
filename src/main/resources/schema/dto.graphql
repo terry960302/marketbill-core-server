@@ -68,3 +68,25 @@ input FlowerFilterInput{
     # 검색용 키워드
     keyword : String,
 }
+
+input CreateBusinessInfoInput {
+    userId : Int!,
+    # 회사명
+    companyName : String!,
+    # 회사번호
+    companyPhoneNo : String!,
+    # 대표자명
+    employerName : String!,
+    # 회사주소
+    address : String!,
+    # 사업자번호
+    businessNo : String!,
+    # 업태
+    businessMainCategory : String!,
+    # 종목
+    businessSubCategory : String!,
+    # 인감도장
+    sealStampImgUrl : String!,
+    # 계좌
+    bankAccount: String!,
+}

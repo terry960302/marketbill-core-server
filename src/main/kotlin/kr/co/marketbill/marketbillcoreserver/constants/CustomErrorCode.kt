@@ -9,6 +9,7 @@ enum class CustomErrorCode {
      * User
      */
     NO_USER, // id에 해당하는 user 데이터가 없음
+    NO_BUSINESS_INFO, // userId에 해당하는 business info 데이터가 없음
     TOKEN_NEEDED, // 토큰이 필요
     EMPLOYER_SIGNUP_NEEDED, // 사장님 회원가입이 먼저 필요
     NO_WHOLESALE_CONNECTION, // 도매상 관계가 없어서 처리 불가

@@ -15,17 +15,40 @@ import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderSheetReceiptLoader
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
+import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
 @DgsComponent
 class OrderFieldFetcher {
+
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerQuantity)
+    fun totalFlowerQuantity(dfe: DgsDataFetchingEnvironment): Int {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        return if (orderSheet.orderItems.isNotEmpty()) {
+            val quantities: List<Int> = orderSheet.orderItems.map { if (it.quantity == null) 0 else it.quantity!! }
+            quantities.reduce { acc, i -> acc + i }
+        } else {
+            0
+        }
+    }
+
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerTypeCount)
+    fun totalFlowerTypeCount(dfe: DgsDataFetchingEnvironment): Int {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        return if (orderSheet.orderItems.isNotEmpty()) {
+            val flowerTypes: List<Long> = orderSheet.orderItems.mapNotNull { it.flower?.flowerType?.id }.distinct()
+            flowerTypes.count()
+        } else {
+            0
+        }
+    }
+
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
     fun orderItems(
         dfe: DgsDataFetchingEnvironment,
         @InputArgument pagination: PaginationInput?
     ): CompletableFuture<List<OrderItem>> {
         val orderSheet = dfe.getSource<OrderSheet>()
-        orderSheet.mapOrderItemRelatedFields()
         val dataLoader = dfe.getDataLoader<Long, List<OrderItem>>(OrderItemLoader::class.java)
 
         val context = DgsContext.Companion.getCustomContext<CustomContext>(dfe)
@@ -40,13 +63,30 @@ class OrderFieldFetcher {
         @InputArgument pagination: PaginationInput?
     ): CompletableFuture<List<OrderSheetReceipt>> {
         val orderSheet = dfe.getSource<OrderSheet>()
-        orderSheet.mapReceiptRelatedFields()
         val dataLoader = dfe.getDataLoader<Long, List<OrderSheetReceipt>>(OrderSheetReceiptLoader::class.java)
 
         val context = DgsContext.Companion.getCustomContext<CustomContext>(dfe)
         context.orderItemsInput.pagination = pagination
 
         return dataLoader.load(orderSheet.id)
+    }
+
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.HasReceipt)
+    fun hasReceipt(dfe: DgsDataFetchingEnvironment): Boolean {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        return orderSheet.orderSheetReceipts.isNotEmpty()
+    }
+
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.RecentReceipt)
+    fun recentReceipt(dfe: DgsDataFetchingEnvironment): Optional<OrderSheetReceipt> {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        val orderSheetReceiptsSortByDesc: List<OrderSheetReceipt>? =
+            orderSheet.orderSheetReceipts.sortedByDescending { it.createdAt }
+        return if (orderSheetReceiptsSortByDesc == null || orderSheetReceiptsSortByDesc.isEmpty()) {
+            Optional.empty<OrderSheetReceipt>()
+        } else {
+            Optional.of(orderSheetReceiptsSortByDesc[0])
+        }
     }
 
     @DgsData(parentType = DgsConstants.CARTITEM.TYPE_NAME, field = DgsConstants.CARTITEM.Grade)

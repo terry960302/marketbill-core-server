@@ -100,7 +100,6 @@ class MockService {
             User(
                 id = it.toLong(),
                 name = generateRandomStr(),
-                businessNo = null,
                 belongsTo=belongsTo
             )
         }

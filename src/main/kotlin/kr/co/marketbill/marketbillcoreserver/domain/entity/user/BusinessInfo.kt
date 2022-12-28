@@ -35,13 +35,19 @@ data class BusinessInfo(
     @Column(name = "business_no")
     val businessNo: String = "",
 
+    // 업태
     @Column(name = "business_main_category")
     val businessMainCategory: String = "",
 
+    // 종목
     @Column(name = "business_sub_category")
     val businessSubCategory: String = "",
 
     // 인감도장
     @Column(name = "seal_stamp_img_url")
     val sealStampImgUrl: String = "",
+
+    // 계좌
+    @Column(name="bank_account")
+    val bankAccount : String = "",
 ) : BaseTime()
