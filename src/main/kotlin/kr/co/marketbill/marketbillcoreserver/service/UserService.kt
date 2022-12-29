@@ -168,7 +168,7 @@ class UserService {
 
     fun createBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
         val businessInfo = BusinessInfo(
-            user = entityManager.getReference(User::class.java, input.userId),
+            user = entityManager.getReference(User::class.java, input.userId.toLong()),
             companyName = input.companyName,
             companyPhoneNo = input.companyPhoneNo,
             businessMainCategory = input.businessMainCategory,
