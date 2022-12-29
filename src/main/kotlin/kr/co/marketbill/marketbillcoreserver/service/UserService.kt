@@ -167,6 +167,13 @@ class UserService {
     }
 
     fun createBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
+        val user = userRepository.findById(input.userId.toLong())
+        if(user.isEmpty)  throw CustomException(
+            message = "There's no user whose ID is ${input.userId}",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_USER
+        )
+
         val businessInfo = BusinessInfo(
             user = entityManager.getReference(User::class.java, input.userId.toLong()),
             companyName = input.companyName,
