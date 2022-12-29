@@ -14,6 +14,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.BatchCartTo
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
@@ -37,6 +38,9 @@ import javax.persistence.EntityManager
 class CartService {
     @Autowired
     private lateinit var entityManager: EntityManager
+
+    @Autowired
+    private lateinit var userRepository: UserRepository
 
     @Autowired
     private lateinit var cartRepository: CartRepository
@@ -115,7 +119,19 @@ class CartService {
         }
     }
 
+    @Transactional
     fun upsertWholesalerOnCartItems(retailerId: Long, wholesalerId: Long): List<CartItem> {
+        val retailer = userRepository.findById(retailerId)
+        val wholesaler = userRepository.findById(wholesalerId)
+        if (retailer.isEmpty || wholesaler.isEmpty) {
+            val target = if (retailer.isEmpty) "retailer" else "wholesaler"
+            val id = if (retailer.isEmpty) retailerId else wholesalerId
+            throw CustomException(
+                message = "There's no $target whose ID is $id",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_USER
+            )
+        }
         val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
         val updatedCartItems = cartItems.map {
             it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
