@@ -24,7 +24,6 @@ class CommonFetcher {
                 messagingService.sendDefaultSMS(to, message)
                 CommonResponse(success = true)
             }
-
         } catch (e: Exception) {
             throw e
         }

@@ -100,7 +100,6 @@ class MockService {
             User(
                 id = it.toLong(),
                 name = generateRandomStr(),
-                businessNo = null,
                 belongsTo=belongsTo
             )
         }
@@ -230,13 +229,13 @@ class MockService {
         }
         orderSheetRepository.saveAll(orderSheets)
 
-        val orderItems = (1..9).map {
-            val orderSheetId = ((it - 1) / 3) + 1
+        val orderItems = (1..60).map {
+            val orderSheetId = ((it - 1) / 20) + 1
             OrderItem(
                 orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId.toLong()),
                 retailer = entityManager.getReference(User::class.java, 1.toLong()),
                 wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
-                flower = entityManager.getReference(Flower::class.java, it.toLong()),
+                flower = entityManager.getReference(Flower::class.java, (1..10).random().toLong()),
                 quantity = (1..100).random(),
                 grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER),
                 price = (100..10000).random()

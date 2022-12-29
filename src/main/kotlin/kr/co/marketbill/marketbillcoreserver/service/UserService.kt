@@ -14,6 +14,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.WholesalerConnSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
+import kr.co.marketbill.marketbillcoreserver.types.CreateBusinessInfoInput
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
 import org.slf4j.Logger
@@ -52,6 +53,9 @@ class UserService {
 
     @Autowired
     private lateinit var authTokenRepository: AuthTokenRepository
+
+    @Autowired
+    private lateinit var businessInfoRepository: BusinessInfoRepository
 
     @Autowired
     private lateinit var tokenService: TokenService
@@ -160,6 +164,33 @@ class UserService {
             BizConnSpecs.hasApplyStatus(status).and(BizConnSpecs.byWholesalerIds(wholesalerIds)), pageable
         )
         return bizConnections.groupBy { it.wholesaler!!.id!! }.toMutableMap()
+    }
+
+    @Transactional
+    fun upsertBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
+        val user = userRepository.findById(input.userId.toLong())
+        if (user.isEmpty) throw CustomException(
+            message = "There's no user whose ID is ${input.userId}",
+            errorType = ErrorType.NOT_FOUND,
+            errorCode = CustomErrorCode.NO_USER
+        )
+
+        val newBusinessInfo = BusinessInfo(
+            user = entityManager.getReference(User::class.java, input.userId.toLong()),
+            companyName = input.companyName,
+            companyPhoneNo = input.companyPhoneNo,
+            businessMainCategory = input.businessMainCategory,
+            businessSubCategory = input.businessSubCategory,
+            employerName = input.employerName,
+            businessNo = input.businessNo,
+            sealStampImgUrl = input.businessNo,
+            bankAccount = input.bankAccount,
+        )
+        val businessInfoID = businessInfoRepository.findByUserId(input.userId.toLong()).get().id
+        if (businessInfoID != null) {
+            newBusinessInfo.id = businessInfoID
+        }
+        return businessInfoRepository.save(newBusinessInfo)
     }
 
 
@@ -345,7 +376,6 @@ class UserService {
 
         val user = User(
             name = input.name,
-            businessNo = null,
             belongsTo = belongsTo,
         )
         val savedUser = userRepository.save(user)

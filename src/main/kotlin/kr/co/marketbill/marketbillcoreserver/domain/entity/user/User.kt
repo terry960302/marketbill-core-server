@@ -33,9 +33,6 @@ data class User(
     @Column(name = "name")
     val name: String? = null,
 
-    @Column(name = "business_no", nullable = true)
-    val businessNo: String? = null,
-
     @OneToOne(
         mappedBy = "user",
         cascade = [CascadeType.ALL],
@@ -51,6 +48,14 @@ data class User(
         fetch = FetchType.LAZY,
     )
     val authToken: AuthToken? = null,
+
+    @OneToOne(
+        mappedBy = "user",
+        cascade = [CascadeType.ALL],
+        orphanRemoval = true,
+        fetch = FetchType.LAZY,
+    )
+    val businessInfo: BusinessInfo? = null,
 
     @OneToMany(
         mappedBy = "retailer",

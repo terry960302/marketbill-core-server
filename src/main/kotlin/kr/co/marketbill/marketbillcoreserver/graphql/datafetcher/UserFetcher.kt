@@ -1,21 +1,16 @@
 package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 
 import com.netflix.graphql.dgs.DgsComponent
-import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
-import com.netflix.graphql.dgs.context.DgsContext
 import com.netflix.graphql.dgs.internal.DgsWebMvcRequestData
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
-import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.AppliedConnectionLoader
-import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.ReceivedConnectionLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.TokenService
@@ -28,7 +23,6 @@ import org.springframework.security.access.prepost.PreAuthorize
 import org.springframework.web.bind.annotation.RequestHeader
 import org.springframework.web.context.request.ServletWebRequest
 import java.util.*
-import java.util.concurrent.CompletableFuture
 import javax.servlet.http.HttpServletResponse
 
 @DgsComponent
@@ -54,6 +48,11 @@ class UserFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId = jwtProvider.parseUserId(token)
         return userService.getUser(userId)
+    }
+
+    @DgsQuery(field = DgsConstants.QUERY.GetUser)
+    fun getUser(@InputArgument id: Long): User {
+        return userService.getUser(id)
     }
 
     @DgsQuery(field = DgsConstants.QUERY.GetUsers)
@@ -172,6 +171,11 @@ class UserFetcher {
         @InputArgument status: kr.co.marketbill.marketbillcoreserver.types.ApplyStatus
     ): BizConnection {
         return userService.updateBizConnection(bizConnId, ApplyStatus.valueOf(status.toString()))
+    }
+
+    @DgsMutation(field = DgsConstants.MUTATION.UpsertBusinessInfo)
+    fun upsertBusinessInfo(@InputArgument input: CreateBusinessInfoInput): kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo {
+        return userService.upsertBusinessInfo(input)
     }
 
 

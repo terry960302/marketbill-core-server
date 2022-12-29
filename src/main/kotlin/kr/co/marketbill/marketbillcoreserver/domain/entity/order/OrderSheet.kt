@@ -51,33 +51,4 @@ data class OrderSheet(
         retailer = if (retailer?.deletedAt == null) retailer else null
         wholesaler = if (wholesaler?.deletedAt == null) wholesaler else null
     }
-
-
-    fun mapOrderItemRelatedFields() {
-        totalFlowerQuantity = if (orderItems.isNotEmpty()) {
-            val quantities: List<Int> = orderItems.map { if (it.quantity == null) 0 else it.quantity!! }
-            quantities.reduce { acc, i -> acc + i }
-        } else {
-            0
-        }
-
-        totalFlowerTypeCount = if (orderItems.isNotEmpty()) {
-            val flowerTypes: List<Long> = orderItems.mapNotNull { it.flower?.flowerType?.id }.distinct()
-            flowerTypes.count()
-        } else {
-            0
-        }
-    }
-
-    fun mapReceiptRelatedFields() {
-        hasReceipt = orderSheetReceipts.isEmpty()
-
-        val orderSheetReceiptsSortByDesc: List<OrderSheetReceipt>? =
-            orderSheetReceipts.sortedByDescending { it.createdAt }
-        recentReceipt = if (orderSheetReceiptsSortByDesc == null || orderSheetReceiptsSortByDesc.isEmpty()) {
-            null
-        } else {
-            orderSheetReceiptsSortByDesc[0]
-        }
-    }
 }
