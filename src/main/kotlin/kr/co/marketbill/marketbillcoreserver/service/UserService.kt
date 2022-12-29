@@ -166,15 +166,16 @@ class UserService {
         return bizConnections.groupBy { it.wholesaler!!.id!! }.toMutableMap()
     }
 
-    fun createBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
+    @Transactional
+    fun upsertBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
         val user = userRepository.findById(input.userId.toLong())
-        if(user.isEmpty)  throw CustomException(
+        if (user.isEmpty) throw CustomException(
             message = "There's no user whose ID is ${input.userId}",
             errorType = ErrorType.NOT_FOUND,
             errorCode = CustomErrorCode.NO_USER
         )
 
-        val businessInfo = BusinessInfo(
+        val newBusinessInfo = BusinessInfo(
             user = entityManager.getReference(User::class.java, input.userId.toLong()),
             companyName = input.companyName,
             companyPhoneNo = input.companyPhoneNo,
@@ -185,7 +186,11 @@ class UserService {
             sealStampImgUrl = input.businessNo,
             bankAccount = input.bankAccount,
         )
-        return businessInfoRepository.save(businessInfo)
+        val businessInfoID = businessInfoRepository.findByUserId(input.userId.toLong()).get().id
+        if (businessInfoID != null) {
+            newBusinessInfo.id = businessInfoID
+        }
+        return businessInfoRepository.save(newBusinessInfo)
     }
 
 
