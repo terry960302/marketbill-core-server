@@ -191,11 +191,17 @@ class OrderService {
     }
 
     fun updateOrderItemsPrice(items: List<OrderItemPriceInput>): List<OrderItem> {
+        if (items.isEmpty()) return listOf()
         val orderItems: List<OrderItem> = items.map {
             val orderItem = entityManager.getReference(OrderItem::class.java, it.id.toLong())
             orderItem.price = it.price
             orderItem
         }
+        val selectedOrderItem = orderItemRepository.findById(items[0].id.toLong())
+        val orderSheet = selectedOrderItem.get().orderSheet!!
+        orderSheet.priceUpdatedAt = LocalDateTime.now()
+        orderSheetRepository.save(orderSheet)
+
         return orderItemRepository.saveAll(orderItems)
     }
 

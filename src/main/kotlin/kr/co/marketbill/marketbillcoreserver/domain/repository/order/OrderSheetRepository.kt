@@ -61,5 +61,4 @@ interface OrderSheetRepository : JpaRepository<OrderSheet, Long>, JpaSpecificati
 
     @Query(OPTIMIZED_FIND_ONE_QUERY, nativeQuery = true)
     fun getDailyOrderSheetsAggregate(wholesalerId: Long, date: Date): OrderSheetsAggregate
-
 }

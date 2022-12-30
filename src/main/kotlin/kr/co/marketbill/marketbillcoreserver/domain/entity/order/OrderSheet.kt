@@ -5,6 +5,8 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
+import java.time.LocalDate
+import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
@@ -33,6 +35,9 @@ data class OrderSheet(
     @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val orderSheetReceipts: List<OrderSheetReceipt> = listOf(),
 
+    @Column(name = "price_updated_at", nullable = true)
+    var priceUpdatedAt: LocalDateTime? = null,
+
     @Transient
     var totalFlowerQuantity: Int = 0,
 
@@ -44,11 +49,15 @@ data class OrderSheet(
 
     @Transient
     var recentReceipt: OrderSheetReceipt? = null,
+
+    @Transient
+    var isPriceUpdated : Boolean = false,
 ) : BaseTime() {
 
     @PostLoad
-    fun postLoad(){
+    fun postLoad() {
         retailer = if (retailer?.deletedAt == null) retailer else null
         wholesaler = if (wholesaler?.deletedAt == null) wholesaler else null
+        isPriceUpdated = priceUpdatedAt != null
     }
 }
