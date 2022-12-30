@@ -24,7 +24,7 @@ data class ReceiptProcessInput(
         val flower: Flower,
         val quantity: Int,
         val grade: String,
-        val price: Int,
+        val price: Int?,
     )
 
     data class Flower(val name: String, val flowerType: FlowerType)

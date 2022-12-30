@@ -239,10 +239,10 @@ class OrderService {
         )
 
 
-        val hasNullPrice = orderSheet.get().orderItems.any { it.price == null }
-        if (hasNullPrice) {
+        val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null }
+        if (isAllNullPrice) {
             throw CustomException(
-                message = "Not able to process receipt with order item which has no price data.",
+                message = "Not able to issue receipt with order items in case of all items have empty price.",
                 errorType = ErrorType.INTERNAL,
                 errorCode = CustomErrorCode.NO_PRICE_ORDER_ITEM
             )
@@ -277,7 +277,7 @@ class OrderService {
                         flowerType = ReceiptProcessInput.FlowerType(name = it.flower!!.flowerType!!.name),
                     ),
                     quantity = it.quantity!!,
-                    price = it.price!!,
+                    price = it.price,
                     grade = it.grade!!,
                 )
             }
