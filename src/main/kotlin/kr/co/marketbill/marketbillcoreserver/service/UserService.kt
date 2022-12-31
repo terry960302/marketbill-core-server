@@ -186,9 +186,9 @@ class UserService {
             sealStampImgUrl = input.businessNo,
             bankAccount = input.bankAccount,
         )
-        val businessInfoID = businessInfoRepository.findByUserId(input.userId.toLong()).get().id
-        if (businessInfoID != null) {
-            newBusinessInfo.id = businessInfoID
+        val prevBusinessInfo = businessInfoRepository.findByUserId(input.userId.toLong())
+        if (prevBusinessInfo.isPresent) {
+            newBusinessInfo.id = prevBusinessInfo.get().id
         }
         return businessInfoRepository.save(newBusinessInfo)
     }
