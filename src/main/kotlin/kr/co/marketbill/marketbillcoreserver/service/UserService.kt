@@ -12,8 +12,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.UserSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.WholesalerConnSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
-import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
-import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
 import kr.co.marketbill.marketbillcoreserver.types.CreateBusinessInfoInput
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
@@ -183,8 +181,9 @@ class UserService {
             businessSubCategory = input.businessSubCategory,
             employerName = input.employerName,
             businessNo = input.businessNo,
-            sealStampImgUrl = input.businessNo,
+            sealStampImgUrl = input.sealStampImgUrl,
             bankAccount = input.bankAccount,
+            address = input.address
         )
         val prevBusinessInfo = businessInfoRepository.findByUserId(input.userId.toLong())
         if (prevBusinessInfo.isPresent) {
