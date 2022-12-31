@@ -4,6 +4,7 @@ plugins {
 	id("org.springframework.boot") version "2.7.5"
 	id("io.spring.dependency-management") version "1.0.15.RELEASE"
 	kotlin("jvm") version "1.6.21"
+	kotlin("plugin.serialization") version "1.6.21"
 	kotlin("plugin.spring") version "1.6.21"
 
 	kotlin("plugin.noarg") version "1.6.21"
@@ -51,6 +52,9 @@ dependencies {
 
 	// api client
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
+
+	// serialization
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 }
 
 tasks.withType<KotlinCompile> {
