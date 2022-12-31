@@ -44,6 +44,7 @@ data class CartItem(
     var orderedAt: LocalDateTime? = null,
 ) : BaseTime(){
     @PostLoad
+    @PostUpdate
     fun postLoad(){
         gradeValue = EnumConverter.convertFlowerGradeKorToEnum(grade!!)
         retailer = if (retailer?.deletedAt == null) retailer else null

@@ -77,6 +77,7 @@ class CartService {
             quantity = quantity,
             grade = convertFlowerGradeToKor(grade)
         )
+        print("@@@@ ${cartItem.grade}")
         val prevCartItem  : Optional<CartItem> = cartRepository.findOne(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId)))
         if (prevCartItem.isPresent) {
             cartItem.id = prevCartItem.get().id
