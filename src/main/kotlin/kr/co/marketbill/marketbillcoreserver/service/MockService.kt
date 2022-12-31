@@ -15,7 +15,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartReposit
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
-import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
@@ -23,8 +22,6 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.beans.factory.annotation.Value
-import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -251,7 +248,7 @@ class MockService {
 
     fun generateRandomStr(outputStrLength: Long = 10): String {
         val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        return java.util.Random().ints(outputStrLength, 0, source.length)
+        return Random().ints(outputStrLength, 0, source.length)
             .asSequence()
             .map(source::get)
             .joinToString("")
