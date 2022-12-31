@@ -1,12 +1,9 @@
 package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 
 import com.netflix.graphql.dgs.DgsComponent
-import com.netflix.graphql.dgs.DgsData
-import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
-import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
@@ -15,8 +12,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
-import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
@@ -28,11 +23,9 @@ import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.security.access.prepost.PreAuthorize
-import org.springframework.web.bind.annotation.CookieValue
 import org.springframework.web.bind.annotation.RequestHeader
 import java.time.LocalDate
 import java.util.Optional
-import java.util.concurrent.CompletableFuture
 
 @DgsComponent
 class OrderFetcher {
@@ -67,7 +60,7 @@ class OrderFetcher {
         @InputArgument pagination: PaginationInput?
     ): Page<CartItem> {
         val token = jwtProvider.filterOnlyToken(authorization)
-        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination, fieldToSort = "updatedAt")
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getAllCartItems(userId, pageable)
     }

@@ -17,8 +17,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetR
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
-import kr.co.marketbill.marketbillcoreserver.graphql.error.InternalErrorException
-import kr.co.marketbill.marketbillcoreserver.graphql.error.NotFoundException
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import org.slf4j.Logger
@@ -71,18 +69,19 @@ class CartService {
         return cartRepository.findAllByRetailerId(userId, pageable)
     }
 
+    @Transactional
     fun addToCart(userId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {
-        val hasCartItems =
-            cartRepository.findAll(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId))).size > 0
-        if (hasCartItems) {
-            throw InternalErrorException("There's already a cart item which has same retailerId, flowerId.")
-        }
         val cartItem = CartItem(
             retailer = entityManager.getReference(User::class.java, userId),
             flower = entityManager.getReference(Flower::class.java, flowerId),
             quantity = quantity,
             grade = convertFlowerGradeToKor(grade)
         )
+        print("@@@@ ${cartItem.grade}")
+        val prevCartItem  : Optional<CartItem> = cartRepository.findOne(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId)))
+        if (prevCartItem.isPresent) {
+            cartItem.id = prevCartItem.get().id
+        }
         return cartRepository.save(cartItem)
     }
 
