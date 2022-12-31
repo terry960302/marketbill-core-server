@@ -22,6 +22,7 @@ import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.context.annotation.Profile
 import org.springframework.data.domain.PageRequest
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
@@ -79,18 +80,22 @@ class MockService {
 
     val logger: Logger = LoggerFactory.getLogger(MockService::class.java)
 
-    @Profile("local")
+    @Value("\${spring.config.activate.on-profile}")
+    private lateinit var profile: String
+
     @PostConstruct
     fun createAllMockToDB() {
-        createMockFlowers()
-        createMockUsers()
-        createMockCartItems()
-        createMockOrderSheets()
+        if (profile == "local") {
+            createMockFlowers()
+            createMockUsers()
+            createMockCartItems()
+            createMockOrderSheets()
+        }
     }
 
     @Transactional
     fun createMockOnlyUsers(fromCount: Int = 1, toCount: Int = 100, role: AccountRole) {
-        val belongsTo = when(role){
+        val belongsTo = when (role) {
             AccountRole.RETAILER -> null
             AccountRole.WHOLESALER_EMPR -> "양재"
             AccountRole.WHOLESALER_EMPE -> "양재"
@@ -100,7 +105,7 @@ class MockService {
             User(
                 id = it.toLong(),
                 name = generateRandomStr(),
-                belongsTo=belongsTo
+                belongsTo = belongsTo
             )
         }
 
@@ -143,7 +148,7 @@ class MockService {
     }
 
     @Transactional
-    fun createWholesalerConns(employerId : Long, employeeIds : List<Long>){
+    fun createWholesalerConns(employerId: Long, employeeIds: List<Long>) {
         val conns = employeeIds.map {
             WholesalerConnection(
                 employer = entityManager.getReference(User::class.java, employerId),
@@ -156,7 +161,7 @@ class MockService {
 
     @Transactional
     fun createMockUsers() {
-        createMockOnlyUsers(1,1, AccountRole.RETAILER)
+        createMockOnlyUsers(1, 1, AccountRole.RETAILER)
         createMockOnlyUsers(2, 2, AccountRole.WHOLESALER_EMPR)
         createMockOnlyUsers(3, 4, AccountRole.WHOLESALER_EMPE)
         createWholesalerConns(employerId = 2, employeeIds = listOf(3, 4))
