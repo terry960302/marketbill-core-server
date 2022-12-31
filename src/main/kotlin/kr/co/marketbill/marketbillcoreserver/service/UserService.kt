@@ -23,8 +23,10 @@ import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.util.Optional
+import java.net.URL
+import java.util.*
 import javax.persistence.EntityManager
+
 
 @Service
 class UserService {
@@ -166,6 +168,14 @@ class UserService {
 
     @Transactional
     fun upsertBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
+        val isValidStampUrl = validateUrl(input.sealStampImgUrl)
+        if (!isValidStampUrl) {
+            throw CustomException(
+                message = "Invalid seal stamp img url. Please check url format.",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.INVALID_FORMAT
+            )
+        }
         val user = userRepository.findById(input.userId.toLong())
         if (user.isEmpty) throw CustomException(
             message = "There's no user whose ID is ${input.userId}",
@@ -408,5 +418,14 @@ class UserService {
         )
         val employer = connections[0].employer!!
         return employer.id!!
+    }
+
+    fun validateUrl(urlString: String?): Boolean {
+        return try {
+            URL(urlString)
+            true
+        } catch (ignored: Exception) {
+            false
+        }
     }
 }
