@@ -1,15 +1,15 @@
 package kr.co.marketbill.marketbillcoreserver.domain.dto
 
-import com.fasterxml.jackson.annotation.JsonProperty
+import kotlinx.serialization.SerialName
 
+@kotlinx.serialization.Serializable
 data class ReceiptProcessOutput(
-    @JsonProperty("file_name")
+    @SerialName("file_name")
     val fileName: String,
-    @JsonProperty("file_path")
+    @SerialName("file_path")
     val filePath: String,
-    @JsonProperty("file_format")
+    @SerialName("file_format")
     val fileFormat: String,
-    @JsonProperty("metadata")
+    @SerialName("metadata")
     val metadata: String,
-) {
-}
+)
