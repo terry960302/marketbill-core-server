@@ -1,7 +1,11 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import com.netflix.graphql.types.errors.ErrorType
+import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.runBlocking
+import kotlinx.coroutines.withContext
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
@@ -24,6 +28,8 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
+import net.minidev.json.JSONObject
+import net.minidev.json.parser.JSONParser
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -32,13 +38,12 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.http.HttpHeaders
+import org.springframework.http.HttpStatus
 import org.springframework.http.MediaType
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import org.springframework.web.reactive.function.BodyInserters
-import org.springframework.web.reactive.function.client.WebClient
-import org.springframework.web.reactive.function.client.awaitBody
-import org.springframework.web.reactive.function.client.awaitExchange
+import org.springframework.web.reactive.function.client.*
 import java.text.SimpleDateFormat
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -288,8 +293,9 @@ class OrderService {
                 )
             }
         )
+
         val receiptInfo: ReceiptProcessOutput = runBlocking {
-            generateReceipt(input)
+            withContext(Dispatchers.Default) { generateReceipt(input) }
         }
         val orderSheetReceipt = OrderSheetReceipt(
             orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId),
@@ -317,12 +323,16 @@ class OrderService {
     }
 
 
-    suspend fun generateReceipt(input: ReceiptProcessInput): ReceiptProcessOutput {
-        val client = createReceiptProcessClient()
-        val res = client.post().body(BodyInserters.fromValue(input)).awaitExchange {
-            it.awaitBody<ReceiptProcessOutput>()
+    private suspend fun generateReceipt(input: ReceiptProcessInput): ReceiptProcessOutput {
+        try {
+            val client = createReceiptProcessClient()
+            return client.post().body(BodyInserters.fromValue(input)).awaitExchange {
+                onReceiptResponse(it)
+            }
+        } catch (e: Exception) {
+            logger.error(e.message)
+            throw e
         }
-        return res
     }
 
     private fun createReceiptProcessClient(): WebClient {
@@ -331,5 +341,14 @@ class OrderService {
             .baseUrl(receiptProcessHost)
             .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
             .build()
+    }
+
+    private suspend fun onReceiptResponse(res: ClientResponse): ReceiptProcessOutput {
+        if (res.statusCode() == HttpStatus.OK || res.statusCode() == HttpStatus.CREATED) {
+            val strData :String = res.awaitBody<String>()
+            return Json.decodeFromString<ReceiptProcessOutput>(strData)
+        } else {
+            throw Exception(res.awaitBody<String>())
+        }
     }
 }
