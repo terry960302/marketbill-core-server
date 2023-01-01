@@ -52,55 +52,93 @@ class CartService {
     @Autowired
     private lateinit var batchCartToOrderLogsRepository: BatchCartToOrderLogsRepository
 
-    val logger: Logger = LoggerFactory.getLogger(CartService::class.java)
+    private val logger: Logger = LoggerFactory.getLogger(CartService::class.java)
+    private val className = this.javaClass.simpleName
 
     fun getConnectedWholesalerOnCartItems(userId: Long): Optional<User> {
-        val cartItems = getAllCartItems(userId, PageRequest.of(DEFAULT_PAGE, 1))
-        val connectedWholesalers = cartItems.map { it.wholesaler }.filterNotNull()
-        return if (connectedWholesalers.isEmpty()) {
-            Optional.empty()
-        } else {
-            Optional.of(connectedWholesalers[0])
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val cartItems = getAllCartItems(userId, PageRequest.of(DEFAULT_PAGE, 1))
+            val connectedWholesalers = cartItems.map { it.wholesaler }.filterNotNull()
+            val wholesaler = if (connectedWholesalers.isEmpty()) {
+                Optional.empty()
+            } else {
+                Optional.of(connectedWholesalers[0])
+            }
+            logger.info("$className.$executedFunc >> completed.")
+            return wholesaler
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
         }
     }
 
 
     fun getAllCartItems(userId: Long, pageable: Pageable): Page<CartItem> {
-        return cartRepository.findAllByRetailerId(userId, pageable)
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val cartItems = cartRepository.findAllByRetailerId(userId, pageable)
+            logger.info("$className.$executedFunc >> completed.")
+            return cartItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+
     }
 
     @Transactional
     fun addToCart(userId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {
-        val cartItem = CartItem(
-            retailer = entityManager.getReference(User::class.java, userId),
-            flower = entityManager.getReference(Flower::class.java, flowerId),
-            quantity = quantity,
-            grade = convertFlowerGradeToKor(grade)
-        )
-        print("@@@@ ${cartItem.grade}")
-        val prevCartItem  : Optional<CartItem> = cartRepository.findOne(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId)))
-        if (prevCartItem.isPresent) {
-            cartItem.id = prevCartItem.get().id
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val cartItem = CartItem(
+                retailer = entityManager.getReference(User::class.java, userId),
+                flower = entityManager.getReference(Flower::class.java, flowerId),
+                quantity = quantity,
+                grade = convertFlowerGradeToKor(grade)
+            )
+            val prevCartItem: Optional<CartItem> =
+                cartRepository.findOne(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId)))
+            if (prevCartItem.isPresent) {
+                cartItem.id = prevCartItem.get().id
+            }
+            val createdCartItem = cartRepository.save(cartItem)
+            logger.info("$className.$executedFunc >> completed.")
+            return createdCartItem
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
         }
-        return cartRepository.save(cartItem)
     }
 
     fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade): CartItem {
-        val cartItem = cartRepository.findById(id)
-        if (cartItem.isEmpty) throw CustomException(
-            message = "There's no cart_item whose ID is $id",
-            errorType = ErrorType.NOT_FOUND,
-            errorCode = CustomErrorCode.NO_CART_ITEM
-        )
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
-        val item = cartItem.get()
-        item.quantity = quantity
-        item.grade = convertFlowerGradeToKor(grade)
+        try {
+            val cartItem = cartRepository.findById(id)
+            if (cartItem.isEmpty) throw CustomException(
+                message = "There's no cart_item whose ID is $id",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_CART_ITEM
+            )
 
-        return cartRepository.save(item)
+            val item = cartItem.get()
+            item.quantity = quantity
+            item.grade = convertFlowerGradeToKor(grade)
+            val updatedCartItem = cartRepository.save(item)
+            logger.info("$className.$executedFunc >> completed.")
+            return updatedCartItem
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
     }
 
     fun removeCartItem(cartItemId: Long): Long {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         try {
             val cartItem: Optional<CartItem> = cartRepository.findById(cartItemId)
             if (cartItem.isEmpty) {
@@ -111,54 +149,71 @@ class CartService {
                 )
             }
             cartRepository.deleteById(cartItemId)
+            logger.info("$className.$executedFunc >> completed.")
             return cartItemId
         } catch (e: Exception) {
-            logger.error(e.message)
+            logger.error("$className.$executedFunc >> ${e.message}.")
             throw e
         }
     }
 
     @Transactional
     fun upsertWholesalerOnCartItems(retailerId: Long, wholesalerId: Long): List<CartItem> {
-        val retailer = userRepository.findById(retailerId)
-        val wholesaler = userRepository.findById(wholesalerId)
-        if (retailer.isEmpty || wholesaler.isEmpty) {
-            val target = if (retailer.isEmpty) "retailer" else "wholesaler"
-            val id = if (retailer.isEmpty) retailerId else wholesalerId
-            throw CustomException(
-                message = "There's no $target whose ID is $id",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
-            )
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val retailer = userRepository.findById(retailerId)
+            val wholesaler = userRepository.findById(wholesalerId)
+            if (retailer.isEmpty || wholesaler.isEmpty) {
+                val target = if (retailer.isEmpty) "retailer" else "wholesaler"
+                val id = if (retailer.isEmpty) retailerId else wholesalerId
+                throw CustomException(
+                    message = "There's no $target whose ID is $id",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_USER
+                )
+            }
+            logger.debug("$className.$executedFunc >> retailer, wholesaler both are exists.")
+
+            val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+            val updatedCartItemObjs = cartItems.map {
+                it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
+                it
+            }
+            val updatedCartItems = cartRepository.saveAll(updatedCartItemObjs)
+            logger.info("$className.$executedFunc >> completed.")
+            return updatedCartItems
+
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
         }
-        val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
-        val updatedCartItems = cartItems.map {
-            it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
-            it
-        }
-        return cartRepository.saveAll(updatedCartItems)
     }
 
     /**
      * ### 스케쥴러
-     * : 매일 오후 11시에 자동 주문처리
+     * : 매일 오후 10시에 자동 주문처리
      */
-    @Scheduled(cron = "0 0 14 * * ?")
+    @Scheduled(cron = "0 0 13 * * ?")
     @Transactional
     fun batchCartToOrder() {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         val newOrderSheets = mutableListOf<OrderSheet>()
         val newOrderItems = mutableListOf<OrderItem>()
 
-        val validCartItems = cartRepository.findAll(CartItemSpecs.hasWholesaler()).filter { it.wholesaler != null }
-
         val log = BatchCartToOrderLogs(
-            cartItemsCount = validCartItems.size,
+            cartItemsCount = 0,
             orderSheetCount = -1,
             orderItemCount = -1,
             errLogs = ""
         )
 
         try {
+            val validCartItems = cartRepository.findAll(CartItemSpecs.hasWholesaler()).filter { it.wholesaler != null }
+            log.cartItemsCount = validCartItems.size
+            logger.debug("$className.$executedFunc >> fetched all cart items each has connected wholesaler info.")
+
             val cartItemGroup: Map<Long, List<CartItem>> = validCartItems.groupBy { it.retailer!!.id!! }
 
             cartItemGroup.forEach { (retailerId, cartItems) ->
@@ -172,6 +227,7 @@ class CartService {
                         it
                     }
                 )
+                logger.debug("$className.$executedFunc >> cart items are ordered. (${cartItems.map { it.id }})")
 
                 val orderSheet = OrderSheet(
                     orderNo = "",
@@ -182,6 +238,7 @@ class CartService {
                 val savedOrderSheet = orderSheetRepository.save(orderSheet)
                 savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
                 val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
+                logger.debug("$className.$executedFunc >> OrderSheet(ID:${updatedOrderSheet.id}) is created.")
 
                 val orderItems = cartItems.map {
                     OrderItem(
@@ -196,15 +253,19 @@ class CartService {
                 }
                 newOrderItems.addAll(orderItems)
                 orderItemRepository.saveAll(orderItems)
+                logger.debug("$className.$executedFunc >> OrderItems(IDs:${orderItems.map { it.id }}) is created.")
             }
 
             log.orderSheetCount = newOrderSheets.size
             log.orderItemCount = newOrderItems.size
+            logger.debug("$className.$executedFunc >> done(no issue).")
         } catch (e: java.lang.Exception) {
             log.errLogs = e.message
+            logger.error("$className.$executedFunc >> ${e.message}")
             throw e
         } finally {
             batchCartToOrderLogsRepository.save(log)
+            logger.info("$className.$executedFunc >> completed.")
         }
     }
 

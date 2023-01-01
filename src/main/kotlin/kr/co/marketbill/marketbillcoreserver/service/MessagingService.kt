@@ -1,9 +1,12 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import com.netflix.graphql.types.errors.ErrorType
+import kotlinx.serialization.decodeFromString
+import kotlinx.serialization.json.Json
 import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.MessageTemplate
 import kr.co.marketbill.marketbillcoreserver.domain.dto.MessageReqDto
+import kr.co.marketbill.marketbillcoreserver.domain.dto.MessageResponseDto
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -17,6 +20,7 @@ import org.springframework.web.reactive.function.client.ClientResponse
 import org.springframework.web.reactive.function.client.WebClient
 import org.springframework.web.reactive.function.client.awaitBody
 import org.springframework.web.reactive.function.client.awaitExchange
+import java.time.LocalDateTime
 
 
 @Service
@@ -25,17 +29,30 @@ class MessagingService {
     private lateinit var baseUrl: String
 
     private val logger: Logger = LoggerFactory.getLogger(MessagingService::class.java)
+    private val className: String = this.javaClass.simpleName
 
     private fun createClient(): WebClient {
-        return WebClient
-            .builder()
-            .baseUrl(baseUrl)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .build()
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val client = WebClient
+                .builder()
+                .baseUrl(baseUrl)
+                .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+                .build()
+            logger.info("$className.$executedFunc >> completed.")
+            return client
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+
     }
 
 
-    suspend fun sendDefaultSMS(to: String, message: String): MessageReqDto {
+    suspend fun sendDefaultSMS(to: String, message: String): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         try {
             val client = createClient()
             val req = MessageReqDto(
@@ -45,9 +62,10 @@ class MessagingService {
             )
 
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            logger.info(res)
-            return req
+            logger.info("$className.$executedFunc >> completed -> ($res)")
+            return res
         } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
             throw CustomException(
                 message = "Error occurred while sending 'Default' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
@@ -56,7 +74,9 @@ class MessagingService {
         }
     }
 
-    suspend fun sendVerificationSMS(to: String, code: String): MessageReqDto {
+    suspend fun sendVerificationSMS(to: String, code: String): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         try {
             val client = createClient()
             val req = MessageReqDto(
@@ -65,9 +85,10 @@ class MessagingService {
                 args = listOf(code)
             )
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            logger.info(res)
-            return req
+            logger.info("$className.$executedFunc >> completed -> ($res)")
+            return res
         } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
             throw CustomException(
                 message = "Error occurred while sending 'Verification' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
@@ -76,7 +97,9 @@ class MessagingService {
         }
     }
 
-    suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String, url: String): MessageReqDto {
+    suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String, url: String): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         try {
             val client = createClient()
             val req = MessageReqDto(
@@ -85,9 +108,10 @@ class MessagingService {
                 args = listOf(retailerName, url)
             )
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            logger.info(res)
-            return req
+            logger.info("$className.$executedFunc >> completed -> ($res)")
+            return res
         } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
             throw CustomException(
                 message = "Error occurred while sending 'ApplyBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
@@ -96,7 +120,9 @@ class MessagingService {
         }
     }
 
-    suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String, url: String): MessageReqDto {
+    suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String, url: String): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         try {
             val client = createClient()
             val req = MessageReqDto(
@@ -105,9 +131,11 @@ class MessagingService {
                 args = listOf(wholesalerName, wholesalerName, url)
             )
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            logger.info(res)
-            return req
+            logger.info("$className.$executedFunc >> completed -> ($res)")
+            return res
         } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+
             throw CustomException(
                 message = "Error occurred while sending 'ConfirmBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
@@ -116,7 +144,9 @@ class MessagingService {
         }
     }
 
-    suspend fun sendRejectBizConnectionSMS(to: String, wholesalerName: String): MessageReqDto {
+    suspend fun sendRejectBizConnectionSMS(to: String, wholesalerName: String): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         try {
             val client = createClient()
             val req = MessageReqDto(
@@ -125,9 +155,11 @@ class MessagingService {
                 args = listOf(wholesalerName, wholesalerName)
             )
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            logger.info(res)
-            return req
+            logger.info("$className.$executedFunc >> completed -> ($res)")
+            return res
         } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+
             throw CustomException(
                 message = "Error occurred while sending 'RejectBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
@@ -141,7 +173,9 @@ class MessagingService {
         wholesalerName: String,
         orderNo: String,
         url: String
-    ): MessageReqDto {
+    ): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
         try {
             val client = createClient()
             val req = MessageReqDto(
@@ -150,9 +184,10 @@ class MessagingService {
                 args = listOf(wholesalerName, orderNo, url)
             )
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            logger.info(res)
-            return req
+            logger.info("$className.$executedFunc >> completed -> ($res)")
+            return res
         } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
             throw CustomException(
                 message = "Error occurred while sending 'IssueOrderSheetReceipt' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
@@ -161,11 +196,30 @@ class MessagingService {
         }
     }
 
-    suspend fun onMessagingResponse(res: ClientResponse): String {
-        return if (res.statusCode() == HttpStatus.OK) {
-            res.awaitBody<String>()
-        } else {
-            throw Exception(res.awaitBody<String>())
+    private suspend fun onMessagingResponse(res: ClientResponse): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            if (res.statusCode() == HttpStatus.OK) {
+                val jsonStr = res.awaitBody<String>()
+                val output = Json.decodeFromString<MessageResponseDto>(jsonStr)
+                logger.info("$className.$executedFunc >> completed.")
+                return output
+            } else if (res.statusCode() == HttpStatus.ACCEPTED) {
+                val output = MessageResponseDto(
+                    requestId = "-1",
+                    requestTime = LocalDateTime.now().toString(),
+                    statusCode = HttpStatus.ACCEPTED.toString(),
+                    statusName = "Accepted"
+                )
+                logger.info("$className.$executedFunc >> completed.")
+                return output
+            } else {
+                throw Exception(res.awaitBody<String>())
+            }
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
         }
     }
 }
