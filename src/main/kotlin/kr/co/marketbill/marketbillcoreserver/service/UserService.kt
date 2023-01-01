@@ -222,7 +222,7 @@ class UserService {
                 errorCode = CustomErrorCode.INVALID_FORMAT
             )
         }
-        logger.trace("$className.$executedFunc >> stamp url validated.")
+        logger.debug("$className.$executedFunc >> stamp url validated.")
 
         val user = userRepository.findById(input.userId.toLong())
         if (user.isEmpty) {
@@ -234,7 +234,7 @@ class UserService {
                 errorCode = CustomErrorCode.NO_USER
             )
         }
-        logger.trace("$className.$executedFunc >> userID(${input.userId}) is existed.")
+        logger.debug("$className.$executedFunc >> userID(${input.userId}) is existed.")
 
         val newBusinessInfo = BusinessInfo(
             user = entityManager.getReference(User::class.java, input.userId.toLong()),
@@ -252,7 +252,7 @@ class UserService {
         if (prevBusinessInfo.isPresent) {
             newBusinessInfo.id = prevBusinessInfo.get().id
         }
-        logger.trace("$className.$executedFunc >> businessInfo object is created. -> $newBusinessInfo")
+        logger.debug("$className.$executedFunc >> businessInfo object is created.")
 
         val upsertedBusinessInfo = businessInfoRepository.save(newBusinessInfo)
         logger.info("$className.$executedFunc >> completed.")
@@ -273,7 +273,7 @@ class UserService {
     fun signUp(input: SignUpInput): AuthTokenDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
-            logger.trace("$className.$executedFunc >> input : $input")
+            logger.debug("$className.$executedFunc >> input : $input")
             val isWholesalerEmployee =
                 input.role == kr.co.marketbill.marketbillcoreserver.types.AccountRole.WHOLESALER_EMPE
 
@@ -292,7 +292,7 @@ class UserService {
 
                     val connection = WholesalerConnection(employer = wholesaleEmployer.get(), employee = employee)
                     wholesalerConnectionRepository.save(connection)
-                    logger.trace("$className.$executedFunc >> wholesaler connection is created.")
+                    logger.debug("$className.$executedFunc >> wholesaler connection is created.")
                     employee
                 }
             } else {
@@ -302,7 +302,7 @@ class UserService {
             val authToken =
                 tokenService.generateAuthTokenPair(userId = user.id!!, role = AccountRole.valueOf(input.role.name))
             tokenService.upsertAuthToken(user.id!!, authToken)
-            logger.trace("$className.$executedFunc >> auth token generated.")
+            logger.debug("$className.$executedFunc >> auth token generated.")
             logger.info("$className.$executedFunc >> completed.")
 
             return authToken
@@ -324,7 +324,7 @@ class UserService {
                 errorType = ErrorType.NOT_FOUND,
                 errorCode = CustomErrorCode.NO_USER
             )
-            logger.trace("$className.$executedFunc >> user credential by phoneNo checked.")
+            logger.debug("$className.$executedFunc >> user credential by phoneNo checked.")
 
             val isValidPassword = passwordEncoder.matches(input.password, userCred.get().password)
             if (!isValidPassword) throw CustomException(
@@ -332,14 +332,14 @@ class UserService {
                 errorType = ErrorType.NOT_FOUND,
                 errorCode = CustomErrorCode.NO_USER
             )
-            logger.trace("$className.$executedFunc >> password validated.")
+            logger.debug("$className.$executedFunc >> password validated.")
 
             val role = userCred.get().role
             val userId = userCred.get().user!!.id!!
 
             val authToken = tokenService.generateAuthTokenPair(userId, AccountRole.valueOf(role.toString()))
             tokenService.upsertAuthToken(userId, authToken)
-            logger.trace("$className.$executedFunc >> auth token generated.")
+            logger.debug("$className.$executedFunc >> auth token generated.")
             logger.info("$className.$executedFunc >> completed.")
             return authToken
         } catch (e: Exception) {
@@ -364,7 +364,7 @@ class UserService {
                     errorCode = CustomErrorCode.BIZ_CONNECTION_DUPLICATED
                 )
             }
-            logger.trace("$className.$executedFunc >> existed biz_connections is validated. ready to create new biz_connection.")
+            logger.debug("$className.$executedFunc >> existed biz_connections is validated. ready to create new biz_connection.")
 
             val bizConnection = BizConnection(
                 retailer = entityManager.getReference(User::class.java, retailerId),
@@ -382,12 +382,12 @@ class UserService {
             val retailerName = retailer.get().name!!
             val targetPhoneNo = wholesaler.get().userCredential!!.phoneNo
             val url = ""
-            logger.trace("$className.$executedFunc >> bizConnection object is created.")
+            logger.debug("$className.$executedFunc >> bizConnection object is created.")
 
             runBlocking {
                 messagingService.sendApplyBizConnectionSMS(targetPhoneNo, retailerName, url)
             }
-            logger.trace("$className.$executedFunc >> sent bizConnection message.")
+            logger.debug("$className.$executedFunc >> sent bizConnection message.")
 
             val createdBizConn = bizConnectionRepository.save(bizConnection)
             logger.info("$className.$executedFunc >> completed.")
@@ -408,11 +408,11 @@ class UserService {
                 errorType = ErrorType.NOT_FOUND,
                 errorCode = CustomErrorCode.NO_BIZ_CONNECTION
             )
-            logger.trace("$className.$executedFunc >> bizConnection to update is existed.")
+            logger.debug("$className.$executedFunc >> bizConnection to update is existed.")
 
             bizConnection.get().applyStatus = status
             val updatedBizConn = bizConnectionRepository.save(bizConnection.get())
-            logger.trace("$className.$executedFunc >> bizConnection is updated.")
+            logger.debug("$className.$executedFunc >> bizConnection is updated.")
 
             val retailer = bizConnection.get().retailer
             val wholesaler = bizConnection.get().wholesaler
@@ -442,7 +442,7 @@ class UserService {
                     }
                 }
             }
-            logger.trace("$className.$executedFunc >> sent bizConnection status updated message.")
+            logger.debug("$className.$executedFunc >> sent bizConnection status updated message.")
             logger.info("$className.$executedFunc >> completed.")
 
             return updatedBizConn
@@ -466,7 +466,7 @@ class UserService {
                 errorCode = CustomErrorCode.PHONE_NO_DUPLICATED
             )
         }
-        logger.trace("$className.$executedFunc >> checked same user credential info.")
+        logger.debug("$className.$executedFunc >> checked same user credential info.")
 
         val hasSameNameUser = userRepository.findAll(UserSpecs.isName(input.name)).isNotEmpty()
         if (hasSameNameUser) {
@@ -478,7 +478,7 @@ class UserService {
                 errorCode = CustomErrorCode.USER_NAME_DUPLICATED
             )
         }
-        logger.trace("$className.$executedFunc >> checked same user name.")
+        logger.debug("$className.$executedFunc >> checked same user name.")
 
         val belongsTo = when (AccountRole.valueOf(input.role.toString())) {
             AccountRole.RETAILER -> null
@@ -491,7 +491,7 @@ class UserService {
             belongsTo = belongsTo,
         )
         val savedUser = userRepository.save(user)
-        logger.trace("$className.$executedFunc >> new user created.")
+        logger.debug("$className.$executedFunc >> new user created.")
 
         val userCred = UserCredential(
             phoneNo = input.phoneNo,
@@ -500,7 +500,7 @@ class UserService {
             user = savedUser
         )
         userCredentialRepository.save(userCred)
-        logger.trace("$className.$executedFunc >> new user credential created.")
+        logger.debug("$className.$executedFunc >> new user credential created.")
         logger.info("$className.$executedFunc >> completed.")
         return savedUser
     }

@@ -1,3 +1,4 @@
+# common
 dgs:
   graphql:
     graphiql:
@@ -5,11 +6,28 @@ dgs:
       enabled: true
     path: /graphql # 서버 엔드포인트(콘솔x)
 
+logging:
+  file:
+    max-history: 9999999
+    max-size: 100MB
+    name: logs/all_logs.log
+  level: # Trace < Debug < Info < Warn < Error < Fatal
+    jdbc: OFF
+    jdbc.sqlonly: DEBUG
+    org.springframework.web: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: DEBUG
+    kr.co.marketbill.marketbillcoreserver: DEBUG
+
 server:
   host: localhost
   port: 8080
 
+# local
 spring:
+  output:
+    ansi:
+      enabled: always
   config:
     activate:
       on-profile: local
@@ -43,6 +61,7 @@ serverless:
   file-process:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/dev
 ---
+# dev
 spring:
   config:
     activate:
@@ -76,6 +95,7 @@ serverless:
   file-process:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/dev
 ---
+# prod
 spring:
   config:
     activate:
@@ -109,7 +129,3 @@ serverless:
   file-process:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/prod
 
-logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.type: trace
