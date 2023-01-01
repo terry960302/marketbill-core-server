@@ -74,8 +74,8 @@ class UserService {
         const val SAME_WHOLESALER_NAME_ERR = "There's a wholesale employer who has same company name"
     }
 
-    val logger: Logger = LoggerFactory.getLogger(UserService::class.java)
-    val className: String = this.javaClass.simpleName
+    private val logger: Logger = LoggerFactory.getLogger(UserService::class.java)
+    private val className: String = this.javaClass.simpleName
 
 
     fun getUser(userId: Long): User {
