@@ -395,6 +395,7 @@ class OrderService {
 
             val orderSheetReceipt = OrderSheetReceipt(
                 orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId),
+                fileName= receiptInfo.fileName,
                 filePath = receiptInfo.filePath,
                 fileFormat = receiptInfo.fileFormat,
                 metadata = receiptInfo.metadata
