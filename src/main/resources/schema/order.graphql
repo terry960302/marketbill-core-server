@@ -51,6 +51,8 @@ type OrderItem{
 type OrderSheetReceipt{
     id : Int!,
     orderSheet : OrderSheet!,
+    # 파일명
+    fileName : String!,
     # 파일경로
     filePath : String!,
     # 확장자명
