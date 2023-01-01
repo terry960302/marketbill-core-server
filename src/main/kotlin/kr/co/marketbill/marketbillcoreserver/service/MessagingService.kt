@@ -196,19 +196,30 @@ class MessagingService {
         }
     }
 
-    suspend fun onMessagingResponse(res: ClientResponse): MessageResponseDto {
-        return if (res.statusCode() == HttpStatus.OK) {
-            val jsonStr = res.awaitBody<String>()
-            Json.decodeFromString<MessageResponseDto>(jsonStr)
-        } else if (res.statusCode() == HttpStatus.ACCEPTED) {
-            MessageResponseDto(
-                requestId = "-1",
-                requestTime = LocalDateTime.now().toString(),
-                statusCode = HttpStatus.ACCEPTED.toString(),
-                statusName = "Accepted"
-            )
-        } else {
-            throw Exception(res.awaitBody<String>())
+    private suspend fun onMessagingResponse(res: ClientResponse): MessageResponseDto {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            if (res.statusCode() == HttpStatus.OK) {
+                val jsonStr = res.awaitBody<String>()
+                val output = Json.decodeFromString<MessageResponseDto>(jsonStr)
+                logger.info("$className.$executedFunc >> completed.")
+                return output
+            } else if (res.statusCode() == HttpStatus.ACCEPTED) {
+                val output = MessageResponseDto(
+                    requestId = "-1",
+                    requestTime = LocalDateTime.now().toString(),
+                    statusCode = HttpStatus.ACCEPTED.toString(),
+                    statusName = "Accepted"
+                )
+                logger.info("$className.$executedFunc >> completed.")
+                return output
+            } else {
+                throw Exception(res.awaitBody<String>())
+            }
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
         }
     }
 }
