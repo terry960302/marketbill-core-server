@@ -195,11 +195,14 @@ class MockService {
         }
         val flowers = flowerRepository.saveAll(flowers1 + flowers2)
 
-
-        val biddingFlowers = flowers.map {
-            BiddingFlower(flower = it, biddingDate = LocalDateTime.now())
+        val biddingFlowers = flowers.map { flower ->
+            (1..10).map {
+                var date = LocalDateTime.now()
+                date = date.plusDays((it - 1).toLong())
+                BiddingFlower(flower = flower, biddingDate = date)
+            }
         }
-        biddingFlowerRepository.saveAll(biddingFlowers)
+        biddingFlowerRepository.saveAll(biddingFlowers.flatten())
 
         logger.trace("createMockFlowers completed")
     }

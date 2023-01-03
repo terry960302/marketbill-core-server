@@ -17,7 +17,7 @@ class FlowerSpecs {
                 } else {
                     builder.like(root.get("name"), "%${keyword}%")
                 }
-            };
+            }
         }
 
         fun btwDates(fromDate: LocalDate?, toDate: LocalDate?): Specification<Flower> {
@@ -25,11 +25,12 @@ class FlowerSpecs {
                 if (fromDate == null || toDate == null) {
                     builder.conjunction()
                 } else {
+                    query.distinct(true)
                     val biddingFlower = root.join<Flower, BiddingFlower>("biddingFlowers")
                     val biddingDate = biddingFlower.get<LocalDateTime>("biddingDate").`as`(LocalDate::class.java)
                     builder.between(biddingDate, fromDate, toDate)
                 }
-            };
+            }
         }
     }
 }
