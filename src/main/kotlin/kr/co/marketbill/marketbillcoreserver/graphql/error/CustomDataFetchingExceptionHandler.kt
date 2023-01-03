@@ -1,6 +1,5 @@
 package kr.co.marketbill.marketbillcoreserver.graphql.error
 
-import com.netflix.graphql.types.errors.ErrorDetail
 import com.netflix.graphql.types.errors.ErrorType
 import com.netflix.graphql.types.errors.TypedGraphQLError
 import com.netflix.graphql.types.errors.TypedGraphQLError.newBuilder
@@ -58,8 +57,9 @@ class CustomDataFetchingExceptionHandler : DataFetcherExceptionHandler {
                 val extensions: MutableMap<String, Any> = HashMap()
                 val debugInfo: MutableMap<String, Any> = HashMap()
                 val unknownError = newBuilder().errorType(ErrorType.UNKNOWN)
+
                 val graphqlError: GraphQLError = unknownError
-                    .message(handlerParameters.exception.message)
+                    .message(handlerParameters.exception.message ?: "")
                     .extensions(extensions)
                     .debugInfo(debugInfo)
                     .path(handlerParameters.path).build()

@@ -99,8 +99,14 @@ class CartService {
                 quantity = quantity,
                 grade = convertFlowerGradeToKor(grade)
             )
+            // 꽃, 품질, 소매상ID가 동일하면 수량만 바뀌므로 업데이트처리(그외에 소매상ID가 다르거나 품질이 다르거나 꽃이 다르면 새로 장바구니에 추가)
             val prevCartItem: Optional<CartItem> =
-                cartRepository.findOne(CartItemSpecs.byFlowerId(flowerId).and(CartItemSpecs.byRetailerId(userId)))
+                cartRepository.findOne(
+                    CartItemSpecs.byFlowerId(flowerId)
+                        .and(CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade)))
+                        .and(CartItemSpecs.byRetailerId(userId))
+                )
+            logger.info("$className.$executedFunc >> completed.")
             if (prevCartItem.isPresent) {
                 cartItem.id = prevCartItem.get().id
             }

@@ -15,6 +15,7 @@ import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderSheetReceiptLoader
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
+import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
@@ -80,9 +81,9 @@ class OrderFieldFetcher {
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.RecentReceipt)
     fun recentReceipt(dfe: DgsDataFetchingEnvironment): Optional<OrderSheetReceipt> {
         val orderSheet = dfe.getSource<OrderSheet>()
-        val orderSheetReceiptsSortByDesc: List<OrderSheetReceipt>? =
+        val orderSheetReceiptsSortByDesc: List<OrderSheetReceipt> =
             orderSheet.orderSheetReceipts.sortedByDescending { it.createdAt }
-        return if (orderSheetReceiptsSortByDesc == null || orderSheetReceiptsSortByDesc.isEmpty()) {
+        return if (orderSheetReceiptsSortByDesc.isEmpty()) {
             Optional.empty<OrderSheetReceipt>()
         } else {
             Optional.of(orderSheetReceiptsSortByDesc[0])
@@ -92,12 +93,14 @@ class OrderFieldFetcher {
     @DgsData(parentType = DgsConstants.CARTITEM.TYPE_NAME, field = DgsConstants.CARTITEM.Grade)
     fun cartItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
         val cartItem = dfe.getSource<CartItem>()
+        cartItem.gradeValue = EnumConverter.convertFlowerGradeKorToEnum(cartItem.grade!!)
         return cartItem.gradeValue!!
     }
 
     @DgsData(parentType = DgsConstants.ORDERITEM.TYPE_NAME, field = DgsConstants.ORDERITEM.Grade)
     fun orderItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
         val orderItem = dfe.getSource<OrderItem>()
+        orderItem.gradeValue = EnumConverter.convertFlowerGradeKorToEnum(orderItem.grade!!)
         return orderItem.gradeValue!!
     }
 }
