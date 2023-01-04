@@ -104,7 +104,7 @@ class UserFetcher {
     @DgsMutation(field = DgsConstants.MUTATION.RemoveUser)
     fun removeUser(@InputArgument userId: Long): CommonResponse {
         try {
-            userService.deleteUser(userId)
+            userService.removeUser(userId)
             return CommonResponse(success = true)
         } catch (e: Exception) {
             throw InternalErrorException(message = e.message!!)
