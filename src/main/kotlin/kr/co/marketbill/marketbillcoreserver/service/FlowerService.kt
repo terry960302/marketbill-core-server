@@ -26,6 +26,7 @@ class FlowerService {
                 FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
                 pageable
             )
+            logger.debug("$className.$executedFunc >> flower result count : ${flowers.size}")
             logger.info("$className.$executedFunc >> completed.")
             return flowers
         } catch (e: Exception) {

@@ -22,6 +22,11 @@ type BiddingFlower {
     biddingDate : LocalDate!,
 }
 
+type GetFlowersOutput{
+    resultCount : Int!,
+    flowers : [Flower!]!,
+}
+
 ## -------------- QUERY ------------------
 
 extend type Query{
@@ -29,6 +34,7 @@ extend type Query{
     # - 사입가능한 꽃 목록(기간별)
     # - 꽃 검색(검색)
     # - 꽃 검색 결과 개수
-    getFlowers(filter : FlowerFilterInput, pagination : PaginationInput) : [Flower!]!,
+    getFlowers(filter : FlowerFilterInput, pagination : PaginationInput) : GetFlowersOutput!,
 }
+
 ## -------------- MUTATION ------------------
