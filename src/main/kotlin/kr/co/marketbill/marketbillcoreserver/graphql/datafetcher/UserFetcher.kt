@@ -178,6 +178,16 @@ class UserFetcher {
         return userService.upsertBusinessInfo(input)
     }
 
+    @DgsMutation(field = DgsConstants.MUTATION.UpdatePassword)
+    fun updatePassword(@InputArgument input: UpdatePasswordInput): CommonResponse {
+        try {
+            userService.updatePassword(input)
+            return CommonResponse(success = true)
+        } catch (e: Exception) {
+            throw e
+        }
+    }
+
 
     @Deprecated(message = "This function for cookie jwt method.")
     fun getHttpServletResponseFromDfe(dfe: DgsDataFetchingEnvironment): HttpServletResponse {

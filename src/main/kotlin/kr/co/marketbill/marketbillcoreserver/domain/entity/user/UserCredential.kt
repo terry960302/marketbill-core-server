@@ -27,5 +27,5 @@ data class UserCredential(
     val phoneNo: String = "",
 
     @Column(name = "password")
-    val password: String = "",
+    var password: String = "",
 ) : BaseTime()
