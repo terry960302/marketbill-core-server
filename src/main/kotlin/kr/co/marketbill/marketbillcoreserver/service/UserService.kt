@@ -151,22 +151,25 @@ class UserService {
     }
 
     @Transactional
-    fun deleteUser(userId: Long): User {
+    fun removeUser(userId: Long) {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-        val user: Optional<User> = userRepository.findById(userId)
-        if (user.isEmpty) {
-            val msg = "There's no user data want to delete"
-            logger.error("$className.$executedFunc >> $msg")
-            throw CustomException(
-                message = msg,
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
-            )
+        try {
+            val user: Optional<User> = userRepository.findById(userId)
+            if (user.isEmpty) {
+                val msg = "There's no user data want to delete"
+                logger.error("$className.$executedFunc >> $msg")
+                throw CustomException(
+                    message = msg,
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_USER
+                )
+            }
+            userRepository.deleteById(userId)
+            logger.info("$className.$executedFunc >> completed.")
+        } catch (e: Exception) {
+            logger.info("$className.$executedFunc >> ${e.message}.")
+            throw e
         }
-        userRepository.deleteById(userId)
-        val deletedUser = entityManager.getReference(User::class.java, userId)
-        logger.info("$className.$executedFunc >> completed.")
-        return deletedUser
     }
 
     fun getAppliedConnectionsByRetailerIds(
