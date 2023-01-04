@@ -32,8 +32,8 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
 	// jpa + db conn
-	implementation("org.postgresql:postgresql:42.5.0")
-	implementation("org.springframework:spring-jdbc:5.3.23")
+	implementation("org.postgresql:postgresql:42.5.1")
+	implementation("org.springframework:spring-jdbc:6.0.3")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
 	// graphql
@@ -42,7 +42,7 @@ dependencies {
 	implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
 
 	// actuator
-	implementation("org.springframework.boot:spring-boot-starter-actuator:2.7.5")
+	implementation("org.springframework.boot:spring-boot-starter-actuator:3.0.1")
 
 	// security
 	implementation("org.springframework.boot:spring-boot-starter-security")
@@ -55,6 +55,12 @@ dependencies {
 
 	// serialization
 	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
+
+	// kotest
+	testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
+	testImplementation("io.kotest:kotest-assertions-core:5.5.4")
+	testImplementation("io.kotest:kotest-property:5.5.4")
+	testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.2")
 }
 
 tasks.withType<KotlinCompile> {
@@ -64,7 +70,7 @@ tasks.withType<KotlinCompile> {
 	}
 }
 
-tasks.withType<Test> {
+tasks.withType<Test>().configureEach {
 	useJUnitPlatform()
 }
 
@@ -82,7 +88,7 @@ noArg {
 }
 
 
-// code gen for graphql DGS
+// codegen for graphql DGS
 tasks.withType<com.netflix.graphql.dgs.codegen.gradle.GenerateJavaTask> {
 	schemaPaths = mutableListOf("${projectDir}/src/main/resources/schema") // List of directories containing schema files
 	packageName = "kr.co.marketbill.marketbillcoreserver" // The package name to use to generate sources
@@ -90,6 +96,6 @@ tasks.withType<com.netflix.graphql.dgs.codegen.gradle.GenerateJavaTask> {
 	language = "kotlin"
 	typeMapping = mutableMapOf(
 	)
-//	generateClient = true // Enable generating the type safe query API
+//	generateClient = true
 }
 
