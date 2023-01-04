@@ -1,6 +1,5 @@
 package kr.co.marketbill.marketbillcoreserver.util
 
-import com.netflix.graphql.dgs.autoconfig.DgsAutoConfiguration
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
 import kr.co.marketbill.marketbillcoreserver.service.UserService
@@ -20,10 +19,10 @@ class PasswordValidatorTest : ShouldSpec() {
                 val minLength = 8
 
                 val passwordPattern = "^(?=.*[0-9])(?=.*[@#\$%^&+=])(?=\\\\S+\$).{${minLength},}\$"
-                val pattern = Pattern.compile(passwordPattern);
-                val matcher = pattern.matcher(password);
+                val pattern = Pattern.compile(passwordPattern)
+                val matcher = pattern.matcher(password)
 
-                return matcher.matches();
+                return matcher.matches()
             }
         }
 
