@@ -31,8 +31,5 @@ class Flower(
 
     @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)
     val orderItems: List<OrderItem>? = null,
-
-    @Transient
-    var totalResultCount : Long? = null,
     ) : BaseTime() {
 }

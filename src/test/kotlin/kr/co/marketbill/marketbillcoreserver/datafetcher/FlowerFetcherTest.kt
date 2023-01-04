@@ -6,14 +6,10 @@ import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.FlowerType
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.graphql.datafetcher.FlowerFetcher
-import kr.co.marketbill.marketbillcoreserver.graphql.datafetcher.OrderFetcher
 import kr.co.marketbill.marketbillcoreserver.graphql.scalars.DateTimeScalarType
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.FlowerService
-import org.aspectj.lang.annotation.Before
 import org.junit.jupiter.api.BeforeEach
 import org.junit.jupiter.api.Test
 import org.mockito.Mockito
@@ -24,7 +20,6 @@ import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import java.time.LocalDate
-import java.util.Date
 
 @SpringBootTest(classes = [DgsAutoConfiguration::class, FlowerFetcher::class])
 class FlowerFetcherTest {
@@ -82,11 +77,14 @@ class FlowerFetcherTest {
                               toDate : "2022-11-30"
                             }
                           }){
-                            id
-                            name
+                            resultCount
+                            flowers{
+                                id
+                                name
+                            }
                           }
                     }
-                """.trimIndent(), "data.getFlowers[*].id"
+                """.trimIndent(), "data.getFlowers.flowers[*].id"
         )
 
         assert(flowers.size == 2)
