@@ -16,7 +16,7 @@ group = "kr.co.marketbill"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_17
 
-extra["kotlin.version"] = "1.4.31"
+extra["kotlin.version"] = "1.6.0"
 extra["graphql-java.version"] = "19.2"
 
 repositories {

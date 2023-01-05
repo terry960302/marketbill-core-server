@@ -2,12 +2,10 @@ package kr.co.marketbill.marketbillcoreserver.util
 
 import io.kotest.core.spec.style.ShouldSpec
 import io.kotest.matchers.shouldBe
-import kr.co.marketbill.marketbillcoreserver.service.UserService
 import org.springframework.boot.test.context.SpringBootTest
 import org.springframework.test.context.ActiveProfiles
-import java.util.regex.Pattern
 
-@SpringBootTest(classes = [UserService::class])
+@SpringBootTest
 @ActiveProfiles("local")
 class PasswordValidatorTest : ShouldSpec() {
     private lateinit var validatePassword: (String) -> Boolean
@@ -15,14 +13,10 @@ class PasswordValidatorTest : ShouldSpec() {
     init {
         beforeTest {
             validatePassword = fun(password: String): Boolean {
-                // 영문, 숫자, 특수문자 조합 8자 이상
+                // 영문, 숫자, 특수문자 조합 + 공백없음
                 val minLength = 8
-
-                val passwordPattern = "^(?=.*[0-9])(?=.*[@#\$%^&+=])(?=\\\\S+\$).{${minLength},}\$"
-                val pattern = Pattern.compile(passwordPattern)
-                val matcher = pattern.matcher(password)
-
-                return matcher.matches()
+                val passwordPattern = "^(?!.* )(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@#\$%^&*]).{$minLength,}\$".toRegex()
+                return password.matches(passwordPattern)
             }
         }
 
