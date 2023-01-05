@@ -119,6 +119,7 @@ class CartService {
         }
     }
 
+    @Transactional
     fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade): CartItem {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -129,10 +130,28 @@ class CartService {
                 errorType = ErrorType.NOT_FOUND,
                 errorCode = CustomErrorCode.NO_CART_ITEM
             )
-
             val item = cartItem.get()
-            item.quantity = quantity
+            logger.debug("$className.$executedFunc >> cart_item is existed.")
+
+            val sameCartItem: Optional<CartItem> = cartRepository.findOne(
+                CartItemSpecs.excludeId(id).and(
+                    CartItemSpecs.byRetailerId(item.retailer!!.id).and(
+                        CartItemSpecs.byFlowerId(item.flower!!.id).and(
+                            CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade))
+                        )
+                    )
+                )
+
+            )
+
+            if (sameCartItem.isPresent) {
+                item.quantity = sameCartItem.get().quantity!! + quantity
+                cartRepository.deleteById(sameCartItem.get().id!!)
+            } else {
+                item.quantity = quantity
+            }
             item.grade = convertFlowerGradeToKor(grade)
+
             val updatedCartItem = cartRepository.save(item)
             logger.info("$className.$executedFunc >> completed.")
             return updatedCartItem

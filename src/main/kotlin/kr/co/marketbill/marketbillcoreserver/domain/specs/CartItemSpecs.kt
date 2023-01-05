@@ -17,6 +17,16 @@ class CartItemSpecs {
             }
         }
 
+        fun excludeId(cartItemId: Long?): Specification<CartItem> {
+            return Specification<CartItem> { root, query, builder ->
+                if (cartItemId == null) {
+                    builder.conjunction()
+                } else {
+                    builder.notEqual(root.get<Long>("id"), cartItemId)
+                }
+            }
+        }
+
         fun byRetailerId(retailerId: Long?): Specification<CartItem> {
             return Specification<CartItem> { root, query, builder ->
                 if (retailerId == null) {
