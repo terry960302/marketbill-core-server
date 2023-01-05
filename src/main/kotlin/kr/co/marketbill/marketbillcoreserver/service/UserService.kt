@@ -26,7 +26,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.net.URL
 import java.util.*
-import java.util.regex.Pattern
 import javax.persistence.EntityManager
 
 
@@ -425,11 +424,20 @@ class UserService {
 
             val retailer = userRepository.findById(retailerId)
             val wholesaler = userRepository.findById(wholesalerId)
-            if (wholesaler.isEmpty) throw CustomException(
-                message = "There's no user(wholesaler) that you hope to connect with.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
-            )
+            if (wholesaler.isEmpty) {
+                throw CustomException(
+                    message = "There's no user(wholesaler) that you hope to connect with.",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_USER
+                )
+            }
+            if(wholesaler.get().userCredential!!.role == AccountRole.WHOLESALER_EMPE){
+                throw CustomException(
+                    message = "You cannot make business connection with employee(wholesaler).",
+                    errorType = ErrorType.BAD_REQUEST,
+                    errorCode = CustomErrorCode.INVALID_DATA
+                )
+            }
             val retailerName = retailer.get().name!!
             val targetPhoneNo = wholesaler.get().userCredential!!.phoneNo
             val url = ""
