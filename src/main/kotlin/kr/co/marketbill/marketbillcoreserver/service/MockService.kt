@@ -134,14 +134,12 @@ class MockService {
 
     @Transactional
     fun createMockBizConns() {
-        val conns = (1..3).map {
-            BizConnection(
-                retailer = entityManager.getReference(User::class.java, (1..1).random().toLong()),
-                wholesaler = entityManager.getReference(User::class.java, (2..3).random().toLong()),
-                applyStatus = ApplyStatus.APPLYING,
-            )
-        }
-        bizConnectionRepository.saveAll(conns)
+        val conn1 = BizConnection(
+            retailer = entityManager.getReference(User::class.java, 1.toLong()),
+            wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
+            applyStatus = ApplyStatus.APPLYING,
+        )
+        bizConnectionRepository.saveAll(listOf(conn1))
     }
 
     @Transactional
