@@ -15,6 +15,7 @@ import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.types.CreateBusinessInfoInput
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
+import kr.co.marketbill.marketbillcoreserver.types.UpdatePasswordInput
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -25,6 +26,7 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.net.URL
 import java.util.*
+import java.util.regex.Pattern
 import javax.persistence.EntityManager
 
 
@@ -168,6 +170,52 @@ class UserService {
             logger.info("$className.$executedFunc >> completed.")
         } catch (e: Exception) {
             logger.info("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    @Transactional
+    fun updatePassword(input: UpdatePasswordInput) {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val isValidPassword = validatePassword(input.password)
+            if (!isValidPassword) {
+                throw CustomException(
+                    message = "Invalid format of password. Password must be at least 8 letters including english, number, special characters with no whitespaces.",
+                    errorType = ErrorType.BAD_REQUEST,
+                    errorCode = CustomErrorCode.INVALID_FORMAT,
+                )
+            }
+            logger.debug("$className.$executedFunc >> password for updating is validated.")
+
+            val user: Optional<User> = userRepository.findById(input.userId.toLong())
+            if (user.isEmpty) {
+                throw CustomException(
+                    message = "There's no user whose id is ${input.userId}",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_USER
+                )
+            }
+            logger.debug("$className.$executedFunc >> user(password owner) is existed.")
+
+
+            val phoneNo: String = user.get().userCredential!!.phoneNo
+            if (phoneNo != input.phoneNo) {
+                throw CustomException(
+                    message = "Phone Number(by DB) and Phone Number(by input) is not matched. Please check phone number that you use when sign up.",
+                    errorType = ErrorType.BAD_REQUEST,
+                    errorCode = CustomErrorCode.INVALID_DATA
+                )
+            }
+            logger.debug("$className.$executedFunc >> DB phoneNo data and input phoneNo data is matched.")
+
+            val credential = user.get().userCredential
+            credential!!.password = passwordEncoder.encode(input.password)
+            userCredentialRepository.save(credential)
+            logger.info("$className.$executedFunc >> completed.")
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
             throw e
         }
     }
@@ -554,5 +602,12 @@ class UserService {
         } catch (ignored: Exception) {
             false
         }
+    }
+
+    private fun validatePassword(password: String): Boolean {
+        // 영문, 숫자, 특수문자 조합 + 공백없음
+        val minLength = 8
+        val passwordPattern = "^(?!.* )(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@#\$%^&*]).{$minLength,}\$".toRegex()
+        return password.matches(passwordPattern)
     }
 }

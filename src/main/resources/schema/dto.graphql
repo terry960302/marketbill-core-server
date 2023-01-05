@@ -90,3 +90,10 @@ input CreateBusinessInfoInput {
     # 계좌
     bankAccount: String!,
 }
+
+# 실수 방지를 위해 userId, phoneNo 의 validation 진행
+input UpdatePasswordInput{
+    userId : Int!,
+    phoneNo : String!,
+    password : String!,
+}

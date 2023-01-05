@@ -19,9 +19,11 @@ import org.springframework.boot.test.mock.mockito.MockBean
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
+import org.springframework.test.context.ActiveProfiles
 import java.time.LocalDate
 
 @SpringBootTest(classes = [DgsAutoConfiguration::class, FlowerFetcher::class])
+@ActiveProfiles("local")
 class FlowerFetcherTest {
     @Autowired
     lateinit var dgsQueryExecutor: DgsQueryExecutor

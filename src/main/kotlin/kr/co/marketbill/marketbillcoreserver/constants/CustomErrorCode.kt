@@ -6,6 +6,7 @@ enum class CustomErrorCode {
      */
     SMS_NOT_REACHED, // SMS 발송하는데 오류 발생
     INVALID_FORMAT, // 잘못된 양식의 데이터
+    INVALID_DATA, // 잘못된 데이터(무관한 데이터)
     /**
      * User
      */

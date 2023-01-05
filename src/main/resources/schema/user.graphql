@@ -112,6 +112,8 @@ type Mutation{
     removeUser(userId : Int!) : CommonResponse!
     # 업체 정보 업로드 및 수정
     upsertBusinessInfo(input : CreateBusinessInfoInput) : BusinessInfo!
+    # 비밀번호 변경
+    updatePassword(input: UpdatePasswordInput) : CommonResponse!
 }
 
 
