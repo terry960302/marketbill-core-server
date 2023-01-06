@@ -11,14 +11,14 @@ class GqlDtoConverter {
     companion object {
         fun convertPaginationInputToPageable(
             pagination: PaginationInput?,
-            fieldToSort: String? = "createdAt"
+            sortBy: String? = "createdAt"
         ): Pageable {
             var pageable: Pageable = PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)
             if (pagination != null) {
                 val sort = if (pagination.sort == kr.co.marketbill.marketbillcoreserver.types.Sort.ASCEND) {
-                    Sort.by(fieldToSort).ascending()
+                    Sort.by(sortBy).ascending()
                 } else {
-                    Sort.by(fieldToSort).descending()
+                    Sort.by(sortBy).descending()
                 }
                 pageable = PageRequest.of(pagination.page!!, pagination.size!!, sort)
             }
