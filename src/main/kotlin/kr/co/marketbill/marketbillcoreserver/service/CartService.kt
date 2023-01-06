@@ -102,11 +102,17 @@ class CartService {
             // 꽃, 품질, 소매상ID가 동일하면 수량만 바뀌므로 업데이트처리(그외에 소매상ID가 다르거나 품질이 다르거나 꽃이 다르면 새로 장바구니에 추가)
             val prevCartItem: Optional<CartItem> =
                 cartRepository.findOne(
-                    CartItemSpecs.byFlowerId(flowerId)
-                        .and(CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade)))
-                        .and(CartItemSpecs.byRetailerId(userId))
-                )
-            logger.info("$className.$executedFunc >> completed.")
+                    CartItemSpecs.byRetailerId(userId)
+                        .and(CartItemSpecs.byFlowerId(flowerId))
+                        .and(CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade))
+                        ))
+
+            val connectedWholesaler : Optional<User> = this.getConnectedWholesalerOnCartItems(userId)
+            logger.debug("$className.$executedFunc >> connected wholesaler fetched.")
+
+            if(connectedWholesaler.isPresent){
+                cartItem.wholesaler = connectedWholesaler.get()
+            }
             if (prevCartItem.isPresent) {
                 cartItem.id = prevCartItem.get().id
             }
@@ -135,11 +141,11 @@ class CartService {
 
             val sameCartItem: Optional<CartItem> = cartRepository.findOne(
                 CartItemSpecs.excludeId(id).and(
-                    CartItemSpecs.byRetailerId(item.retailer!!.id).and(
-                        CartItemSpecs.byFlowerId(item.flower!!.id).and(
-                            CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade))
-                        )
-                    )
+                    CartItemSpecs.byRetailerId(item.retailer!!.id)
+                ).and(
+                    CartItemSpecs.byFlowerId(item.flower!!.id)
+                ).and(
+                    CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade))
                 )
 
             )
