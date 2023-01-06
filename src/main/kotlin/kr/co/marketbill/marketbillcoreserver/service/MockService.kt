@@ -83,10 +83,10 @@ class MockService {
     @PostConstruct
     fun createAllMockToDB() {
         if (profile == "local") {
-            createMockFlowers()
-            createMockUsers()
-            createMockCartItems()
-            createMockOrderSheets()
+//            createMockFlowers()
+//            createMockUsers()
+//            createMockCartItems()
+//            createMockOrderSheets()
         }
     }
 
