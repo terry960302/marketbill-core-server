@@ -60,7 +60,7 @@ class OrderFetcher {
         @InputArgument pagination: PaginationInput?
     ): Page<CartItem> {
         val token = jwtProvider.filterOnlyToken(authorization)
-        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination, fieldToSort = "updatedAt")
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getAllCartItems(userId, pageable)
     }
@@ -137,7 +137,7 @@ class OrderFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         var userId = jwtProvider.parseUserId(token)
         val role = jwtProvider.parseUserRole(token)
-        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination, fieldToSort = "date")
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination, sortBy = "date")
 
         if (role == AccountRole.WHOLESALER_EMPE) {
             userId = userService.getConnectedEmployerId(userId)
