@@ -20,13 +20,12 @@ class FlowerService {
     private val className: String = this.javaClass.simpleName
 
     fun getFlowers(fromDate: LocalDate?, toDate: LocalDate?, keyword: String?, pageable: Pageable): Page<Flower> {
-        val executedFunc = object : Any() {}.javaClass.enclosingClass.name
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
             val flowers = flowerRepository.findAll(
                 FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
                 pageable
             )
-            logger.debug("$className.$executedFunc >> flower result count : ${flowers.size}")
             logger.info("$className.$executedFunc >> completed.")
             return flowers
         } catch (e: Exception) {
