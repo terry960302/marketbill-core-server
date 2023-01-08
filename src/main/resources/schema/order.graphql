@@ -48,6 +48,17 @@ type OrderItem{
     deletedAt : LocalDate,
 }
 
+type DailyOrderItem{
+    id : Int!,
+    wholesaler : User,
+    flower : Flower!,
+    grade : FlowerGrade!,
+    price : Int,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
 type OrderSheetReceipt{
     id : Int!,
     orderSheet : OrderSheet!,
@@ -92,6 +103,8 @@ extend type Query {
     # [도매상] 오늘의 주문합계
     # - date : "yyyy-MM-dd" 문자열 포맷(없는 경우 오늘 날짜 들어감)
     getDailyOrderSheetAggregate(date : String) : OrderSheetsAggregate
+    # [도매상] 판매가 일괄적용시 불러오는 주문항목들
+    getDailyOrderItems(filter : DailyOrderItemFilterInput) : [DailyOrderItem!]!
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {
@@ -107,10 +120,12 @@ extend type Mutation {
     orderCartItems : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
     removeOrderSheet(orderSheetId : Int!) : CommonResponse!,
-    # [도매상] 주문 항목 수정
+    # [도매상] 주문내역 주문 항목 수정
     updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem!]!
-    # [도매상] 영수증 발행(미완성)
+    # [도매상] 판매가 일괄적용 주문 항목 일괄 수정
+    updateDailyOrderItemsPrice(items : [OrderItemPriceInput]) : [DailyOrderItem!]!
+    # [도매상] 영수증 발행
     issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt!,
-    # 배치 장바구니 주문처리
+    # 정기적 일괄 장바구니 주문처리
     batchCartToOrder : CommonResponse!
 }

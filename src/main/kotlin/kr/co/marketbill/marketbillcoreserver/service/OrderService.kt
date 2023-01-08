@@ -13,18 +13,18 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.DailyOrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetReceiptRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BusinessInfoRepository
+import kr.co.marketbill.marketbillcoreserver.domain.specs.DailyOrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetReceiptSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
+import kr.co.marketbill.marketbillcoreserver.domain.vo.DailyOrderItemKey
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
@@ -60,6 +60,9 @@ class OrderService {
 
     @Autowired
     private lateinit var orderItemRepository: OrderItemRepository
+
+    @Autowired
+    private lateinit var dailyOrderItemRepository: DailyOrderItemRepository
 
     @Autowired
     private lateinit var orderSheetRepository: OrderSheetRepository
@@ -131,8 +134,9 @@ class OrderService {
                     price = null,
                 )
             }
-            orderItemRepository.saveAll(orderItems)
-            logger.debug("$className.$executedFunc >> Order items are created using cart items.")
+            val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
+            logger.debug("$className.$executedFunc >> Order items are created by cart items.")
+            createOrderItemGroups(createdOrderItems)
             logger.info("$className.$executedFunc >> completed.")
             return updatedOrderSheet
         } catch (e: Exception) {
@@ -166,6 +170,27 @@ class OrderService {
             )
             logger.info("$className.$executedFunc >> completed.")
             return orderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    @Transactional(readOnly = true)
+    fun getDailyOrderItems(
+        wholesalerId: Long?,
+        fromDate: LocalDate?,
+        toDate: LocalDate?,
+        pageable: Pageable
+    ): Page<DailyOrderItem> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val items = dailyOrderItemRepository.findAll(
+                DailyOrderItemSpecs.byWholesalerId(wholesalerId).and(DailyOrderItemSpecs.btwDates(fromDate, toDate)),
+                pageable
+            )
+            logger.info("$className.$executedFunc >> completed.")
+            return items
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
             throw e
@@ -229,6 +254,7 @@ class OrderService {
         }
     }
 
+    @Transactional
     fun removeOrderSheet(orderSheetId: Long): Long {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -241,6 +267,7 @@ class OrderService {
                     errorCode = CustomErrorCode.NO_ORDER_SHEET
                 )
             }
+            deleteOrderItemGroups(orderSheetId)
             orderSheetRepository.deleteById(orderSheetId)
             logger.info("$className.$executedFunc >> completed.")
             return orderSheetId
@@ -395,7 +422,7 @@ class OrderService {
 
             val orderSheetReceipt = OrderSheetReceipt(
                 orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId),
-                fileName= receiptInfo.fileName,
+                fileName = receiptInfo.fileName,
                 filePath = receiptInfo.filePath,
                 fileFormat = receiptInfo.fileFormat,
                 metadata = receiptInfo.metadata
@@ -420,6 +447,71 @@ class OrderService {
             logger.debug("$className.$executedFunc >> Sent issue receipt message.")
 
             return createdReceipt
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
+    fun createOrderItemGroups(orderItems: List<OrderItem>): List<DailyOrderItem> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val newDailyOrderItems: List<DailyOrderItem> = orderItems.filter {
+                val isAlreadyExists: Boolean = dailyOrderItemRepository.exists(
+                    DailyOrderItemSpecs.byItemKey(
+                        DailyOrderItemKey(
+                            wholesalerId = it.wholesaler!!.id!!,
+                            flowerId = it.flower!!.id!!,
+                            grade = it.grade!!,
+                            date = it.createdAt.toLocalDate(),
+                        )
+                    )
+                )
+                !isAlreadyExists
+            }.map {
+                DailyOrderItem(
+                    wholesaler = it.wholesaler,
+                    flower = it.flower,
+                    grade = it.grade,
+                )
+            }
+            logger.info("$className.$executedFunc >> completed.")
+
+            return dailyOrderItemRepository.saveAll(newDailyOrderItems)
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
+    private fun deleteOrderItemGroups(orderSheetId: Long) {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val orderItems: List<OrderItem> =
+                orderItemRepository.findAll(OrderItemSpecs.byOrderSheetId(orderSheetId))
+
+
+            val orderItemGroupIdsToDelete: List<Long> = orderItems.flatMap {
+                val groupKey = DailyOrderItemKey(
+                    wholesalerId = it.wholesaler!!.id!!,
+                    flowerId = it.flower!!.id!!,
+                    grade = it.grade!!,
+                    date = it.createdAt.toLocalDate()
+                )
+                val sameOrderItems = orderItemRepository.findAll(
+                    OrderItemSpecs.byItemKey(groupKey).and(OrderItemSpecs.excludeId(it.id))
+                )
+                if (sameOrderItems.isEmpty()) {
+                    dailyOrderItemRepository.findAll(DailyOrderItemSpecs.byItemKey(groupKey)).map { it.id!! }
+                } else {
+                    listOf()
+                }
+            }
+            logger.info("$className.$executedFunc >> completed.")
+
+            return dailyOrderItemRepository.deleteAllById(orderItemGroupIdsToDelete)
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}")
             throw e
