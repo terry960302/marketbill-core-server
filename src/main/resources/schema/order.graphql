@@ -104,7 +104,7 @@ extend type Query {
     # - date : "yyyy-MM-dd" 문자열 포맷(없는 경우 오늘 날짜 들어감)
     getDailyOrderSheetAggregate(date : String) : OrderSheetsAggregate
     # [도매상] 판매가 일괄적용시 불러오는 주문항목들
-    getDailyOrderItems(filter : DailyOrderItemFilterInput) : [DailyOrderItem!]!
+    getDailyOrderItems(filter : DailyOrderItemFilterInput, pagination : PaginationInput) : [DailyOrderItem!]!
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {

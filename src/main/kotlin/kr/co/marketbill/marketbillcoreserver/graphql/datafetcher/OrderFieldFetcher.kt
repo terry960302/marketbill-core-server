@@ -7,10 +7,7 @@ import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderSheetReceiptLoader
@@ -102,5 +99,12 @@ class OrderFieldFetcher {
         val orderItem = dfe.getSource<OrderItem>()
         orderItem.gradeValue = EnumConverter.convertFlowerGradeKorToEnum(orderItem.grade!!)
         return orderItem.gradeValue!!
+    }
+
+    @DgsData(parentType = DgsConstants.DAILYORDERITEM.TYPE_NAME, field = DgsConstants.DAILYORDERITEM.Grade)
+    fun dailyOrderItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
+        val dailyOrderItem = dfe.getSource<DailyOrderItem>()
+        dailyOrderItem.gradeValue = EnumConverter.convertFlowerGradeKorToEnum(dailyOrderItem.grade!!)
+        return dailyOrderItem.gradeValue!!
     }
 }
