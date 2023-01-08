@@ -277,6 +277,7 @@ class OrderService {
         }
     }
 
+    @Transactional
     fun updateOrderItemsPrice(items: List<OrderItemPriceInput>): List<OrderItem> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -299,6 +300,61 @@ class OrderService {
             val updatedOrderItems = orderItemRepository.saveAll(orderItems)
             logger.info("$className.$executedFunc >> completed.")
             return updatedOrderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    /**
+     * ## 판매가 일괄적용의 가격 수정
+     * : DailyOrderItem 의 가격수정이 이뤄지면, OrderItem에도 영향
+     */
+    @Transactional
+    fun updateDailyOrderItemsPrice(items: List<OrderItemPriceInput>): List<DailyOrderItem> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            if (items.isEmpty()) {
+                logger.debug("$className.$executedFunc >> no daily order items to update.")
+                return listOf()
+            }
+            val dailyOrderItems: List<DailyOrderItem> = items.map {
+                val dailyOrderItem = entityManager.getReference(DailyOrderItem::class.java, it.id.toLong())
+                dailyOrderItem.price = it.price
+                dailyOrderItem
+            }
+
+            val allConnectedOrderItems: List<OrderItem> = dailyOrderItems.flatMap { parent ->
+                val connectedOrderItems: List<OrderItem> = orderItemRepository.findAll(
+                    OrderItemSpecs.byItemKey(
+                        DailyOrderItemKey(
+                            flowerId = parent.flower!!.id!!,
+                            wholesalerId = parent.wholesaler!!.id!!,
+                            grade = parent.grade!!,
+                            date = parent.createdAt.toLocalDate()
+                        )
+                    )
+                )
+                connectedOrderItems.map { child ->
+                    child.price = parent.price
+                    child
+                }
+            }.toList()
+
+            val allConnectedOrderSheets : List<OrderSheet> = allConnectedOrderItems.map { it.orderSheet!! }.map {
+                it.priceUpdatedAt = LocalDateTime.now()
+                it
+            }
+
+            orderItemRepository.saveAll(allConnectedOrderItems)
+            logger.debug("$className.$executedFunc >> OrderItem price is updated.")
+            orderSheetRepository.saveAll(allConnectedOrderSheets)
+            logger.debug("$className.$executedFunc >> OrderSheet 'priceUpdatedAt' column is updated.")
+
+            val updatedDailyOrderItems = dailyOrderItemRepository.saveAll(dailyOrderItems)
+            logger.info("$className.$executedFunc >> completed.")
+            return updatedDailyOrderItems
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
             throw e
