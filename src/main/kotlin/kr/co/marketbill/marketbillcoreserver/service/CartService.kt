@@ -227,7 +227,7 @@ class CartService {
      * ### 스케쥴러
      * : 매일 오후 10시에 자동 주문처리
      */
-    @Scheduled(cron = "0 0 13 * * ?")
+    @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
     @Transactional
     fun batchCartToOrder() {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
