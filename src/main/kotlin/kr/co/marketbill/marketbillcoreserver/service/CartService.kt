@@ -55,6 +55,7 @@ class CartService {
     private val logger: Logger = LoggerFactory.getLogger(CartService::class.java)
     private val className = this.javaClass.simpleName
 
+    @Transactional
     fun getConnectedWholesalerOnCartItems(userId: Long): Optional<User> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -167,6 +168,7 @@ class CartService {
         }
     }
 
+    @Transactional
     fun removeCartItem(cartItemId: Long): Long {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
