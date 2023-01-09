@@ -2,6 +2,10 @@ type CommonResponse{
     success : Boolean
 }
 
+extend type Query {
+    getCurrentDateTime : LocalDate
+}
+
 extend type Mutation{
     # 자유양식 SMS 전송
     sendDefaultSms(to : String!, message : String!) : CommonResponse!
