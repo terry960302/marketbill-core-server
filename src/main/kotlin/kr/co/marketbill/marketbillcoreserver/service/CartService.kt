@@ -109,7 +109,7 @@ class CartService {
                         ))
 
             val connectedWholesaler : Optional<User> = this.getConnectedWholesalerOnCartItems(userId)
-            logger.debug("$className.$executedFunc >> connected wholesaler fetched.")
+            logger.info("$className.$executedFunc >> connected wholesaler fetched.")
 
             if(connectedWholesaler.isPresent){
                 cartItem.wholesaler = connectedWholesaler.get()
@@ -138,7 +138,7 @@ class CartService {
                 errorCode = CustomErrorCode.NO_CART_ITEM
             )
             val item = cartItem.get()
-            logger.debug("$className.$executedFunc >> cart_item is existed.")
+            logger.info("$className.$executedFunc >> cart_item is existed.")
 
             val sameCartItem: Optional<CartItem> = cartRepository.findOne(
                 CartItemSpecs.excludeId(id).and(
@@ -206,7 +206,7 @@ class CartService {
                     errorCode = CustomErrorCode.NO_USER
                 )
             }
-            logger.debug("$className.$executedFunc >> retailer, wholesaler both are exists.")
+            logger.info("$className.$executedFunc >> retailer, wholesaler both are exists.")
 
             val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
             val updatedCartItemObjs = cartItems.map {
@@ -245,7 +245,7 @@ class CartService {
         try {
             val validCartItems = cartRepository.findAll(CartItemSpecs.hasWholesaler()).filter { it.wholesaler != null }
             log.cartItemsCount = validCartItems.size
-            logger.debug("$className.$executedFunc >> fetched all cart items each has connected wholesaler info.")
+            logger.info("$className.$executedFunc >> fetched all cart items each has connected wholesaler info.")
 
             val cartItemGroup: Map<Long, List<CartItem>> = validCartItems.groupBy { it.retailer!!.id!! }
 
@@ -260,7 +260,7 @@ class CartService {
                         it
                     }
                 )
-                logger.debug("$className.$executedFunc >> cart items are ordered. (${cartItems.map { it.id }})")
+                logger.info("$className.$executedFunc >> cart items are ordered. (${cartItems.map { it.id }})")
 
                 val orderSheet = OrderSheet(
                     orderNo = "",
@@ -271,7 +271,7 @@ class CartService {
                 val savedOrderSheet = orderSheetRepository.save(orderSheet)
                 savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
                 val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
-                logger.debug("$className.$executedFunc >> OrderSheet(ID:${updatedOrderSheet.id}) is created.")
+                logger.info("$className.$executedFunc >> OrderSheet(ID:${updatedOrderSheet.id}) is created.")
 
                 val orderItems = cartItems.map {
                     OrderItem(
@@ -286,12 +286,12 @@ class CartService {
                 }
                 newOrderItems.addAll(orderItems)
                 orderItemRepository.saveAll(orderItems)
-                logger.debug("$className.$executedFunc >> OrderItems(IDs:${orderItems.map { it.id }}) is created.")
+                logger.info("$className.$executedFunc >> OrderItems(IDs:${orderItems.map { it.id }}) is created.")
             }
 
             log.orderSheetCount = newOrderSheets.size
             log.orderItemCount = newOrderItems.size
-            logger.debug("$className.$executedFunc >> done(no issue).")
+            logger.info("$className.$executedFunc >> done(no issue).")
         } catch (e: java.lang.Exception) {
             log.errLogs = e.message
             logger.error("$className.$executedFunc >> ${e.message}")

@@ -105,10 +105,10 @@ class OrderService {
                 errorType = ErrorType.NOT_FOUND,
                 errorCode = CustomErrorCode.NO_CART_WHOLESALER
             )
-            logger.debug("$className.$executedFunc >> All cart items have wholesaler info.")
+            logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
 
             cartRepository.saveAll(cartItems)
-            logger.debug("$className.$executedFunc >> All cart items are ordered.")
+            logger.info("$className.$executedFunc >> All cart items are ordered.")
 
             val selectedRetailer: User = cartItems[0].retailer!!
             val selectedWholesaler: User = cartItems[0].wholesaler!!
@@ -119,7 +119,7 @@ class OrderService {
                 wholesaler = selectedWholesaler,
             )
             val savedOrderSheet = orderSheetRepository.save(orderSheet)
-            logger.debug("$className.$executedFunc >> OrderSheet is created.")
+            logger.info("$className.$executedFunc >> OrderSheet is created.")
             savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
             val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
 
@@ -135,7 +135,7 @@ class OrderService {
                 )
             }
             val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
-            logger.debug("$className.$executedFunc >> Order items are created by cart items.")
+            logger.info("$className.$executedFunc >> Order items are created by cart items.")
             createOrderItemGroups(createdOrderItems)
             logger.info("$className.$executedFunc >> completed.")
             return updatedOrderSheet
@@ -285,7 +285,7 @@ class OrderService {
 
         try {
             if (items.isEmpty()) {
-                logger.debug("$className.$executedFunc >> no order items to update.")
+                logger.info("$className.$executedFunc >> no order items to update.")
                 return listOf()
             }
             val orderItems: List<OrderItem> = items.map {
@@ -297,7 +297,7 @@ class OrderService {
             val orderSheet = selectedOrderItem.get().orderSheet!!
             orderSheet.priceUpdatedAt = LocalDateTime.now()
             orderSheetRepository.save(orderSheet)
-            logger.debug("$className.$executedFunc >> OrderSheet 'priceUpdatedAt' column is updated.")
+            logger.info("$className.$executedFunc >> OrderSheet 'priceUpdatedAt' column is updated.")
 
             val updatedOrderItems = orderItemRepository.saveAll(orderItems)
             logger.info("$className.$executedFunc >> completed.")
@@ -318,7 +318,7 @@ class OrderService {
 
         try {
             if (items.isEmpty()) {
-                logger.debug("$className.$executedFunc >> no daily order items to update.")
+                logger.info("$className.$executedFunc >> no daily order items to update.")
                 return listOf()
             }
             val dailyOrderItems: List<DailyOrderItem> = items.map {
@@ -350,9 +350,9 @@ class OrderService {
             }
 
             orderItemRepository.saveAll(allConnectedOrderItems)
-            logger.debug("$className.$executedFunc >> OrderItem price is updated.")
+            logger.info("$className.$executedFunc >> OrderItem price is updated.")
             orderSheetRepository.saveAll(allConnectedOrderSheets)
-            logger.debug("$className.$executedFunc >> OrderSheet 'priceUpdatedAt' column is updated.")
+            logger.info("$className.$executedFunc >> OrderSheet 'priceUpdatedAt' column is updated.")
 
             val updatedDailyOrderItems = dailyOrderItemRepository.saveAll(dailyOrderItems)
             logger.info("$className.$executedFunc >> completed.")
@@ -415,7 +415,7 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            logger.debug("$className.$executedFunc >> init")
+            logger.info("$className.$executedFunc >> init")
 
             val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
             if (orderSheet.isEmpty) throw CustomException(
@@ -423,7 +423,7 @@ class OrderService {
                 errorType = ErrorType.NOT_FOUND,
                 errorCode = CustomErrorCode.NO_ORDER_SHEET
             )
-            logger.debug("$className.$executedFunc >> orderSheet is existed.")
+            logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
             val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null }
@@ -434,7 +434,7 @@ class OrderService {
                     errorCode = CustomErrorCode.NO_PRICE_ORDER_ITEM
                 )
             }
-            logger.debug("$className.$executedFunc >> order items price data validated.")
+            logger.info("$className.$executedFunc >> order items price data validated.")
 
             val wholesalerBusinessInfo: Optional<BusinessInfo> =
                 businessInfoRepository.findByUserId(orderSheet.get().wholesaler!!.id!!)
@@ -443,7 +443,7 @@ class OrderService {
                 errorType = ErrorType.NOT_FOUND,
                 errorCode = CustomErrorCode.NO_BUSINESS_INFO
             )
-            logger.debug("$className.$executedFunc >> businessInfo of wholesaler is validated.")
+            logger.info("$className.$executedFunc >> businessInfo of wholesaler is validated.")
 
             val input = ReceiptProcessInput(
                 orderNo = orderSheet.get().orderNo,
@@ -471,12 +471,12 @@ class OrderService {
                     )
                 }
             )
-            logger.debug("$className.$executedFunc >> receipt object is created.")
+            logger.info("$className.$executedFunc >> receipt object is created.")
 
             val receiptInfo: ReceiptProcessOutput = runBlocking {
                 withContext(Dispatchers.Default) { generateReceipt(input) }
             }
-            logger.debug("$className.$executedFunc >> [file-process-service] processing receipt is completed. -> response : ($receiptInfo)")
+            logger.info("$className.$executedFunc >> [file-process-service] processing receipt is completed. -> response : ($receiptInfo)")
 
             val orderSheetReceipt = OrderSheetReceipt(
                 orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId),
@@ -487,7 +487,7 @@ class OrderService {
             )
             val createdReceipt = orderSheetReceiptRepository.save(orderSheetReceipt)
 
-            logger.debug("$className.$executedFunc >> OrderSheetReceipt is created.")
+            logger.info("$className.$executedFunc >> OrderSheetReceipt is created.")
 
             val targetPhoneNo = orderSheet.get().retailer!!.userCredential!!.phoneNo
             val wholesalerName = orderSheet.get().wholesaler!!.name!!
@@ -502,7 +502,7 @@ class OrderService {
                     url
                 )
             }
-            logger.debug("$className.$executedFunc >> Sent issue receipt message.")
+            logger.info("$className.$executedFunc >> Sent issue receipt message.")
 
             return createdReceipt
         } catch (e: Exception) {
