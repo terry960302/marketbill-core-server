@@ -2,6 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.domain.specs
 
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.BiddingFlower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
+import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.FlowerType
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Component
 import java.time.LocalDate
@@ -15,7 +16,10 @@ class FlowerSpecs {
                 if (keyword == null) {
                     builder.conjunction()
                 } else {
-                    builder.like(root.get("name"), "%${keyword}%")
+                    val namePredicate = builder.like(root.get("name"), "%${keyword}%")
+                    val flowerType = root.join<Flower, FlowerType>("flowerType")
+                    val typeNamePredicate = builder.like(flowerType.get<String>("name"), "%${keyword}%")
+                    builder.or(namePredicate, typeNamePredicate)
                 }
             }
         }
