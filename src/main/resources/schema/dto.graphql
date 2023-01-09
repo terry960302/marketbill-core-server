@@ -40,7 +40,9 @@ input BizConnectionFilterInput{
 }
 
 input UserFilterInput{
-    roles : [AccountRole!]!
+    roles : [AccountRole!],
+    phoneNo : String,
+    name : String,
 }
 
 input DateFilterInput{
