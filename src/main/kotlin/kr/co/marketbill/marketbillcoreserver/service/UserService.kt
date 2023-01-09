@@ -327,30 +327,13 @@ class UserService {
     fun signUp(input: SignUpInput): AuthTokenDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
-            logger.debug("$className.$executedFunc >> input : $input")
             val isWholesalerEmployee =
                 input.role == kr.co.marketbill.marketbillcoreserver.types.AccountRole.WHOLESALER_EMPE
 
             val user = if (isWholesalerEmployee) {
-                val wholesaleEmployer: Optional<User> = userRepository.findOne(
-                    UserSpecs.hasRoles(listOf(AccountRole.WHOLESALER_EMPR)).and(UserSpecs.isName(input.name))
-                )
-                if (wholesaleEmployer.isEmpty) {
-                    throw CustomException(
-                        message = EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR,
-                        errorType = ErrorType.INTERNAL,
-                        errorCode = CustomErrorCode.EMPLOYER_SIGNUP_NEEDED
-                    )
-                } else {
-                    val employee = createUser(input)
-
-                    val connection = WholesalerConnection(employer = wholesaleEmployer.get(), employee = employee)
-                    wholesalerConnectionRepository.save(connection)
-                    logger.debug("$className.$executedFunc >> wholesaler connection is created.")
-                    employee
-                }
+                wholesalerEmployeeSignUp(input)
             } else {
-                createUser(input)
+                wholesaleEmployerAndRetailerSignUp(input)
             }
 
             val authToken =
@@ -365,6 +348,51 @@ class UserService {
             throw e
         }
     }
+
+    @Transactional
+    fun wholesalerEmployeeSignUp(input: SignUpInput): User {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        val wholesaleEmployers: List<User> = userRepository.findAll(
+            UserSpecs.hasRoles(listOf(AccountRole.WHOLESALER_EMPR)).and(UserSpecs.isName(input.name))
+        )
+        val hasSameNameEmployer = wholesaleEmployers.isNotEmpty()
+        if (!hasSameNameEmployer) {
+            throw CustomException(
+                message = EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR,
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.EMPLOYER_SIGNUP_NEEDED
+            )
+        }
+
+        val employer = wholesaleEmployers[0]
+        val employee = createUser(input)
+
+        val connection = WholesalerConnection(employer = employer, employee = employee)
+        wholesalerConnectionRepository.save(connection)
+        logger.debug("$className.$executedFunc >> wholesaler connection is created.")
+        return employee
+    }
+
+    @Transactional
+    fun wholesaleEmployerAndRetailerSignUp(input: SignUpInput): User {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        val hasSameNameUser = userRepository.findAll(UserSpecs.isName(input.name)).isNotEmpty()
+        if (hasSameNameUser) {
+            val msg = SAME_WHOLESALER_NAME_ERR
+            logger.error("$className.$executedFunc >> $msg")
+            throw CustomException(
+                message = msg,
+                errorType = ErrorType.INTERNAL,
+                errorCode = CustomErrorCode.USER_NAME_DUPLICATED
+            )
+        }
+        logger.debug("$className.$executedFunc >> user of same name validated.")
+
+        return createUser(input)
+    }
+
 
     @Transactional
     fun signIn(input: SignInInput): AuthTokenDto {
@@ -530,18 +558,6 @@ class UserService {
             )
         }
         logger.debug("$className.$executedFunc >> checked same user credential info.")
-
-        val hasSameNameUser = userRepository.findAll(UserSpecs.isName(input.name)).isNotEmpty()
-        if (hasSameNameUser) {
-            val msg = SAME_WHOLESALER_NAME_ERR
-            logger.error("$className.$executedFunc >> $msg")
-            throw CustomException(
-                message = msg,
-                errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.USER_NAME_DUPLICATED
-            )
-        }
-        logger.debug("$className.$executedFunc >> checked same user name.")
 
         val belongsTo = when (AccountRole.valueOf(input.role.toString())) {
             AccountRole.RETAILER -> null
