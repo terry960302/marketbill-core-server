@@ -145,6 +145,7 @@ class OrderService {
         }
     }
 
+    @Transactional(readOnly = true)
     fun getOrderSheets(userId: Long?, role: AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderSheet> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -161,6 +162,7 @@ class OrderService {
         }
     }
 
+    @Transactional(readOnly = true)
     fun getOrderItems(wholesalerId: Long?, role: AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderItem> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
