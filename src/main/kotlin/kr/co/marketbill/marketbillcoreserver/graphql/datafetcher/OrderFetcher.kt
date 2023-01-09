@@ -87,6 +87,10 @@ class OrderFetcher {
             val token = jwtProvider.filterOnlyToken(authorization.get())
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
+
+            if (role == AccountRole.WHOLESALER_EMPE){
+                userId = userService.getConnectedEmployerId(userId)
+            }
         }
 
         if (filter != null) {
