@@ -91,6 +91,7 @@ class MockService {
 //            createMockUsers()
 //            createMockCartItems()
 //            createMockOrderSheets()
+            logger.info("mock data created.")
         }
     }
 

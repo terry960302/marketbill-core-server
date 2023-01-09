@@ -308,7 +308,7 @@ class OrderService {
 
     /**
      * ## 판매가 일괄적용의 가격 수정
-     * : DailyOrderItem 의 가격수정이 이뤄지면, OrderItem에도 영향
+     * : DailyOrderItem 의 가격수정이 이뤄지면, OrderItem 에도 영향
      */
     @Transactional
     fun updateDailyOrderItemsPrice(items: List<OrderItemPriceInput>): List<DailyOrderItem> {
