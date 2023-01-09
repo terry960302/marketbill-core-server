@@ -65,6 +65,8 @@ class UserFetcher {
         var userId: Long? = null
         var role: AccountRole? = null
         var roles: List<AccountRole>? = null
+        var phoneNo : String? = null
+        var name : String? = null
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
         if (authorization.isPresent) {
@@ -74,7 +76,9 @@ class UserFetcher {
         }
         if (filter != null) {
             roles =
-                filter.roles.map { kr.co.marketbill.marketbillcoreserver.constants.AccountRole.valueOf(it.toString()) }
+                filter.roles?.map { kr.co.marketbill.marketbillcoreserver.constants.AccountRole.valueOf(it.toString()) }
+            phoneNo = filter.phoneNo
+            name = filter.name
         }
 
         val selection = dfe.selectionSet
@@ -83,7 +87,7 @@ class UserFetcher {
         return if (needFetchApplyStatus) {
             userService.getUsersWithApplyStatus(userId, role, pageable)
         } else {
-            userService.getAllUsers(roles, pageable)
+            userService.getUsers(roles, phoneNo, name, pageable)
         }
     }
 

@@ -96,10 +96,14 @@ class UserService {
         }
     }
 
-    fun getAllUsers(roles: List<AccountRole>?, pageable: Pageable): Page<User> {
+    fun getUsers(roles: List<AccountRole>?, phoneNo: String?, name: String?, pageable: Pageable): Page<User> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
-            val users = userRepository.findAll(UserSpecs.hasRoles(roles), pageable)
+            val users = userRepository.findAll(
+                UserSpecs.hasRoles(roles)
+                    .and(UserSpecs.likeName(name))
+                    .and(UserSpecs.byPhoneNo(phoneNo)), pageable
+            )
             logger.info("$className.$executedFunc >> completed.")
             return users
         } catch (e: Exception) {
@@ -431,7 +435,7 @@ class UserService {
                     errorCode = CustomErrorCode.NO_USER
                 )
             }
-            if(wholesaler.get().userCredential!!.role == AccountRole.WHOLESALER_EMPE){
+            if (wholesaler.get().userCredential!!.role == AccountRole.WHOLESALER_EMPE) {
                 throw CustomException(
                     message = "You cannot make business connection with employee(wholesaler).",
                     errorType = ErrorType.BAD_REQUEST,

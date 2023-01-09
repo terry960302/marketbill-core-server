@@ -1,12 +1,10 @@
 package kr.co.marketbill.marketbillcoreserver.domain.specs
 
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.UserCredential
 import org.springframework.data.jpa.domain.Specification
 import javax.persistence.criteria.Join
-import javax.persistence.criteria.JoinType
 
 class UserSpecs {
     companion object {
@@ -32,6 +30,28 @@ class UserSpecs {
                 }
             }
         }
+
+        fun byPhoneNo(phoneNo: String?): Specification<User> {
+            return Specification<User> { root, query, builder ->
+                if (phoneNo == null) {
+                    builder.conjunction()
+                } else {
+                    val userCred: Join<User, UserCredential> = root.join("userCredential")
+                    builder.equal(userCred.get<String>("phoneNo"), phoneNo)
+                }
+            }
+        }
+
+        fun likeName(name: String?): Specification<User> {
+            return Specification<User> { root, query, builder ->
+                if (name == null) {
+                    builder.conjunction()
+                } else {
+                    builder.like(root.get<String>("name"), "%$name%")
+                }
+            }
+        }
+
 
         fun exclude(id: Long?): Specification<User> {
             return Specification<User> { root, query, builder ->
