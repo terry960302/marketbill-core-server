@@ -12,6 +12,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.BiddingFlo
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerTypeRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.DailyOrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
@@ -70,6 +71,9 @@ class MockService {
     private lateinit var orderItemRepository: OrderItemRepository
 
     @Autowired
+    private lateinit var dailyOrderItemRepository: DailyOrderItemRepository
+
+    @Autowired
     private lateinit var orderSheetRepository: OrderSheetRepository
 
     @Autowired
@@ -87,6 +91,7 @@ class MockService {
 //            createMockUsers()
 //            createMockCartItems()
 //            createMockOrderSheets()
+            logger.info("mock data created.")
         }
     }
 

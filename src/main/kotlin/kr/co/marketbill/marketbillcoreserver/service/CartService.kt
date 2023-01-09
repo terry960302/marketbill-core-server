@@ -59,7 +59,7 @@ class CartService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val cartItems = getAllCartItems(userId, PageRequest.of(DEFAULT_PAGE, 1))
+            val cartItems = this.getAllCartItems(userId, PageRequest.of(DEFAULT_PAGE, 1))
             val connectedWholesalers = cartItems.map { it.wholesaler }.filterNotNull()
             val wholesaler = if (connectedWholesalers.isEmpty()) {
                 Optional.empty()

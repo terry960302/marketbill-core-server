@@ -162,6 +162,34 @@ class OrderFetcher {
         return orderService.getDailyOrderSheetsAggregate(userId, date)
     }
 
+    @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
+    @DgsQuery(field = DgsConstants.QUERY.GetDailyOrderItems)
+    fun getDailyOrderItems(
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
+        @InputArgument filter: DailyOrderItemFilterInput?,
+        @InputArgument pagination: PaginationInput?,
+    ): Page<kr.co.marketbill.marketbillcoreserver.domain.entity.order.DailyOrderItem> {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        var userId = jwtProvider.parseUserId(token)
+        val role = jwtProvider.parseUserRole(token)
+        var fromDate: LocalDate? = null
+        var toDate: LocalDate? = null
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
+
+        if (role == AccountRole.WHOLESALER_EMPE) {
+            userId = userService.getConnectedEmployerId(userId)
+        }
+
+        if (filter != null) {
+            if (filter.dateRange != null) {
+                fromDate = LocalDate.parse(filter.dateRange.fromDate)
+                toDate = LocalDate.parse(filter.dateRange.toDate)
+            }
+        }
+
+        return orderService.getDailyOrderItems(userId, fromDate, toDate, pageable)
+    }
+
 
     // mutation
     @PreAuthorize("hasRole('RETAILER')")
@@ -210,7 +238,7 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsMutation( field = DgsConstants.MUTATION.OrderCartItems)
+    @DgsMutation(field = DgsConstants.MUTATION.OrderCartItems)
     fun orderCartItems(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
     ): OrderSheet {
@@ -232,6 +260,12 @@ class OrderFetcher {
     @DgsMutation(field = DgsConstants.MUTATION.UpdateOrderItemsPrice)
     fun updateOrderItemsPrice(@InputArgument items: List<OrderItemPriceInput>): List<OrderItem> {
         return orderService.updateOrderItemsPrice(items)
+    }
+
+    @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
+    @DgsMutation(field = DgsConstants.MUTATION.UpdateDailyOrderItemsPrice)
+    fun updateDailyOrderItemsPrice(@InputArgument items: List<OrderItemPriceInput>): List<kr.co.marketbill.marketbillcoreserver.domain.entity.order.DailyOrderItem> {
+        return orderService.updateDailyOrderItemsPrice(items)
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR')")
