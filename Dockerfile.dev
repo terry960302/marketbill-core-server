@@ -20,7 +20,7 @@ ARG JAR_FILE=/app/build/libs/${FILENAME}.jar
 COPY --from=builder ${JAR_FILE} ./app.jar
 
 EXPOSE 8080
-ENTRYPOINT ["java","-jar", "-Dspring.profiles.active=${PROFILE}", "-Duser.timezone=Asia/Seoul", "/app.jar"]
+ENTRYPOINT ["java","-jar", "-Dspring.profiles.active=${PROFILE}", "-Duser.timezone=UTC", "/app.jar"]
 
 ## -- (구) Dockerfile --
 #FROM gradle:7.5.1-jdk18 AS builder
