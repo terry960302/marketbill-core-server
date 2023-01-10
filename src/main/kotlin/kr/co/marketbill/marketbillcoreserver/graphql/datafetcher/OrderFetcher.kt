@@ -110,7 +110,7 @@ class OrderFetcher {
         var date: LocalDate? = null
         var userId: Long? = null
         var role: AccountRole? = null
-
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
         if (authorization.isPresent) {
             val token = jwtProvider.filterOnlyToken(authorization.get())
@@ -121,8 +121,6 @@ class OrderFetcher {
                 userId = userService.getConnectedEmployerId(userId)
             }
         }
-        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
-
 
         if (filter != null) {
             date = LocalDate.parse(filter.date)
