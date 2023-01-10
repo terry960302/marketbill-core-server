@@ -319,11 +319,12 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            if (items.isEmpty()) {
-                logger.info("$className.$executedFunc >> no daily order items to update.")
+            val filteredItems = items.filter { it.price > 0 }
+            if (filteredItems.isEmpty()) {
+                logger.info("$className.$executedFunc >> No daily order items to update.")
                 return listOf()
             }
-            val dailyOrderItems: List<DailyOrderItem> = items.map {
+            val dailyOrderItems: List<DailyOrderItem> = filteredItems.map {
                 val dailyOrderItem = entityManager.getReference(DailyOrderItem::class.java, it.id.toLong())
                 dailyOrderItem.price = it.price
                 dailyOrderItem
