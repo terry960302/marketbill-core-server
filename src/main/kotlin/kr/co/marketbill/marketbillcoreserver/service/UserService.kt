@@ -79,6 +79,7 @@ class UserService {
     private val className: String = this.javaClass.simpleName
 
 
+    @Transactional(readOnly = true)
     fun getUser(userId: Long): User {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         val user: Optional<User> = userRepository.findById(userId)
@@ -96,6 +97,7 @@ class UserService {
         }
     }
 
+    @Transactional(readOnly = true)
     fun getUsers(roles: List<AccountRole>?, phoneNo: String?, name: String?, pageable: Pageable): Page<User> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
@@ -633,7 +635,7 @@ class UserService {
     }
 
     private fun validatePassword(password: String): Boolean {
-        // 영문, 숫자, 특수문자 조합 + 공백없음
+        // 영문, 숫자, 특수문자 조합 + 공백없음 + 8자 이상
         val minLength = 8
         val passwordPattern = "^(?!.* )(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@#\$%^&*]).{$minLength,}\$".toRegex()
         return password.matches(passwordPattern)

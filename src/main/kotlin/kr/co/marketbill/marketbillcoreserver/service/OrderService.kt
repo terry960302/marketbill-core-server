@@ -366,6 +366,7 @@ class OrderService {
         }
     }
 
+    @Transactional(readOnly = true)
     fun getAllDailyOrderSheetsAggregates(wholesalerId: Long, pageable: Pageable): Page<OrderSheetsAggregate> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -390,6 +391,7 @@ class OrderService {
         }
     }
 
+    @Transactional(readOnly = true)
     fun getDailyOrderSheetsAggregate(wholesalerId: Long, dateStr: String?): Optional<OrderSheetsAggregate> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 

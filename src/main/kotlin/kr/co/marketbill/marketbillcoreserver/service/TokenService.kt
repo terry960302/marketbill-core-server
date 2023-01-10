@@ -10,6 +10,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import javax.persistence.EntityManager
 
 @Service
@@ -50,6 +51,7 @@ class TokenService {
         }
     }
 
+    @Transactional
     fun upsertAuthToken(userId: Long, newToken: AuthTokenDto): AuthToken {
         val executedFunc = object : Any() {}.javaClass.enclosingClass.name
         try {

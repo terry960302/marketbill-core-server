@@ -9,6 +9,7 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
 
 @Service
@@ -19,6 +20,7 @@ class FlowerService {
     private val logger: Logger = LoggerFactory.getLogger(FlowerService::class.java)
     private val className: String = this.javaClass.simpleName
 
+    @Transactional(readOnly = true)
     fun getFlowers(fromDate: LocalDate?, toDate: LocalDate?, keyword: String?, pageable: Pageable): Page<Flower> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
