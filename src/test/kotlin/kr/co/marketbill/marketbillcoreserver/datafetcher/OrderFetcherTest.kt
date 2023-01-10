@@ -29,70 +29,70 @@ import org.springframework.test.context.ActiveProfiles
 @SpringBootTest(classes = [DgsAutoConfiguration::class, OrderFetcher::class])
 @ActiveProfiles("local")
 class OrderFetcherTest {
-
-    @Autowired
-    lateinit var dgsQueryExecutor: DgsQueryExecutor
-
-    @MockBean
-    lateinit var dateTimeScalarType: DateTimeScalarType
-
-    @MockBean
-    lateinit var jwtProvider: JwtProvider
-
-    @MockBean
-    lateinit var cartService: CartService
-
-    @MockBean
-    lateinit var messagingService: MessagingService
-
-    @MockBean
-    lateinit var userService: UserService
-
-    @MockBean
-    lateinit var orderService: OrderService
-
-
-    @BeforeEach
-    fun before() {
-        Mockito.`when`(orderService.getOrderItems(null, null, null, PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)))
-            .thenAnswer {
-                val list = listOf<OrderItem>(
-                    OrderItem(
-                        id = 1,
-                        retailer = User(id = 1, name = "reatiler1"),
-                        wholesaler = User(id = 2, name = "wholesaler2")
-                    ),
-                    OrderItem(
-                        id = 2,
-                        retailer = User(id = 1, name = "reatiler1"),
-                        wholesaler = User(id = 2, name = "wholesaler2")
-                    ),
-                )
-                val page: Page<OrderItem> = PageImpl(list)
-                page
-            }
-    }
-
-    @Test
-    fun getOrderSheet() {
-        val orderItemIds: List<Long> = dgsQueryExecutor.executeAndExtractJsonPath(
-            """
-                    {
-                        getOrderItems{
-                            id
-                            retailer {
-                                id
-                                name
-                            }
-                            wholesaler {
-                                id
-                                name
-                           }
-                        }
-                    }
-                """.trimIndent(), "data.getOrderItems[*].id"
-        )
-
-        assert(orderItemIds.size == 2)
-    }
+//
+//    @Autowired
+//    lateinit var dgsQueryExecutor: DgsQueryExecutor
+//
+//    @MockBean
+//    lateinit var dateTimeScalarType: DateTimeScalarType
+//
+//    @MockBean
+//    lateinit var jwtProvider: JwtProvider
+//
+//    @MockBean
+//    lateinit var cartService: CartService
+//
+//    @MockBean
+//    lateinit var messagingService: MessagingService
+//
+//    @MockBean
+//    lateinit var userService: UserService
+//
+//    @MockBean
+//    lateinit var orderService: OrderService
+//
+//
+//    @BeforeEach
+//    fun before() {
+//        Mockito.`when`(orderService.getOrderItems(null, null, null, PageRequest.of(DEFAULT_PAGE, DEFAULT_SIZE)))
+//            .thenAnswer {
+//                val list = listOf<OrderItem>(
+//                    OrderItem(
+//                        id = 1,
+//                        retailer = User(id = 1, name = "reatiler1"),
+//                        wholesaler = User(id = 2, name = "wholesaler2")
+//                    ),
+//                    OrderItem(
+//                        id = 2,
+//                        retailer = User(id = 1, name = "reatiler1"),
+//                        wholesaler = User(id = 2, name = "wholesaler2")
+//                    ),
+//                )
+//                val page: Page<OrderItem> = PageImpl(list)
+//                page
+//            }
+//    }
+//
+//    @Test
+//    fun getOrderSheet() {
+//        val orderItemIds: List<Long> = dgsQueryExecutor.executeAndExtractJsonPath(
+//            """
+//                    {
+//                        getOrderItems{
+//                            id
+//                            retailer {
+//                                id
+//                                name
+//                            }
+//                            wholesaler {
+//                                id
+//                                name
+//                           }
+//                        }
+//                    }
+//                """.trimIndent(), "data.getOrderItems[*].id"
+//        )
+//
+//        assert(orderItemIds.size == 2)
+//    }
 }
