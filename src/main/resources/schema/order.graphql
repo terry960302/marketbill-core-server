@@ -17,14 +17,14 @@ type OrderSheet{
     orderNo : String!,
     retailer : User,
     wholesaler : User,
-    orderItems(pagination: PaginationInput) : [OrderItem!],
+    orderItems(pagination: PaginationInput) : [OrderItem!]!,
     # 주문서에 해당하는 꽃의 총 개수
     totalFlowerQuantity : Int!,
     # 주문서에 해당하는 꽃의 품종 개수(중복x)
     totalFlowerTypeCount : Int!,
     # 영수증 발행 여부
     hasReceipt : Boolean!,
-    orderSheetReceipts (pagination: PaginationInput): [OrderSheetReceipt!],
+    orderSheetReceipts (pagination: PaginationInput): [OrderSheetReceipt!]!,
     # 최신 영수증(가장 근래 발행한 영수증)
     recentReceipt : OrderSheetReceipt,
     # 판매가 저장여부(한번이라도 저장한 적이 있는지)

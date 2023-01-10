@@ -8,11 +8,11 @@ type User {
     businessInfo : BusinessInfo,
     userCredential : UserCredential!,
     # 보낸 거래처 신청
-    appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
+    appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!]!,
     # 받은 거래처 신청
-    receivedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
+    receivedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!]!,
     # [도매상] 연결된 직원 목록
-    connectedEmployees : [User!],
+    connectedEmployees : [User!]!,
     # [도매상] 연결된 사장(업체)
     connectedEmployer : User,
     # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
