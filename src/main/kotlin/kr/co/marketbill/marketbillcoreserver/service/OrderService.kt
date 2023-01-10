@@ -429,10 +429,11 @@ class OrderService {
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
-            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null }
-            if (isAllNullPrice) {
+            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null}
+            val isAllZeroMinusPrice = orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0}
+            if (isAllNullPrice || isAllZeroMinusPrice) {
                 throw CustomException(
-                    message = "Not able to issue receipt with order items in case of all items have empty price.",
+                    message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
                     errorType = ErrorType.INTERNAL,
                     errorCode = CustomErrorCode.NO_PRICE_ORDER_ITEM
                 )
