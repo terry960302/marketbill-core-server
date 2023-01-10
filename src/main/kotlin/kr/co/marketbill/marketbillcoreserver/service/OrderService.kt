@@ -284,17 +284,19 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            if (items.isEmpty()) {
+            val filteredItems = items.filter { it.price >= 0 }
+            if (filteredItems.isEmpty()) {
                 logger.info("$className.$executedFunc >> no order items to update.")
                 return listOf()
             }
-            val orderItems: List<OrderItem> = items.map {
+
+            val orderItems: List<OrderItem> = filteredItems.map {
                 val orderItem = entityManager.getReference(OrderItem::class.java, it.id.toLong())
                 orderItem.price = it.price
                 orderItem
             }
-            val selectedOrderItem = orderItemRepository.findById(items[0].id.toLong())
-            val orderSheet = selectedOrderItem.get().orderSheet!!
+            val selectedOrderItem: OrderItem = orderItems[0]
+            val orderSheet = selectedOrderItem.orderSheet!!
             orderSheet.priceUpdatedAt = LocalDateTime.now()
             orderSheetRepository.save(orderSheet)
             logger.info("$className.$executedFunc >> OrderSheet 'priceUpdatedAt' column is updated.")
@@ -344,7 +346,7 @@ class OrderService {
                 }
             }.toList()
 
-            val allConnectedOrderSheets : List<OrderSheet> = allConnectedOrderItems.map { it.orderSheet!! }.map {
+            val allConnectedOrderSheets: List<OrderSheet> = allConnectedOrderItems.map { it.orderSheet!! }.map {
                 it.priceUpdatedAt = LocalDateTime.now()
                 it
             }
@@ -511,6 +513,7 @@ class OrderService {
         }
     }
 
+    @Transactional
     fun createOrderItemGroups(orderItems: List<OrderItem>): List<DailyOrderItem> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -543,6 +546,7 @@ class OrderService {
         }
     }
 
+    @Transactional
     private fun deleteOrderItemGroups(orderSheetId: Long) {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -575,7 +579,6 @@ class OrderService {
             throw e
         }
     }
-
 
     private suspend fun generateReceipt(input: ReceiptProcessInput): ReceiptProcessOutput {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
