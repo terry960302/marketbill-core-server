@@ -1,34 +1,34 @@
 package kr.co.marketbill.marketbillcoreserver.datafetcher
 
-import com.netflix.graphql.dgs.DgsQueryExecutor
-import com.netflix.graphql.dgs.autoconfig.DgsAutoConfiguration
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.graphql.datafetcher.OrderFetcher
-import kr.co.marketbill.marketbillcoreserver.graphql.scalars.DateTimeScalarType
-import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
-import kr.co.marketbill.marketbillcoreserver.service.CartService
-import kr.co.marketbill.marketbillcoreserver.service.MessagingService
-import kr.co.marketbill.marketbillcoreserver.service.OrderService
-import kr.co.marketbill.marketbillcoreserver.service.UserService
-import org.junit.jupiter.api.BeforeEach
-import org.junit.jupiter.api.Test
-import org.mockito.Mockito
-import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.boot.test.context.SpringBootTest
-import org.springframework.boot.test.mock.mockito.MockBean
-import org.springframework.data.domain.Page
-import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
-import org.springframework.test.context.ActiveProfiles
-
-
-@SpringBootTest(classes = [DgsAutoConfiguration::class, OrderFetcher::class])
-@ActiveProfiles("local")
-class OrderFetcherTest {
+//import com.netflix.graphql.dgs.DgsQueryExecutor
+//import com.netflix.graphql.dgs.autoconfig.DgsAutoConfiguration
+//import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+//import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
+//import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
+//import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
+//import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+//import kr.co.marketbill.marketbillcoreserver.graphql.datafetcher.OrderFetcher
+//import kr.co.marketbill.marketbillcoreserver.graphql.scalars.DateTimeScalarType
+//import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
+//import kr.co.marketbill.marketbillcoreserver.service.CartService
+//import kr.co.marketbill.marketbillcoreserver.service.MessagingService
+//import kr.co.marketbill.marketbillcoreserver.service.OrderService
+//import kr.co.marketbill.marketbillcoreserver.service.UserService
+//import org.junit.jupiter.api.BeforeEach
+//import org.junit.jupiter.api.Test
+//import org.mockito.Mockito
+//import org.springframework.beans.factory.annotation.Autowired
+//import org.springframework.boot.test.context.SpringBootTest
+//import org.springframework.boot.test.mock.mockito.MockBean
+//import org.springframework.data.domain.Page
+//import org.springframework.data.domain.PageImpl
+//import org.springframework.data.domain.PageRequest
+//import org.springframework.test.context.ActiveProfiles
+//
+//
+//@SpringBootTest(classes = [DgsAutoConfiguration::class, OrderFetcher::class])
+//@ActiveProfiles("local")
+//class OrderFetcherTest {
 //
 //    @Autowired
 //    lateinit var dgsQueryExecutor: DgsQueryExecutor
@@ -95,4 +95,4 @@ class OrderFetcherTest {
 //
 //        assert(orderItemIds.size == 2)
 //    }
-}
+//}
