@@ -3,8 +3,6 @@ package kr.co.marketbill.marketbillcoreserver.graphql.dataloader
 import com.netflix.graphql.dgs.DgsDataLoader
 import com.netflix.graphql.dgs.context.DgsContext
 import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.service.UserService
@@ -12,7 +10,6 @@ import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.dataloader.BatchLoaderEnvironment
 import org.dataloader.MappedBatchLoaderWithContext
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.domain.PageRequest
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -38,10 +35,12 @@ class ReceivedConnectionLoader : MappedBatchLoaderWithContext<Long, List<BizConn
         if (filter != null) {
             applyStatus = filter.applyStatus.map { ApplyStatus.valueOf(it.toString()) }
         }
-        return if (keys == null) {
-            CompletableFuture.completedFuture(emptyMap<Long, List<BizConnection>>().toMutableMap())
-        } else CompletableFuture.supplyAsync {
-            userService.getReceivedConnectionsByWholesalerIds(keys.stream().toList(), applyStatus, pageable)
+        return CompletableFuture.supplyAsync {
+            userService.getReceivedConnectionsByWholesalerIds(
+                keys!!.stream().toList(),
+                applyStatus,
+                pageable
+            )
         }
     }
 }

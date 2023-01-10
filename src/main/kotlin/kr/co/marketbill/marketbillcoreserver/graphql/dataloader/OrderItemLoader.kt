@@ -2,8 +2,6 @@ package kr.co.marketbill.marketbillcoreserver.graphql.dataloader
 
 import com.netflix.graphql.dgs.DgsDataLoader
 import com.netflix.graphql.dgs.context.DgsContext
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_SIZE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
@@ -11,9 +9,6 @@ import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.dataloader.BatchLoaderEnvironment
 import org.dataloader.MappedBatchLoaderWithContext
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.beans.factory.annotation.Qualifier
-import org.springframework.data.domain.PageRequest
-import org.springframework.data.domain.Sort
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
@@ -32,11 +27,13 @@ class OrderItemLoader : MappedBatchLoaderWithContext<Long, List<OrderItem>> {
         val pagination = orderContext.orderItemsInput.pagination
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
-        return CompletableFuture.supplyAsync {
-            orderService.getAllOrderItemsByOrderSheetIds(
-                keys!!.stream().toList(),
-                pageable
-            )
-        }
+
+        val orderSheetIds = keys!!.stream().toList()
+        val mappedOrderItems: MutableMap<Long, List<OrderItem>> = orderService.getAllOrderItemsByOrderSheetIds(
+            orderSheetIds,
+            pageable
+        )
+
+        return CompletableFuture.supplyAsync { mappedOrderItems }
     }
 }

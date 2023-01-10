@@ -28,6 +28,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.vo.DailyOrderItemKey
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
+import kr.co.marketbill.marketbillcoreserver.util.groupFillBy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -207,7 +208,7 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
             val orderItems = orderItemRepository.findAll(OrderItemSpecs.byOrderSheetIds(orderSheetIds), pageable)
-            val groupedOrderItems = orderItems.groupBy { it.orderSheet!!.id!! }
+            val groupedOrderItems = orderItems.groupFillBy(orderSheetIds) { it.orderSheet!!.id!! }
                 .toMutableMap()
             logger.info("$className.$executedFunc >> completed.")
             return groupedOrderItems
@@ -225,7 +226,7 @@ class OrderService {
         try {
             val orderSheetReceipts =
                 orderSheetReceiptRepository.findAll(OrderSheetReceiptSpecs.byOrderSheetIds(orderSheetIds), pageable)
-            val groupedOrderItems = orderSheetReceipts.groupBy { it.orderSheet!!.id!! }
+            val groupedOrderItems = orderSheetReceipts.groupFillBy(orderSheetIds) { it.orderSheet!!.id!! }
                 .toMutableMap()
             logger.info("$className.$executedFunc >> completed.")
             return groupedOrderItems

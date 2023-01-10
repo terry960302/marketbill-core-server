@@ -2,9 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.service
 
 import com.netflix.graphql.types.errors.ErrorType
 import kotlinx.coroutines.runBlocking
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
-import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.constants.*
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
@@ -16,6 +14,7 @@ import kr.co.marketbill.marketbillcoreserver.types.CreateBusinessInfoInput
 import kr.co.marketbill.marketbillcoreserver.types.SignInInput
 import kr.co.marketbill.marketbillcoreserver.types.SignUpInput
 import kr.co.marketbill.marketbillcoreserver.types.UpdatePasswordInput
+import kr.co.marketbill.marketbillcoreserver.util.groupFillBy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -235,7 +234,7 @@ class UserService {
             val bizConnections = bizConnectionRepository.findAll(
                 BizConnSpecs.hasApplyStatus(status).and(BizConnSpecs.byRetailerIds(retailerIds)), pageable
             )
-            val groupedBizConns = bizConnections.groupBy { it.retailer!!.id!! }.toMutableMap()
+            val groupedBizConns = bizConnections.groupFillBy(retailerIds) { it.retailer!!.id!! }.toMutableMap()
             logger.info("$className.$executedFunc >> completed.")
             return groupedBizConns
         } catch (e: Exception) {
@@ -255,7 +254,8 @@ class UserService {
             val bizConnections = bizConnectionRepository.findAll(
                 BizConnSpecs.hasApplyStatus(status).and(BizConnSpecs.byWholesalerIds(wholesalerIds)), pageable
             )
-            val groupedBizConns = bizConnections.groupBy { it.wholesaler!!.id!! }.toMutableMap()
+            val groupedBizConns = bizConnections.groupFillBy(wholesalerIds) { it.wholesaler!!.id!! }.toMutableMap()
+            logger.debug("$className.$executedFunc >> ${groupedBizConns.mapValues { it.value.map { it.id } }}")
             logger.info("$className.$executedFunc >> completed.")
             return groupedBizConns
         } catch (e: Exception) {
