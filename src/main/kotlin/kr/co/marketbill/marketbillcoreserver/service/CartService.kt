@@ -76,6 +76,7 @@ class CartService {
     }
 
 
+    @Transactional(readOnly = true)
     fun getAllCartItems(userId: Long, pageable: Pageable): Page<CartItem> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
