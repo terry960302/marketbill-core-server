@@ -284,17 +284,19 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            if (items.isEmpty()) {
+            val filteredItems = items.filter { it.price >= 0 }
+            if (filteredItems.isEmpty()) {
                 logger.info("$className.$executedFunc >> no order items to update.")
                 return listOf()
             }
-            val orderItems: List<OrderItem> = items.map {
+
+            val orderItems: List<OrderItem> = filteredItems.map {
                 val orderItem = entityManager.getReference(OrderItem::class.java, it.id.toLong())
                 orderItem.price = it.price
                 orderItem
             }
-            val selectedOrderItem = orderItemRepository.findById(items[0].id.toLong())
-            val orderSheet = selectedOrderItem.get().orderSheet!!
+            val selectedOrderItem: OrderItem = orderItems[0]
+            val orderSheet = selectedOrderItem.orderSheet!!
             orderSheet.priceUpdatedAt = LocalDateTime.now()
             orderSheetRepository.save(orderSheet)
             logger.info("$className.$executedFunc >> OrderSheet 'priceUpdatedAt' column is updated.")
@@ -317,11 +319,12 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            if (items.isEmpty()) {
-                logger.info("$className.$executedFunc >> no daily order items to update.")
+            val filteredItems = items.filter { it.price > 0 }
+            if (filteredItems.isEmpty()) {
+                logger.info("$className.$executedFunc >> No daily order items to update.")
                 return listOf()
             }
-            val dailyOrderItems: List<DailyOrderItem> = items.map {
+            val dailyOrderItems: List<DailyOrderItem> = filteredItems.map {
                 val dailyOrderItem = entityManager.getReference(DailyOrderItem::class.java, it.id.toLong())
                 dailyOrderItem.price = it.price
                 dailyOrderItem
@@ -344,7 +347,7 @@ class OrderService {
                 }
             }.toList()
 
-            val allConnectedOrderSheets : List<OrderSheet> = allConnectedOrderItems.map { it.orderSheet!! }.map {
+            val allConnectedOrderSheets: List<OrderSheet> = allConnectedOrderItems.map { it.orderSheet!! }.map {
                 it.priceUpdatedAt = LocalDateTime.now()
                 it
             }
@@ -426,10 +429,11 @@ class OrderService {
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
-            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null }
-            if (isAllNullPrice) {
+            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null}
+            val isAllZeroMinusPrice = orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0}
+            if (isAllNullPrice || isAllZeroMinusPrice) {
                 throw CustomException(
-                    message = "Not able to issue receipt with order items in case of all items have empty price.",
+                    message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
                     errorType = ErrorType.INTERNAL,
                     errorCode = CustomErrorCode.NO_PRICE_ORDER_ITEM
                 )
@@ -511,6 +515,7 @@ class OrderService {
         }
     }
 
+    @Transactional
     fun createOrderItemGroups(orderItems: List<OrderItem>): List<DailyOrderItem> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -543,6 +548,7 @@ class OrderService {
         }
     }
 
+    @Transactional
     private fun deleteOrderItemGroups(orderSheetId: Long) {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -575,7 +581,6 @@ class OrderService {
             throw e
         }
     }
-
 
     private suspend fun generateReceipt(input: ReceiptProcessInput): ReceiptProcessOutput {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
