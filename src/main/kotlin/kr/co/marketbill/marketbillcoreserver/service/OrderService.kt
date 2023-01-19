@@ -499,14 +499,12 @@ class OrderService {
             val targetPhoneNo = orderSheet.get().retailer!!.userCredential!!.phoneNo
             val wholesalerName = orderSheet.get().wholesaler!!.name!!
             val orderNo = orderSheet.get().orderNo
-            val url = ""
 
             runBlocking {
                 messagingService.sendIssueOrderSheetReceiptSMS(
                     to = targetPhoneNo,
                     wholesalerName = wholesalerName,
                     orderNo = orderNo,
-                    url
                 )
             }
             logger.info("$className.$executedFunc >> Sent issue receipt message.")

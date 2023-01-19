@@ -474,11 +474,10 @@ class UserService {
             }
             val retailerName = retailer.get().name!!
             val targetPhoneNo = wholesaler.get().userCredential!!.phoneNo
-            val url = ""
             logger.info("$className.$executedFunc >> bizConnection object is created.")
 
             runBlocking {
-                messagingService.sendApplyBizConnectionSMS(targetPhoneNo, retailerName, url)
+                messagingService.sendApplyBizConnectionSMS(targetPhoneNo, retailerName)
             }
             logger.info("$className.$executedFunc >> sent bizConnection message.")
 
@@ -517,12 +516,10 @@ class UserService {
                     logger.info("No need messaging API call on APPLYING status")
                 }
                 ApplyStatus.CONFIRMED -> {
-                    val url = ""
                     runBlocking {
                         messagingService.sendConfirmBizConnectionSMS(
                             to = targetPhoneNo,
                             wholesalerName = wholesalerName,
-                            url = url
                         )
                     }
                 }

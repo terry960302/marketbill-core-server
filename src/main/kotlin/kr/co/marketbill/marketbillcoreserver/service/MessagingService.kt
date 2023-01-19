@@ -101,11 +101,12 @@ class MessagingService {
         }
     }
 
-    suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String, url: String): MessageResponseDto {
+    suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String): MessageResponseDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.WHOLESALER_EMPR)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.ApplyBizConnection.toString(),
@@ -124,11 +125,12 @@ class MessagingService {
         }
     }
 
-    suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String, url: String): MessageResponseDto {
+    suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String): MessageResponseDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.RETAILER)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.ConfirmBizConnection.toString(),
@@ -153,10 +155,11 @@ class MessagingService {
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.RETAILER)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.RejectBizConnection.toString(),
-                args = listOf(wholesalerName, wholesalerName)
+                args = listOf(wholesalerName, wholesalerName, url)
             )
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info("$className.$executedFunc >> completed -> ($res)")
@@ -176,12 +179,12 @@ class MessagingService {
         to: String,
         wholesalerName: String,
         orderNo: String,
-        url: String
     ): MessageResponseDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.RETAILER)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.IssueOrderSheetReceipt.toString(),
