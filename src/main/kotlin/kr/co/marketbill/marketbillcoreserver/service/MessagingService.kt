@@ -238,7 +238,7 @@ class MessagingService {
         val mainDomain = "marketbill.co.kr"
 
         val roleGroup = when (role) {
-            AccountRole.RETAILER -> "retailer"
+            AccountRole.RETAILER -> "retail"
             else -> "wholesale"
         }
         val source = "marketbill"
