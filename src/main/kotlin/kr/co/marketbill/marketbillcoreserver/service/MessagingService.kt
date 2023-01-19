@@ -3,6 +3,7 @@ package kr.co.marketbill.marketbillcoreserver.service
 import com.netflix.graphql.types.errors.ErrorType
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
+import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.MessageTemplate
 import kr.co.marketbill.marketbillcoreserver.domain.dto.MessageReqDto
@@ -27,6 +28,9 @@ import java.time.LocalDateTime
 class MessagingService {
     @Value("\${serverless.messaging.host}")
     private lateinit var baseUrl: String
+
+    @Value("\${spring.config.activate.on-profile}")
+    private lateinit var profile: String
 
     private val logger: Logger = LoggerFactory.getLogger(MessagingService::class.java)
     private val className: String = this.javaClass.simpleName
@@ -97,11 +101,12 @@ class MessagingService {
         }
     }
 
-    suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String, url: String): MessageResponseDto {
+    suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String): MessageResponseDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.WHOLESALER_EMPR)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.ApplyBizConnection.toString(),
@@ -120,11 +125,12 @@ class MessagingService {
         }
     }
 
-    suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String, url: String): MessageResponseDto {
+    suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String): MessageResponseDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.RETAILER)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.ConfirmBizConnection.toString(),
@@ -149,10 +155,11 @@ class MessagingService {
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.RETAILER)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.RejectBizConnection.toString(),
-                args = listOf(wholesalerName, wholesalerName)
+                args = listOf(wholesalerName, wholesalerName, url)
             )
             val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
             logger.info("$className.$executedFunc >> completed -> ($res)")
@@ -172,12 +179,12 @@ class MessagingService {
         to: String,
         wholesalerName: String,
         orderNo: String,
-        url: String
     ): MessageResponseDto {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
             val client = createClient()
+            val url = generateSmsUrl(AccountRole.RETAILER)
             val req = MessageReqDto(
                 to = to,
                 template = MessageTemplate.IssueOrderSheetReceipt.toString(),
@@ -221,5 +228,25 @@ class MessagingService {
             logger.error("$className.$executedFunc >> ${e.message}")
             throw e
         }
+    }
+
+    private fun generateSmsUrl(role: AccountRole): String {
+        val subDomain = when (profile) {
+            "local", "dev" -> "${profile}."
+            else -> ""
+        }
+        val mainDomain = "marketbill.co.kr"
+
+        val roleGroup = when (role) {
+            AccountRole.RETAILER -> "retailer"
+            else -> "wholesale"
+        }
+        val source = "marketbill"
+        val campaign = "message"
+
+        return "$${subDomain}${mainDomain}/${roleGroup}/signin?" +
+                "utm_source=${source}&" +
+                "utm_medium=${roleGroup}&" +
+                "utm_campaign=${campaign}"
     }
 }
