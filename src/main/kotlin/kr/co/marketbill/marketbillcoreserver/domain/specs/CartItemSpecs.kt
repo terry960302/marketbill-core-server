@@ -14,7 +14,17 @@ class CartItemSpecs {
             return Specification<CartItem> { root, query, builder ->
                 val wholesaler: Join<CartItem, User> = root.join("wholesaler")
                 wholesaler.isNotNull
-            };
+            }
+        }
+
+        fun excludeId(cartItemId: Long?): Specification<CartItem> {
+            return Specification<CartItem> { root, query, builder ->
+                if (cartItemId == null) {
+                    builder.conjunction()
+                } else {
+                    builder.notEqual(root.get<Long>("id"), cartItemId)
+                }
+            }
         }
 
         fun byRetailerId(retailerId: Long?): Specification<CartItem> {
@@ -24,6 +34,16 @@ class CartItemSpecs {
                 } else {
                     val retailer = root.join<CartItem, User>("retailer")
                     builder.equal(retailer.get<Long>("id"), retailerId)
+                }
+            }
+        }
+
+        fun byFlowerGrade(gradeKor: String?): Specification<CartItem> {
+            return Specification<CartItem> { root, query, builder ->
+                if (gradeKor == null) {
+                    builder.conjunction()
+                } else {
+                    builder.equal(root.get<String>("grade"), gradeKor)
                 }
             }
         }

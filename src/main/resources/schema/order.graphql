@@ -3,9 +3,9 @@ type CartItem{
     id : Int!,
     retailer : User,
     wholesaler : User,
-    flower : Flower,
+    flower : Flower!,
     quantity : Int!,
-    grade : String!,
+    grade : FlowerGrade!,
     orderedAt : LocalDate,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
@@ -17,16 +17,18 @@ type OrderSheet{
     orderNo : String!,
     retailer : User,
     wholesaler : User,
-    orderItems(pagination: PaginationInput) : [OrderItem!],
+    orderItems(pagination: PaginationInput) : [OrderItem!]!,
     # 주문서에 해당하는 꽃의 총 개수
-    totalFlowerQuantity : Int,
+    totalFlowerQuantity : Int!,
     # 주문서에 해당하는 꽃의 품종 개수(중복x)
-    totalFlowerTypeCount : Int,
+    totalFlowerTypeCount : Int!,
     # 영수증 발행 여부
-    hasReceipt : Boolean,
-    orderSheetReceipts : [OrderSheetReceipt!],
-    # 최신 영수증(가장 늦게 발행한 영수증)
+    hasReceipt : Boolean!,
+    orderSheetReceipts (pagination: PaginationInput): [OrderSheetReceipt!]!,
+    # 최신 영수증(가장 근래 발행한 영수증)
     recentReceipt : OrderSheetReceipt,
+    # 판매가 저장여부(한번이라도 저장한 적이 있는지)
+    isPriceUpdated : Boolean,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
@@ -34,12 +36,23 @@ type OrderSheet{
 
 type OrderItem{
     id : Int!,
-    orderSheet : OrderSheet,
+    orderSheet : OrderSheet!,
     retailer : User,
     wholesaler : User,
-    flower : Flower,
+    flower : Flower!,
     quantity : Int!,
-    grade : String!,
+    grade : FlowerGrade!,
+    price : Int,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+type DailyOrderItem{
+    id : Int!,
+    wholesaler : User,
+    flower : Flower!,
+    grade : FlowerGrade!,
     price : Int,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
@@ -48,13 +61,15 @@ type OrderItem{
 
 type OrderSheetReceipt{
     id : Int!,
-    orderSheet : OrderSheet,
+    orderSheet : OrderSheet!,
+    # 파일명
+    fileName : String!,
     # 파일경로
     filePath : String!,
     # 확장자명
-    fileFormat : String,
+    fileFormat : String!,
     # 그외 메타데이터
-    metadata : String,
+    metadata : String!,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
@@ -65,9 +80,9 @@ type OrderSheetsAggregate{
     # 날짜(date)
     date : LocalDate,
     # 꽃 종류 개수(중복x)
-    flowerTypesCount  :Int,
+    flowerTypesCount  :Int!,
     # 주문 수
-    orderSheetsCount : Int,
+    orderSheetsCount : Int!,
 }
 
 
@@ -76,18 +91,20 @@ extend type Query {
     # [소매상] 장바구니 항목들에 기등록된 거래처 정보 가져오기
     getCartWholesaler : User
     # [소매상] 장바구니 목록 가져오기
-    getAllCartItems(pagination : PaginationInput) : [CartItem!]
+    getAllCartItems(pagination : PaginationInput) : [CartItem!]!
     # [공통] 주문서 목록 가져오기
-    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!],
+    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!]!,
     # [공통] 주문서 단건(상세) 가져오기
-    getOrderSheet(orderSheetId : Int!) : OrderSheet,
+    getOrderSheet(orderSheetId : Int!) : OrderSheet!,
     # [공통] 주문 항목 가져오기
-    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!],
+    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!]!,
     # [도매상] 일자별 주문 집계 목록
-    getAllDailyOrderSheetAggregates(pagination : PaginationInput) : [OrderSheetsAggregate!]
+    getAllDailyOrderSheetAggregates(pagination : PaginationInput) : [OrderSheetsAggregate!]!
     # [도매상] 오늘의 주문합계
     # - date : "yyyy-MM-dd" 문자열 포맷(없는 경우 오늘 날짜 들어감)
     getDailyOrderSheetAggregate(date : String) : OrderSheetsAggregate
+    # [도매상] 판매가 일괄적용시 불러오는 주문항목들
+    getDailyOrderItems(filter : DailyOrderItemFilterInput, pagination : PaginationInput) : [DailyOrderItem!]!
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {
@@ -96,18 +113,19 @@ extend type Mutation {
     # [소매상] 장바구니 항목 삭제
     removeCartItem(cartItemId : Int!) : CommonResponse!,
     # [소매상] 장바구니 항목 수정
-    updateCartItem(input : UpdateCartItemInput) : CartItem
+    updateCartItem(input : UpdateCartItemInput) : CartItem!
     # [소매상] 장바구니 거래처 설정 및 수정
-    upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem!],
+    upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem!]!,
     # [소매상] 장바구니 항목들 주문하기
     orderCartItems : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
     removeOrderSheet(orderSheetId : Int!) : CommonResponse!,
-    # [도매상] 주문 항목 수정
-    updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem!]
+    # [도매상] 주문내역 주문 항목 수정
+    updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem!]!
+    # [도매상] 판매가 일괄적용 주문 항목 일괄 수정
+    updateDailyOrderItemsPrice(items : [OrderItemPriceInput]) : [DailyOrderItem!]!
     # [도매상] 영수증 발행
-    # - 파일처리 구축 후 실제 로직 적용 예정
-    issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt,
-    # 배치 장바구니 주문처리
+    issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt!,
+    # 정기적 일괄 장바구니 주문처리
     batchCartToOrder : CommonResponse!
 }

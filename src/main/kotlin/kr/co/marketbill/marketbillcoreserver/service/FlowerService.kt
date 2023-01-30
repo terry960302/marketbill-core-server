@@ -9,22 +9,31 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
+import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDate
-import java.util.*
 
 @Service
 class FlowerService {
     @Autowired
     private lateinit var flowerRepository: FlowerRepository
 
+    private val logger: Logger = LoggerFactory.getLogger(FlowerService::class.java)
+    private val className: String = this.javaClass.simpleName
 
-    val logger: Logger = LoggerFactory.getLogger(FlowerService::class.java)
-
+    @Transactional(readOnly = true)
     fun getFlowers(fromDate: LocalDate?, toDate: LocalDate?, keyword: String?, pageable: Pageable): Page<Flower> {
-        return flowerRepository.findAll(
-            FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
-            pageable
-        )
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val flowers = flowerRepository.findAll(
+                FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
+                pageable
+            )
+            logger.info("$className.$executedFunc >> completed.")
+            return flowers
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
     }
 
 }

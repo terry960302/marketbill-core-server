@@ -2,6 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.config
 
 import graphql.com.google.common.collect.ImmutableList
 import kr.co.marketbill.marketbillcoreserver.security.JwtAuthFilter
+import kr.co.marketbill.marketbillcoreserver.security.JwtExceptionFilter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
@@ -28,6 +29,9 @@ class SecurityConfig {
 
     @Autowired
     private lateinit var jwtAuthFilter: JwtAuthFilter
+
+    @Autowired
+    private lateinit var jwtExceptionFilter: JwtExceptionFilter
 
     @Bean
     fun passwordEncoder(): BCryptPasswordEncoder = BCryptPasswordEncoder()
@@ -56,13 +60,14 @@ class SecurityConfig {
                 jwtAuthFilter,
                 UsernamePasswordAuthenticationFilter::class.java
             )
+            .addFilterBefore(jwtExceptionFilter, jwtAuthFilter.javaClass)
             .csrf { csrf: CsrfConfigurer<HttpSecurity> -> csrf.disable() }
             .authorizeRequests(
                 Customizer { auth ->
                     auth
                         .antMatchers(HttpMethod.OPTIONS, "/**/graphql/*").permitAll()
-                        .antMatchers(HttpMethod.POST,"/**/graphql/*").permitAll()
-                        .antMatchers(HttpMethod.GET,"/**/graphiql/*")
+                        .antMatchers(HttpMethod.POST, "/**/graphql/*").permitAll()
+                        .antMatchers(HttpMethod.GET, "/**/graphiql/*")
                         .permitAll()
                 }
             )

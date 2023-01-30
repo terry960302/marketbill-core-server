@@ -15,13 +15,13 @@ data class WholesalerConnection(
     val id: Long? = null,
 
     // 도매상 사장
-    @OneToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "employer_id")
+    @ManyToOne(fetch = FetchType.EAGER)
+    @JoinColumn(name = "employer_id", nullable = false)
     val employer: User? = null,
 
     // 도매상 직원
     @ManyToOne(fetch = FetchType.EAGER)
-    @JoinColumn(name = "employee_id")
+    @JoinColumn(name = "employee_id", nullable = false)
     val employee: User? = null,
-    ) : BaseTime() {
+) : BaseTime() {
 }

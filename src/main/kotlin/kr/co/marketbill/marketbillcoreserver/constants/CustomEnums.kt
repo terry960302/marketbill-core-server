@@ -18,7 +18,7 @@ enum class FlowerGrade {
     LOWER,
 }
 
-enum class MessageType {
+enum class MessageTemplate {
     Default,
     Verification,
     ApplyBizConnection,

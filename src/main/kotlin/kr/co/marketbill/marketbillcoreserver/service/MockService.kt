@@ -7,28 +7,22 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.FlowerType
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.AuthToken
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.UserCredential
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.BiddingFlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerTypeRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.DailyOrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.AuthTokenRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BizConnectionRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserCredentialRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
-import kr.co.marketbill.marketbillcoreserver.domain.specs.BizConnSpecs
+import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
+import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.context.annotation.Profile
-import org.springframework.data.domain.PageRequest
+import org.springframework.beans.factory.annotation.Value
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -77,22 +71,51 @@ class MockService {
     private lateinit var orderItemRepository: OrderItemRepository
 
     @Autowired
+    private lateinit var dailyOrderItemRepository: DailyOrderItemRepository
+
+    @Autowired
     private lateinit var orderSheetRepository: OrderSheetRepository
+
+    @Autowired
+    private lateinit var wholesalerConnectionRepository: WholesalerConnectionRepository
 
     val logger: Logger = LoggerFactory.getLogger(MockService::class.java)
 
-    @Profile("local", "dev")
+    @Value("\${spring.config.activate.on-profile}")
+    private lateinit var profile: String
+
     @PostConstruct
     fun createAllMockToDB() {
-        createMockFlowers()
-//        createMockUsers()
-//        createMockCartItems()
-//        createMockOrderSheets()
+        if (profile == "local") {
+//            createMockFlowers()
+//            createMockUsers()
+//            createMockCartItems()
+//            createMockOrderSheets()
+
+
+            logger.info("mock data created.")
+//            deleteDuplicateFlowers()
+        }
+    }
+
+    @Transactional
+    fun deleteDuplicateFlowers() {
+        val flowerIdsToDelete = flowerRepository.findAll().groupBy {
+            val key = "${it.flowerType!!.name}-${it.name}"
+            key
+        }.mapValues {
+            it.value.map { it.id }
+        }.filterValues { it.size > 1 }
+            .mapValues { it.value.subList(1, it.value.size) }.flatMap { it.value }
+
+        flowerRepository.deleteAllById(flowerIdsToDelete)
+        // [628, 646, 664, 682, 700, 718, 736, 754, 772, 790, 808, 826, 844, 862, 629, 647, 665, 683, 701, 719, 737, 755, 773, 791, 809, 827, 845, 863, 630, 648, 666, 684, 702, 720, 738, 756, 774, 792, 810, 828, 846, 864, 631, 649, 667, 685, 703, 721, 739, 757, 775, 793, 811, 829, 847, 865, 632, 650, 668, 686, 704, 722, 740, 758, 776, 794, 812, 830, 848, 866, 633, 651, 669, 687, 705, 723, 741, 759, 777, 795, 813, 831, 849, 867, 634, 652, 670, 688, 706, 724, 742, 760, 778, 796, 814, 832, 850, 868, 635, 653, 671, 689, 707, 725, 743, 761, 779, 797, 815, 833, 851, 869, 636, 654, 672, 690, 708, 726, 744, 762, 780, 798, 816, 834, 852, 870, 637, 655, 673, 691, 709, 727, 745, 763, 781, 799, 817, 835, 853, 871, 638, 656, 674, 692, 710, 728, 746, 764, 782, 800, 818, 836, 854, 872, 639, 657, 675, 693, 711, 729, 747, 765, 783, 801, 819, 837, 855, 873, 640, 658, 676, 694, 712, 730, 748, 766, 784, 802, 820, 838, 856, 874, 641, 659, 677, 695, 713, 731, 749, 767, 785, 803, 821, 839, 857, 875, 642, 660, 678, 696, 714, 732, 750, 768, 786, 804, 822, 840, 858, 876, 643, 661, 679, 697, 715, 733, 751, 769, 787, 805, 823, 841, 859, 877, 644, 662, 680, 698, 716, 734, 752, 770, 788, 806, 824, 842, 860, 878, 645, 663, 681, 699, 717, 735, 753, 771, 789, 807, 825, 843, 861, 879]
+
     }
 
     @Transactional
     fun createMockOnlyUsers(fromCount: Int = 1, toCount: Int = 100, role: AccountRole) {
-        val belongsTo = when(role){
+        val belongsTo = when (role) {
             AccountRole.RETAILER -> null
             AccountRole.WHOLESALER_EMPR -> "양재"
             AccountRole.WHOLESALER_EMPE -> "양재"
@@ -102,8 +125,7 @@ class MockService {
             User(
                 id = it.toLong(),
                 name = generateRandomStr(),
-                businessNo = null,
-                belongsTo=belongsTo
+                belongsTo = belongsTo
             )
         }
 
@@ -123,7 +145,7 @@ class MockService {
                 refreshToken = jwtProvider.generateToken(
                     it.toLong(),
                     role.toString(),
-                    JwtProvider.refreshExpiration
+                    JwtProvider.REFRESH_EXPIRATION
                 )
             )
         }
@@ -135,21 +157,32 @@ class MockService {
 
     @Transactional
     fun createMockBizConns() {
-        val conns = (1..3).map {
-            BizConnection(
-                retailer = entityManager.getReference(User::class.java, (1..1).random().toLong()),
-                wholesaler = entityManager.getReference(User::class.java, (2..3).random().toLong()),
-                applyStatus = ApplyStatus.APPLYING,
+        val conn1 = BizConnection(
+            retailer = entityManager.getReference(User::class.java, 1.toLong()),
+            wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
+            applyStatus = ApplyStatus.APPLYING,
+        )
+        bizConnectionRepository.saveAll(listOf(conn1))
+    }
+
+    @Transactional
+    fun createWholesalerConns(employerId: Long, employeeIds: List<Long>) {
+        val conns = employeeIds.map {
+            WholesalerConnection(
+                employer = entityManager.getReference(User::class.java, employerId),
+                employee = entityManager.getReference(User::class.java, it)
             )
         }
-        bizConnectionRepository.saveAll(conns)
+        wholesalerConnectionRepository.saveAll(conns)
+
     }
 
     @Transactional
     fun createMockUsers() {
-        createMockOnlyUsers(1,1, AccountRole.RETAILER)
+        createMockOnlyUsers(1, 1, AccountRole.RETAILER)
         createMockOnlyUsers(2, 2, AccountRole.WHOLESALER_EMPR)
-        createMockOnlyUsers(3, 3, AccountRole.WHOLESALER_EMPE)
+        createMockOnlyUsers(3, 4, AccountRole.WHOLESALER_EMPE)
+        createWholesalerConns(employerId = 2, employeeIds = listOf(3, 4))
         createMockBizConns()
 
         logger.trace("createMockUsers completed")
@@ -183,11 +216,14 @@ class MockService {
         }
         val flowers = flowerRepository.saveAll(flowers1 + flowers2)
 
-
-        val biddingFlowers = flowers.map {
-            BiddingFlower(flower = it, biddingDate = LocalDateTime.now())
+        val biddingFlowers = flowers.map { flower ->
+            (1..10).map {
+                var date = LocalDateTime.now()
+                date = date.plusDays((it - 1).toLong())
+                BiddingFlower(flower = flower, biddingDate = date)
+            }
         }
-        biddingFlowerRepository.saveAll(biddingFlowers)
+        biddingFlowerRepository.saveAll(biddingFlowers.flatten())
 
         logger.trace("createMockFlowers completed")
     }
@@ -212,22 +248,23 @@ class MockService {
 
         val orderSheets = (1..3).map {
             OrderSheet(
-                orderNo = UUID.randomUUID().toString(),
+                orderNo = StringGenerator.generateOrderNo(it.toLong()),
                 retailer = entityManager.getReference(User::class.java, 1.toLong()),
                 wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
             )
         }
         orderSheetRepository.saveAll(orderSheets)
 
-        val orderItems = (1..9).map {
-            val orderSheetId = ((it - 1) / 3) + 1
+        val orderItems = (1..60).map {
+            val orderSheetId = ((it - 1) / 20) + 1
             OrderItem(
                 orderSheet = entityManager.getReference(OrderSheet::class.java, orderSheetId.toLong()),
                 retailer = entityManager.getReference(User::class.java, 1.toLong()),
                 wholesaler = entityManager.getReference(User::class.java, 2.toLong()),
-                flower = entityManager.getReference(Flower::class.java, it.toLong()),
+                flower = entityManager.getReference(Flower::class.java, (1..10).random().toLong()),
                 quantity = (1..100).random(),
-                grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER)
+                grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER),
+                price = (100..10000).random()
             )
         }
         orderItemRepository.saveAll(orderItems)
@@ -235,7 +272,7 @@ class MockService {
 
     fun generateRandomStr(outputStrLength: Long = 10): String {
         val source = "ABCDEFGHIJKLMNOPQRSTUVWXYZ"
-        return java.util.Random().ints(outputStrLength, 0, source.length)
+        return Random().ints(outputStrLength, 0, source.length)
             .asSequence()
             .map(source::get)
             .joinToString("")

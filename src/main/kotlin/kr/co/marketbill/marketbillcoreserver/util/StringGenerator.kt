@@ -6,9 +6,9 @@ import kotlin.math.pow
 
 class StringGenerator {
     companion object{
-        fun generateOrderNo(orderSheetId: Long, digit: Int = 4): String {
+        fun generateOrderNo(orderSheetId: Long, digit: Int = 5): String {
             val symbolChar = "M"
-            val formatter = SimpleDateFormat("yyyyMMdd")
+            val formatter = SimpleDateFormat("yyMMdd")
             val dateStr = formatter.format(Date())
 
             val id: Long = if (digit <= orderSheetId.toString().length) {

@@ -4,6 +4,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
+import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
@@ -20,17 +21,20 @@ data class OrderSheet(
 
     @ManyToOne
     @JoinColumn(name = "retailer_id")
-    val retailer: User? = null,
+    var retailer: User? = null,
 
     @ManyToOne
     @JoinColumn(name = "wholesaler_id")
-    val wholesaler: User? = null,
+    var wholesaler: User? = null,
 
-    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true)
-    val orderItems: List<OrderItem> = arrayListOf(),
+    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    val orderItems: List<OrderItem> = listOf(),
 
-    @OneToMany(mappedBy = "orderSheet", fetch = FetchType.EAGER)
-    val orderSheetReceipts: List<OrderSheetReceipt>? = null,
+    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    val orderSheetReceipts: List<OrderSheetReceipt> = listOf(),
+
+    @Column(name = "price_updated_at", nullable = true)
+    var priceUpdatedAt: LocalDateTime? = null,
 
     @Transient
     var totalFlowerQuantity: Int = 0,
@@ -43,35 +47,16 @@ data class OrderSheet(
 
     @Transient
     var recentReceipt: OrderSheetReceipt? = null,
+
+    @Transient
+    var isPriceUpdated : Boolean = false,
 ) : BaseTime() {
+
     @PostLoad
+    @PostUpdate
     fun postLoad() {
-        totalFlowerQuantity = if (orderItems.isNotEmpty()) {
-            val quantities: List<Int> = orderItems.map { if (it.quantity == null) 0 else it.quantity!! }
-            quantities.reduce { acc, i -> acc + i }
-        } else {
-            0
-        }
-
-        totalFlowerTypeCount = if (orderItems.isNotEmpty()) {
-            val flowerTypes: List<Long> = orderItems.mapNotNull { it.flower?.flowerType?.id }.distinct()
-            flowerTypes.count()
-        } else {
-            0
-        }
-
-        hasReceipt = if (orderSheetReceipts == null) {
-            false
-        } else {
-            orderSheetReceipts!!.isNotEmpty()
-        }
-
-        val orderSheetReceiptsSortByDesc: List<OrderSheetReceipt>? =
-            orderSheetReceipts?.sortedByDescending { it.createdAt }
-        recentReceipt = if (orderSheetReceiptsSortByDesc == null || orderSheetReceiptsSortByDesc.isEmpty()) {
-            null
-        } else {
-            orderSheetReceiptsSortByDesc[0]
-        }
+        retailer = if (retailer?.deletedAt == null) retailer else null
+        wholesaler = if (wholesaler?.deletedAt == null) wholesaler else null
+        isPriceUpdated = priceUpdatedAt != null
     }
 }

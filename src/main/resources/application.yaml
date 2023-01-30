@@ -1,3 +1,4 @@
+# common
 dgs:
   graphql:
     graphiql:
@@ -5,11 +6,28 @@ dgs:
       enabled: true
     path: /graphql # 서버 엔드포인트(콘솔x)
 
+logging:
+  file:
+    max-history: 9999999
+    max-size: 100MB
+    name: logs/all_logs.log
+  level: # Trace < Debug < Info < Warn < Error < Fatal
+    jdbc: OFF
+    jdbc.sqlonly: DEBUG
+    org.springframework.web: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: DEBUG
+    kr.co.marketbill.marketbillcoreserver: DEBUG
+
 server:
   host: localhost
   port: 8080
 
+# local
 spring:
+  output:
+    ansi:
+      enabled: always
   config:
     activate:
       on-profile: local
@@ -21,10 +39,13 @@ spring:
   security:
     jwt:
       secret: 1234
+    cookies:
+      httpOnly: true
+      secure : true
   jpa:
     open-in-view: true
     hibernate:
-      ddl-auto: create-drop # create-drop, create, update, validate, none
+      ddl-auto: update # create-drop, create, update, validate, none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       use-new-id-generator-mappings: false
@@ -37,7 +58,10 @@ spring:
 serverless:
   messaging:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/messaging/dev
+  file-process:
+    host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/dev
 ---
+# dev
 spring:
   config:
     activate:
@@ -50,10 +74,13 @@ spring:
   security:
     jwt:
       secret: 1234
+    cookies:
+      httpOnly: true
+      secure: true
   jpa:
     open-in-view: true
     hibernate:
-      ddl-auto: create # create-drop, create, update, validate, none
+      ddl-auto: update # create-drop, create, update, validate, none
       naming:
         physical-strategy: org.hibernate.boot.model.naming.PhysicalNamingStrategyStandardImpl
       use-new-id-generator-mappings: false
@@ -65,7 +92,10 @@ spring:
 serverless:
   messaging:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/messaging/dev
+  file-process:
+    host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/dev
 ---
+# prod
 spring:
   config:
     activate:
@@ -78,6 +108,9 @@ spring:
   security:
     jwt:
       secret : marketbill1234!
+    cookies:
+      httpOnly: true
+      secure: true
   jpa:
     open-in-view: true
     hibernate:
@@ -93,8 +126,6 @@ spring:
 serverless:
   messaging:
     host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/messaging/prod
+  file-process:
+    host: https://0haadxc8a0.execute-api.ap-northeast-2.amazonaws.com/v1/file-process/prod
 
-logging:
-  level:
-    org.hibernate.SQL: debug
-    org.hibernate.type: trace

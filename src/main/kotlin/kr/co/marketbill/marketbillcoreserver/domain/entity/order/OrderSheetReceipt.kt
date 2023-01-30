@@ -18,6 +18,9 @@ data class OrderSheetReceipt(
     @JoinColumn(name = "order_sheet_id")
     val orderSheet : OrderSheet? = null,
 
+    @Column(name = "file_name")
+    val fileName : String = "",
+
     @Column(name = "file_path")
     val filePath :String? = null,
 

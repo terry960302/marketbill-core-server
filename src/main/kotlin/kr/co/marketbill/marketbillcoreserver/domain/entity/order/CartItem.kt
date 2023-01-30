@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
+import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
@@ -15,11 +16,11 @@ import javax.persistence.*
 data class CartItem(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
 
     @ManyToOne
     @JoinColumn(name = "retailer_id")
-    val retailer: User? = null,
+    var retailer: User? = null,
 
     @ManyToOne
     @JoinColumn(name = "wholesaler_id", nullable = true)
@@ -35,6 +36,17 @@ data class CartItem(
     @Column(name = "grade")
     var grade: String? = null,
 
+    @Transient
+    var gradeValue : FlowerGrade? = null,
+
     @Column(name = "ordered_at")
     var orderedAt: LocalDateTime? = null,
-) : BaseTime()
+) : BaseTime(){
+    @PostLoad
+    @PostUpdate
+    fun postLoad(){
+        retailer = if (retailer?.deletedAt == null) retailer else null
+        wholesaler = if (wholesaler?.deletedAt == null) wholesaler else null
+    }
+
+}

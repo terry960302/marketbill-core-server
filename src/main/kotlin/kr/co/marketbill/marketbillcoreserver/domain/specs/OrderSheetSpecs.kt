@@ -36,7 +36,6 @@ class OrderSheetSpecs {
                     val createdAt = root.get<LocalDateTime>("createdAt").`as`(LocalDate::class.java)
                     builder.equal(createdAt, date)
                 }
-
             }
         }
     }

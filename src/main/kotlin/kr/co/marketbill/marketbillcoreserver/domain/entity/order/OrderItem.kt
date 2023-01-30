@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
+import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
@@ -22,11 +23,11 @@ data class OrderItem(
 
     @ManyToOne
     @JoinColumn(name = "retailer_id")
-    val retailer: User? = null,
+    var retailer: User? = null,
 
     @ManyToOne
     @JoinColumn(name = "wholesaler_id")
-    val wholesaler: User? = null,
+    var wholesaler: User? = null,
 
     @ManyToOne
     @JoinColumn(name = "flower_id")
@@ -38,6 +39,16 @@ data class OrderItem(
     @Column(name = "grade")
     val grade: String? = null,
 
+    @Transient
+    var gradeValue: FlowerGrade? = null,
+
     @Column(name = "price", nullable = true)
     var price: Int? = null,
-) : BaseTime()
+) : BaseTime() {
+    @PostLoad
+    @PostUpdate
+    fun postLoad() {
+        retailer = if (retailer?.deletedAt == null) retailer else null
+        wholesaler = if (wholesaler?.deletedAt == null) wholesaler else null
+    }
+}

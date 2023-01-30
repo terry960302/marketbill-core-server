@@ -1,5 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.graphql.error
 
-class CustomException(override var message : String = "") : java.lang.RuntimeException() {
+import com.netflix.graphql.types.errors.ErrorType
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 
+class CustomException(override val message: String, val errorType: ErrorType, val errorCode: CustomErrorCode) :
+    RuntimeException() {
 }

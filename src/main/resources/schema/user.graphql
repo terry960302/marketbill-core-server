@@ -4,18 +4,22 @@ type User {
     # 소속(도매상=시장명, 소매상=null)
     belongsTo : String,
     name : String!,
-    # 사업자번호(nullable)
-    businessNo : String,
-    deletedAt : LocalDate,
-    userCredential : UserCredential,
+    # 본인이 속한 업체 비즈니스 정보
+    businessInfo : BusinessInfo,
+    userCredential : UserCredential!,
     # 보낸 거래처 신청
-    appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
+    appliedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!]!,
     # 받은 거래처 신청
-    receivedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!],
+    receivedConnections(pagination : PaginationInput, filter : BizConnectionFilterInput) : [BizConnection!]!,
+    # [도매상] 연결된 직원 목록
+    connectedEmployees : [User!]!,
+    # [도매상] 연결된 사장(업체)
+    connectedEmployer : User,
     # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
     applyStatus : ApplyStatus,
     # 거래처 신청 테이블 고유값
-    bizConnectionId : Int
+    bizConnectionId : Int,
+    deletedAt : LocalDate,
 }
 
 # 유저의 로그인, 회원가입 정보
@@ -29,7 +33,7 @@ type UserCredential {
     deletedAt : LocalDate,
 }
 
-# 주의 : 서로 다른 Role 끼리 거래관계를 맺기 때문에 같은 role 의 데이터를 가져올 경우 데이터가 없습니다.
+# 소매상과 도매상의 거래처 관계
 type BizConnection {
     id : Int!,
     # 거래처 신청자(=소매상)
@@ -37,38 +41,79 @@ type BizConnection {
     # 거래처 신청 수취자(=도매상)
     wholesaler : User,
     # 거래처 신청 상태
-    applyStatus : ApplyStatus,
+    applyStatus : ApplyStatus!,
     createdAt : LocalDate!,
     deletedAt : LocalDate,
     updatedAt : LocalDate!,
 }
 
+# AuthTokenDto와 동일
 type AuthToken{
     accessToken : String!,
     refreshToken : String!,
 }
 
+# 본인이 속한 업체의 비즈니스 정보
+type BusinessInfo{
+    id : Int!,
+    companyName : String!,
+    companyPhoneNo : String!,
+    # 대표자명
+    employerName : String!,
+    address : String!,
+    # 사업자번호
+    businessNo : String!,
+    # 업태
+    businessMainCategory : String!,
+    # 종목
+    businessSubCategory : String!,
+    # 인감도장
+    sealStampImgUrl : String!,
+    # 계좌(양식 = '<은행> <계좌번호> <예금주>')
+    bankAccount: String!,
+    createdAt : LocalDate!,
+    deletedAt : LocalDate,
+    updatedAt : LocalDate!,
+}
+
 ## -------------- QUERY ------------------
+
 type Query {
     # 토큰으로 나의 정보 가져오기
     # - 거래처 목록 가져오기(내가 신청한 것만)
-    me : User
+    me : User!
     # 유저 목록 가져오기
-    # - 거래처 목록 가져오기(전체 목록) : User > applyStatus 필드를 추가할 경우(내가 소매상이면 도매상 목록을 가져옴)
+    # - @Deprecated 거래처 목록 가져오기(전체 목록) : User > applyStatus 필드를 추가할 경우(내가 소매상이면 도매상 목록을 가져옴)
     # - 유저 전체 목록 가져오기 : User > applyStatus 필드 없는 경우
-    getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User!]
+    getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User!]!
+    # [관리자] 단일 유저 정보 가져오기
+    getUser(id : Int!) : User!
+    # 거래관계를 맺을 수 있는 유저 전체 목록 가져오기
+    # : 본인의 role 과 반대인 유저의 목록을 가져옵니다.
+    getConnectableUsers(pagination : PaginationInput) : [User!]!
 }
 
 ## -------------- MUTATION ------------------
+
 type Mutation{
     # 회원가입
-    signUp(input : SignUpInput) : AuthToken
+    signUp(input : SignUpInput) : AuthToken!
     # 로그인
-    signIn(input : SignInInput) : AuthToken
+    signIn(input : SignInInput) : AuthToken!
     # 소매상 -> 도매상 거래처 신청
-    applyBizConnection(wholesalerId : Int!) : BizConnection
+    applyBizConnection(wholesalerId : Int!) : BizConnection!
     # 도매상 -> 소매상 거래처 신청처리(승낙, 거절)
-    updateBizConnection(bizConnId : Int!, status : ApplyStatus): BizConnection
+    updateBizConnection(bizConnId : Int!, status : ApplyStatus): BizConnection!
+    # 로그아웃
+    signOut : CommonResponse!
+    # 토큰 재발급(리토큰)
+    reissueToken : AuthToken!
+    # [관리자] 유저 삭제
+    removeUser(userId : Int!) : CommonResponse!
+    # [관리자] 업체 정보 업로드 및 수정
+    upsertBusinessInfo(input : CreateBusinessInfoInput) : BusinessInfo!
+    # [관리자] 비밀번호 변경
+    updatePassword(input: UpdatePasswordInput) : CommonResponse!
 }
 
 

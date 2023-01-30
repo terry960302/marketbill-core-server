@@ -36,11 +36,13 @@ input PaginationInput {
 }
 
 input BizConnectionFilterInput{
-    applyStatus : ApplyStatus!,
+    applyStatus : [ApplyStatus!]!,
 }
 
 input UserFilterInput{
-    roles : [AccountRole!]!
+    roles : [AccountRole!],
+    phoneNo : String,
+    name : String,
 }
 
 input DateFilterInput{
@@ -49,7 +51,7 @@ input DateFilterInput{
 }
 
 input OrderItemPriceInput{
-    # 주문항목(orderItem) ID
+    # 주문항목(orderItem, dailyOrderItem) ID
     id : Int!,
     # 판매가
     price : Int!,
@@ -67,4 +69,37 @@ input FlowerFilterInput{
     dateRange : DateRangeInput,
     # 검색용 키워드
     keyword : String,
+}
+
+input CreateBusinessInfoInput {
+    userId : Int!,
+    # 회사명
+    companyName : String!,
+    # 회사번호
+    companyPhoneNo : String!,
+    # 대표자명
+    employerName : String!,
+    # 회사주소
+    address : String!,
+    # 사업자번호
+    businessNo : String!,
+    # 업태
+    businessMainCategory : String!,
+    # 종목
+    businessSubCategory : String!,
+    # 인감도장
+    sealStampImgUrl : String!,
+    # 계좌
+    bankAccount: String!,
+}
+
+# 실수 방지를 위해 userId, phoneNo 의 validation 진행
+input UpdatePasswordInput{
+    userId : Int!,
+    phoneNo : String!,
+    password : String!,
+}
+
+input DailyOrderItemFilterInput{
+    dateRange : DateRangeInput,
 }
