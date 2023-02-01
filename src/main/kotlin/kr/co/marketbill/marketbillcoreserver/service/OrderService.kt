@@ -57,7 +57,7 @@ class OrderService {
     private lateinit var entityManager: EntityManager
 
     @Autowired
-    private lateinit var cartRepository: CartRepository
+    private lateinit var cartItemRepository: CartItemRepository
 
     @Autowired
     private lateinit var orderItemRepository: OrderItemRepository
@@ -88,7 +88,7 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
                 .map {
                     it.orderedAt = LocalDateTime.now()
                     it
@@ -108,7 +108,7 @@ class OrderService {
             )
             logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
 
-            cartRepository.saveAll(cartItems)
+            cartItemRepository.saveAll(cartItems)
             logger.info("$className.$executedFunc >> All cart items are ordered.")
 
             val selectedRetailer: User = cartItems[0].retailer!!

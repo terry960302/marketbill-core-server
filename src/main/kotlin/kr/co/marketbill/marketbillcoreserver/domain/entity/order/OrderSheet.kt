@@ -36,6 +36,9 @@ data class OrderSheet(
     @Column(name = "price_updated_at", nullable = true)
     var priceUpdatedAt: LocalDateTime? = null,
 
+    @Column(name = "memo", nullable = true)
+    var memo: String? = null,
+
     @Transient
     var totalFlowerQuantity: Int = 0,
 
@@ -49,7 +52,7 @@ data class OrderSheet(
     var recentReceipt: OrderSheetReceipt? = null,
 
     @Transient
-    var isPriceUpdated : Boolean = false,
+    var isPriceUpdated: Boolean = false,
 ) : BaseTime() {
 
     @PostLoad
