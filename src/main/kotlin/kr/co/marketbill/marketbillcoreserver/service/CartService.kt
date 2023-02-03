@@ -408,6 +408,7 @@ class CartService {
      * ### 스케쥴러
      * : 매일 오후 10시에 자동 주문처리
      */
+    @Deprecated(message="Replaced by orderBatchCartItems")
     @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
     @Transactional
     fun batchCartToOrder() {
@@ -443,6 +444,85 @@ class CartService {
                     }
                 )
                 logger.info("$className.$executedFunc >> cart items are ordered. (${cartItems.map { it.id }})")
+
+                val orderSheet = OrderSheet(
+                    orderNo = "",
+                    retailer = retailer,
+                    wholesaler = wholesaler,
+                )
+                newOrderSheets.add(orderSheet)
+                val savedOrderSheet = orderSheetRepository.save(orderSheet)
+                savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
+                val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
+                logger.info("$className.$executedFunc >> OrderSheet(ID:${updatedOrderSheet.id}) is created.")
+
+                val orderItems = cartItems.map {
+                    OrderItem(
+                        orderSheet = updatedOrderSheet,
+                        retailer = retailer,
+                        wholesaler = wholesaler,
+                        flower = it.flower,
+                        quantity = it.quantity,
+                        grade = it.grade,
+                        price = null,
+                    )
+                }
+                newOrderItems.addAll(orderItems)
+                orderItemRepository.saveAll(orderItems)
+                logger.info("$className.$executedFunc >> OrderItems(IDs:${orderItems.map { it.id }}) is created.")
+            }
+
+            log.orderSheetCount = newOrderSheets.size
+            log.orderItemCount = newOrderItems.size
+            logger.info("$className.$executedFunc >> done(no issue).")
+        } catch (e: java.lang.Exception) {
+            log.errLogs = e.message
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        } finally {
+            batchCartToOrderLogsRepository.save(log)
+            logger.info("$className.$executedFunc >> completed.")
+        }
+    }
+
+    @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
+    @Transactional
+    fun orderBatchCartItems() {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        val newOrderSheets = mutableListOf<OrderSheet>()
+        val newOrderItems = mutableListOf<OrderItem>()
+
+        val log = BatchCartToOrderLogs(
+            cartItemsCount = 0,
+            orderSheetCount = -1,
+            orderItemCount = -1,
+            errLogs = ""
+        )
+
+        try {
+            val validCartItems =
+                cartItemRepository.findAll(CartItemSpecs.hasWholesaler()).filter { it.wholesaler != null }
+            log.cartItemsCount = validCartItems.size
+            logger.info("$className.$executedFunc >> fetched all cart items each has connected wholesaler info.")
+
+            val cartItemGroup: Map<Long, List<CartItem>> = validCartItems.groupBy { it.retailer!!.id!! }
+
+            cartItemGroup.forEach { (retailerId, cartItems) ->
+                val retailer = entityManager.getReference(User::class.java, retailerId)
+                val shoppingSession = shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+                val wholesaler = shoppingSession.get().wholesaler
+
+                val orderedAt = LocalDateTime.now()
+                cartItemRepository.saveAll(
+                    cartItems.map {
+                        it.orderedAt = orderedAt
+                        it
+                    }
+                )
+                logger.info("$className.$executedFunc >> cart items are ordered. (${cartItems.map { it.id }})")
+                shoppingSessionRepository.delete(shoppingSession.get())
+                logger.info("$className.$executedFunc >> shopping session is deleted(closed)")
 
                 val orderSheet = OrderSheet(
                     orderNo = "",
