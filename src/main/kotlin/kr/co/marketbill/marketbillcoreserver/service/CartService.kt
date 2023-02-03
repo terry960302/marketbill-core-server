@@ -220,20 +220,21 @@ class CartService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-
             val shoppingSession: Optional<ShoppingSession> =
                 shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-            if (shoppingSession.isEmpty) {
-                throw CustomException(
-                    message = "There's no shopping_session whose retailerID is $retailerId",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION
+
+            val session  : ShoppingSession = if (shoppingSession.isEmpty) {
+                val newSession  = ShoppingSession(
+                    retailer = entityManager.getReference(User::class.java, retailerId)
                 )
+                shoppingSessionRepository.save(newSession)
+            }else{
+                shoppingSession.get()
             }
 
             val newCartItem = CartItem(
                 retailer = entityManager.getReference(User::class.java, retailerId),
-                wholesaler = shoppingSession.get().wholesaler,
+                wholesaler = session.wholesaler,
                 flower = entityManager.getReference(Flower::class.java, flowerId),
                 quantity = quantity,
                 shoppingSession = shoppingSession.get(),
