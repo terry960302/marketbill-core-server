@@ -189,6 +189,7 @@ class OrderService {
                 orderNo = "",
                 retailer = shoppingSession.get().retailer,
                 wholesaler = shoppingSession.get().wholesaler,
+                memo = shoppingSession.get().memo,
             )
             val savedOrderSheet = orderSheetRepository.save(orderSheet)
             logger.info("$className.$executedFunc >> OrderSheet is created.")
