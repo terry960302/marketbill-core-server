@@ -27,7 +27,6 @@ import java.time.LocalDateTime
 import java.util.*
 import javax.annotation.PostConstruct
 import javax.persistence.EntityManager
-import kotlin.collections.ArrayList
 
 @Service
 class CartService {
@@ -41,7 +40,7 @@ class CartService {
     private lateinit var cartItemRepository: CartItemRepository
 
     @Autowired
-    private lateinit var cartRepository: CartRepository
+    private lateinit var shoppingSessionRepository: ShoppingSessionRepository
 
     @Autowired
     private lateinit var orderSheetRepository: OrderSheetRepository
@@ -55,57 +54,58 @@ class CartService {
     private val logger: Logger = LoggerFactory.getLogger(CartService::class.java)
     private val className = this.javaClass.simpleName
 
-//    @Transactional
+    @Transactional
 //    @PostConstruct
-//    fun fillCartIdOnCartItems() {
-//        val cartItems = cartItemRepository.findAll(PageRequest.of(0, 999999, Sort.by("createdAt").ascending())).get().toList()
-//        println(cartItems.map { it.id })
-//
-//        val cartItemsMap = mutableMapOf<Long, List<CartItem>>()
-//        var group: CartItem = cartItems[0]
-//        var cartId: Long = 1
-//        cartItemsMap[cartId] = arrayListOf()
-//
-//        cartItems.forEach {
-//            if (group?.retailer == it.retailer && group?.wholesaler == it.wholesaler) {
-//                val arr = cartItemsMap[cartId] as java.util.ArrayList<CartItem>
-//                arr.add(it)
-//                cartItemsMap[cartId] = arr
-//            } else {
-//                group = it
-//                cartId +=1
-//                cartItemsMap[cartId] = arrayListOf(group)
-//            }
-//        }
-//
-//        cartItemsMap.forEach { cartId, cartItems ->
-////            println("cartId : $t")
-////            println("cartItems : ${u.map { it.id }}")
-////            println("----")
-//
-//            val cart = cartRepository.save(Cart(
-//                id = cartId,
-//                retailer = cartItems[0].retailer,
-//                wholesaler = cartItems[0].wholesaler,
-//                memo = "",
-//            ))
-//
-//            val newItems = cartItems.map {
-//                it.cart = cart
-//                it
-//            }
-//            cartItemRepository.saveAll(newItems)
-//
-//            if(cartItems[0].orderedAt != null){
-//                cart.orderedAt = cartItems[0].orderedAt
-//            }
-//            cartRepository.save(cart)
-//            if(cartItems[0].deletedAt != null){
-//                cartRepository.delete(cart)
-//            }
-//        }
-//        println("processed!!")
-//    }
+    fun fillSessionIdOnCartItems() {
+        val cartItems: List<CartItem> =
+            cartItemRepository.findAll(PageRequest.of(0, 999999, Sort.by("createdAt").ascending())).get().toList()
+
+        // grouping
+        val groupedCartItems : Map<Long, List<CartItem>> = cartItems.groupBy {
+            it.retailer!!.id!!
+        }
+
+        // update session ID
+        groupedCartItems.forEach { retailerId, cartItems ->
+            val selectedItem = cartItems[0]
+
+            val createdSession = shoppingSessionRepository.save(ShoppingSession(
+                retailer = selectedItem.retailer,
+                wholesaler = null,
+                memo = null,
+            ))
+
+            val items : List<CartItem> = cartItems.map {
+                it.shoppingSession = createdSession
+                it
+            }
+            cartItemRepository.saveAll(items)
+
+            val lastEle = cartItems.last()
+            if(lastEle.deletedAt != null || lastEle.orderedAt != null){
+                shoppingSessionRepository.delete(createdSession)
+            }
+        }
+        println("processing completed!!")
+    }
+
+    @Transactional
+//    @PostConstruct
+    fun processShoppingSessions(){
+        val sessions = shoppingSessionRepository.findAll()
+
+        val needDeletion = arrayListOf<ShoppingSession>()
+
+        sessions.map {
+            val selected  =  it.cartItems.last()
+            if(selected.deletedAt != null || selected.orderedAt != null){
+                needDeletion.add(it)
+            }
+        }
+
+        shoppingSessionRepository.deleteAllById(needDeletion.map { it.id })
+        println("processing completed!!")
+    }
 
     @Transactional
     fun getConnectedWholesalerOnCartItems(retailerId: Long): Optional<User> {

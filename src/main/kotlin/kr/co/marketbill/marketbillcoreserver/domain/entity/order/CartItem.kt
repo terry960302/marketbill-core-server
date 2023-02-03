@@ -12,15 +12,15 @@ import javax.persistence.*
 @Entity
 @Table(name = "cart_items")
 @SQLDelete(sql = "UPDATE cart_items SET deleted_at = current_timestamp WHERE id = ?")
-//@Where(clause = "deleted_at is Null AND ordered_at is Null")
+@Where(clause = "deleted_at is Null AND ordered_at is Null")
 data class CartItem(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
     @ManyToOne
-    @JoinColumn(name = "cart_id")
-    var cart: Cart? = null,
+    @JoinColumn(name = "session_id")
+    var shoppingSession: ShoppingSession? = null,
 
     @ManyToOne
     @JoinColumn(name = "retailer_id")
