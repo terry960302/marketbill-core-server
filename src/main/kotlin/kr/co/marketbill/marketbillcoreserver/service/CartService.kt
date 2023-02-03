@@ -14,6 +14,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.ShoppingSessionSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
+import kr.co.marketbill.marketbillcoreserver.util.groupFillBy
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
@@ -110,6 +111,7 @@ class CartService {
         println("processing completed!!")
     }
 
+    @Deprecated(message = "Replaced by getShoppingSession")
     @Transactional
     fun getConnectedWholesalerOnCartItems(retailerId: Long): Optional<User> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -143,16 +145,7 @@ class CartService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val session: Optional<ShoppingSession> =
-                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-            if (session.isEmpty) {
-                throw CustomException(
-                    message = "There's no shopping session on retailer whose ID is $retailerId",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION,
-                )
-            }
-            return session
+            return shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}")
             throw e
@@ -223,12 +216,12 @@ class CartService {
             val shoppingSession: Optional<ShoppingSession> =
                 shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
 
-            val session  : ShoppingSession = if (shoppingSession.isEmpty) {
-                val newSession  = ShoppingSession(
+            val session: ShoppingSession = if (shoppingSession.isEmpty) {
+                val newSession = ShoppingSession(
                     retailer = entityManager.getReference(User::class.java, retailerId)
                 )
                 shoppingSessionRepository.save(newSession)
-            }else{
+            } else {
                 shoppingSession.get()
             }
 
@@ -390,7 +383,7 @@ class CartService {
                 logger.info("$className.$executedFunc >> wholesaler data on cart_items updated.")
             }
 
-            if(memo != null){
+            if (memo != null) {
                 session.memo = memo
                 shoppingSessionRepository.save(session)
                 logger.info("$className.$executedFunc >> memo data on shopping_session updated.")
@@ -409,7 +402,7 @@ class CartService {
      * ### 스케쥴러
      * : 매일 오후 10시에 자동 주문처리
      */
-    @Deprecated(message="Replaced by orderBatchCartItems")
+    @Deprecated(message = "Replaced by orderBatchCartItems")
     @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
     @Transactional
     fun batchCartToOrder() {
@@ -565,4 +558,21 @@ class CartService {
         }
     }
 
+
+    fun getAllCartItemsByShoppingSessionIds(
+        shoppingSessionIds: List<Long>,
+        pageable: Pageable
+    ): MutableMap<Long, List<CartItem>> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val cartItems = cartItemRepository.findAll(CartItemSpecs.byShoppingSessionIds(shoppingSessionIds), pageable)
+            val groupedCartItems = cartItems.groupFillBy(shoppingSessionIds) { it.shoppingSession!!.id!! }
+                .toMutableMap()
+            logger.info("$className.$executedFunc >> completed.")
+            return groupedCartItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
 }

@@ -11,6 +11,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
@@ -43,6 +44,7 @@ class OrderFetcher {
 
     val logger: Logger = LoggerFactory.getLogger(OrderFetcher::class.java)
 
+    @Deprecated(message = "Replaced by getShoppingSession")
     @PreAuthorize("hasRole('RETAILER')")
     @DgsQuery(field = DgsConstants.QUERY.GetCartWholesaler)
     fun getCartWholesaler(
@@ -53,6 +55,7 @@ class OrderFetcher {
         return cartService.getConnectedWholesalerOnCartItems(userId)
     }
 
+    @Deprecated(message = "Replaced by getShoppingSession")
     @PreAuthorize("hasRole('RETAILER')")
     @DgsQuery(field = DgsConstants.QUERY.GetAllCartItems)
     fun getAllCartItems(
@@ -64,6 +67,17 @@ class OrderFetcher {
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getAllCartItems(userId, pageable)
     }
+
+    @PreAuthorize("hasRole('RETAILER')")
+    @DgsQuery(field = DgsConstants.QUERY.GetShoppingSession)
+    fun getShoppingSession(
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String
+    ): Optional<ShoppingSession> {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId: Long = jwtProvider.parseUserId(token)
+        return cartService.getShoppingSession(userId)
+    }
+
 
     // 공용
     @DgsQuery(field = DgsConstants.QUERY.GetOrderSheet)
@@ -88,7 +102,7 @@ class OrderFetcher {
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
 
-            if (role == AccountRole.WHOLESALER_EMPE){
+            if (role == AccountRole.WHOLESALER_EMPE) {
                 userId = userService.getConnectedEmployerId(userId)
             }
         }
@@ -277,8 +291,8 @@ class OrderFetcher {
     }
 
 
-    @DgsMutation(field = DgsConstants.MUTATION.BatchCartToOrder)
-    fun batchCartToOrder(): CommonResponse {
+    @DgsMutation(field = DgsConstants.MUTATION.OrderBatchCartItems)
+    fun orderBatchCartItems(): CommonResponse {
         cartService.batchCartToOrder()
         return CommonResponse(success = true)
     }

@@ -3,7 +3,7 @@ type ShoppingSession{
     retailer: User,
     wholesaler : User,
     memo : String,
-    cartItems : [CartItem]!,
+    cartItems(pagination: PaginationInput) : [CartItem]!,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
@@ -135,7 +135,7 @@ extend type Query {
     getAllCartItems(pagination : PaginationInput) : [CartItem!]!
     # [소매상] 장바구니 쇼핑 세션 가져오기
     # - getCartWholesaler, getAllCartItems 대체
-    getShoppingSession : ShoppingSession!,
+    getShoppingSession : ShoppingSession,
     # [공통] 주문서 목록 가져오기
     getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!]!,
     # [공통] 주문서 단건(상세) 가져오기

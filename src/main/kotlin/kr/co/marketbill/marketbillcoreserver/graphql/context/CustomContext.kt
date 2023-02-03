@@ -2,6 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.graphql.context
 
 import com.netflix.graphql.dgs.context.DgsCustomContextBuilder
 import kr.co.marketbill.marketbillcoreserver.domain.dto.BizConnectionContextInput
+import kr.co.marketbill.marketbillcoreserver.domain.dto.CartItemContextInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderItemContextInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetReceiptContextInput
 import org.springframework.stereotype.Component
@@ -18,6 +19,7 @@ class CustomContext {
     val appliedConnectionsInput: BizConnectionContextInput = BizConnectionContextInput()
     val receivedConnectionsInput: BizConnectionContextInput = BizConnectionContextInput()
     val orderItemsInput: OrderItemContextInput = OrderItemContextInput()
+    val cartItemsInput: CartItemContextInput = CartItemContextInput()
     val orderSheetReceiptsInput : OrderSheetReceiptContextInput = OrderSheetReceiptContextInput()
 }
 
