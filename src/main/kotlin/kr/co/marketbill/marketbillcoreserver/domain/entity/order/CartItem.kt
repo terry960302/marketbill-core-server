@@ -18,7 +18,7 @@ data class CartItem(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
-    @ManyToOne
+    @ManyToOne(cascade = [CascadeType.REMOVE])
     @JoinColumn(name = "session_id")
     var shoppingSession: ShoppingSession? = null,
 

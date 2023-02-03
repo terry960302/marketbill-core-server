@@ -24,10 +24,10 @@ data class ShoppingSession(
     var wholesaler: User? = null,
 
     @Column(name = "memo", nullable = true)
-    val memo: String? = null,
+    var memo: String? = null,
 
-    @OneToMany(mappedBy = "shoppingSession", fetch = FetchType.EAGER)
-    val cartItems : List<CartItem> = listOf(),
+    @OneToMany(mappedBy = "shoppingSession", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    val cartItems: List<CartItem> = listOf(),
 ) : BaseTime() {
     @PostLoad
     @PostUpdate

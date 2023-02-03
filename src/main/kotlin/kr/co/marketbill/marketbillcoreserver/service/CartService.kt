@@ -10,6 +10,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.UserRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
+import kr.co.marketbill.marketbillcoreserver.domain.specs.ShoppingSessionSpecs
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
@@ -61,7 +62,7 @@ class CartService {
             cartItemRepository.findAll(PageRequest.of(0, 999999, Sort.by("createdAt").ascending())).get().toList()
 
         // grouping
-        val groupedCartItems : Map<Long, List<CartItem>> = cartItems.groupBy {
+        val groupedCartItems: Map<Long, List<CartItem>> = cartItems.groupBy {
             it.retailer!!.id!!
         }
 
@@ -69,20 +70,22 @@ class CartService {
         groupedCartItems.forEach { retailerId, cartItems ->
             val selectedItem = cartItems[0]
 
-            val createdSession = shoppingSessionRepository.save(ShoppingSession(
-                retailer = selectedItem.retailer,
-                wholesaler = null,
-                memo = null,
-            ))
+            val createdSession = shoppingSessionRepository.save(
+                ShoppingSession(
+                    retailer = selectedItem.retailer,
+                    wholesaler = null,
+                    memo = null,
+                )
+            )
 
-            val items : List<CartItem> = cartItems.map {
+            val items: List<CartItem> = cartItems.map {
                 it.shoppingSession = createdSession
                 it
             }
             cartItemRepository.saveAll(items)
 
             val lastEle = cartItems.last()
-            if(lastEle.deletedAt != null || lastEle.orderedAt != null){
+            if (lastEle.deletedAt != null || lastEle.orderedAt != null) {
                 shoppingSessionRepository.delete(createdSession)
             }
         }
@@ -91,14 +94,14 @@ class CartService {
 
     @Transactional
 //    @PostConstruct
-    fun processShoppingSessions(){
+    fun processShoppingSessions() {
         val sessions = shoppingSessionRepository.findAll()
 
         val needDeletion = arrayListOf<ShoppingSession>()
 
         sessions.map {
-            val selected  =  it.cartItems.last()
-            if(selected.deletedAt != null || selected.orderedAt != null){
+            val selected = it.cartItems.last()
+            if (selected.deletedAt != null || selected.orderedAt != null) {
                 needDeletion.add(it)
             }
         }
@@ -127,7 +130,37 @@ class CartService {
         }
     }
 
+    /**
+     * <대체하는 함수>
+     * - getConnectedWholesalerOnCartItems 대체
+     * - getAllCartItems 대체
+     *
+     * <새로운 기능>
+     * - getCartMemo 기능 대체가능
+     */
+    @Transactional(readOnly = true)
+    fun getShoppingSession(retailerId: Long): Optional<ShoppingSession> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
+        try {
+            val session: Optional<ShoppingSession> =
+                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+            if (session.isEmpty) {
+                throw CustomException(
+                    message = "There's no shopping session on retailer whose ID is $retailerId",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION,
+                )
+            }
+            return session
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
+
+    @Deprecated(message = "Replaced by getShoppingSession")
     @Transactional(readOnly = true)
     fun getAllCartItems(userId: Long, pageable: Pageable): Page<CartItem> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -142,6 +175,7 @@ class CartService {
 
     }
 
+    @Deprecated(message = "Replaced by addCartItem")
     @Transactional
     fun addToCart(userId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -173,6 +207,41 @@ class CartService {
                 cartItem.id = prevCartItem.get().id
             }
             val createdCartItem = cartItemRepository.save(cartItem)
+            logger.info("$className.$executedFunc >> completed.")
+            return createdCartItem
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    @Transactional
+    fun addCartItem(retailerId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+
+            val shoppingSession: Optional<ShoppingSession> =
+                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+            if (shoppingSession.isEmpty) {
+                throw CustomException(
+                    message = "There's no shopping_session whose retailerID is $retailerId",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION
+                )
+            }
+
+            val newCartItem = CartItem(
+                retailer = entityManager.getReference(User::class.java, retailerId),
+                wholesaler = shoppingSession.get().wholesaler,
+                flower = entityManager.getReference(Flower::class.java, flowerId),
+                quantity = quantity,
+                shoppingSession = shoppingSession.get(),
+                grade = convertFlowerGradeToKor(grade)
+            )
+
+            val createdCartItem = cartItemRepository.save(newCartItem)
+
             logger.info("$className.$executedFunc >> completed.")
             return createdCartItem
         } catch (e: Exception) {
@@ -223,6 +292,7 @@ class CartService {
         }
     }
 
+    @Deprecated(message = "Replaced by deleteCartItem")
     @Transactional
     fun removeCartItem(cartItemId: Long): Long {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -245,6 +315,7 @@ class CartService {
         }
     }
 
+    @Deprecated(message = "Replaced by updateShoppingSession")
     @Transactional
     fun upsertWholesalerOnCartItems(retailerId: Long, wholesalerId: Long): List<CartItem> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -271,6 +342,61 @@ class CartService {
             val updatedCartItems = cartItemRepository.saveAll(updatedCartItemObjs)
             logger.info("$className.$executedFunc >> completed.")
             return updatedCartItems
+
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    @Transactional
+    fun updateShoppingSession(retailerId: Long, wholesalerId: Long?, memo: String?): ShoppingSession {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val shoppingSession: Optional<ShoppingSession> =
+                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+            if (shoppingSession.isEmpty) {
+                throw CustomException(
+                    message = "There's no shopping session whose retailerID is $retailerId",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION
+                )
+            }
+            val session = shoppingSession.get()
+
+            if (wholesalerId != null) {
+                val wholesaler = userRepository.findById(wholesalerId)
+                if (wholesaler.isEmpty) {
+                    throw CustomException(
+                        message = "There's no wholesaler whose ID is $wholesalerId",
+                        errorType = ErrorType.NOT_FOUND,
+                        errorCode = CustomErrorCode.NO_USER
+                    )
+                }
+                logger.info("$className.$executedFunc >> wholesaler both are exists.")
+
+                session.wholesaler = wholesaler.get()
+                shoppingSessionRepository.save(session)
+                logger.info("$className.$executedFunc >> wholesaler data on shopping_session updated.")
+
+                val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+                val updatedCartItemObjs = cartItems.map {
+                    it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
+                    it
+                }
+                cartItemRepository.saveAll(updatedCartItemObjs)
+                logger.info("$className.$executedFunc >> wholesaler data on cart_items updated.")
+            }
+
+            if(memo != null){
+                session.memo = memo
+                shoppingSessionRepository.save(session)
+                logger.info("$className.$executedFunc >> memo data on shopping_session updated.")
+            }
+
+            logger.info("$className.$executedFunc >> completed.")
+            return session
 
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
