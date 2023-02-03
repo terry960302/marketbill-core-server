@@ -31,6 +31,9 @@ data class OrderSheet(
     val orderItems: List<OrderItem> = listOf(),
 
     @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
+    val customOrderItems: List<CustomOrderItem> = listOf(),
+
+    @OneToMany(mappedBy = "orderSheet", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val orderSheetReceipts: List<OrderSheetReceipt> = listOf(),
 
     @Column(name = "price_updated_at", nullable = true)

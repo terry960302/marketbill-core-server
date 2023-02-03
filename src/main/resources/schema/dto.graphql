@@ -103,3 +103,9 @@ input UpdatePasswordInput{
 input DailyOrderItemFilterInput{
     dateRange : DateRangeInput,
 }
+
+# 둘중에 하나는 필수 입력
+input UpdateShoppingSessionInput{
+    wholesalerId : Int,
+    memo : Int,
+}
