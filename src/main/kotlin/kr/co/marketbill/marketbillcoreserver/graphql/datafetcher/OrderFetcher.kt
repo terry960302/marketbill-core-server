@@ -231,11 +231,11 @@ class OrderFetcher {
     ): CartItem {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
-        return cartService.addToCart(
-            userId,
-            input.flowerId.toLong(),
-            input.quantity,
-            FlowerGrade.valueOf(input.grade.toString())
+        return cartService.addCartItem(
+            retailerId = userId,
+            flowerId = input.flowerId.toLong(),
+            quantity = input.quantity,
+            grade = FlowerGrade.valueOf(input.grade.toString())
         )
     }
 
@@ -257,6 +257,7 @@ class OrderFetcher {
         return CommonResponse(success = true)
     }
 
+    @Deprecated(message = "Replaced by updateShoppingSession")
     @PreAuthorize("hasRole('RETAILER')")
     @DgsMutation(field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
     fun upsertWholesalerOnCartItems(
@@ -275,7 +276,7 @@ class OrderFetcher {
     ): OrderSheet {
         val token = jwtProvider.filterOnlyToken(authorization)
         val retailerId = jwtProvider.parseUserId(token)
-        return orderService.orderCartItems(retailerId)
+        return orderService.orderAllCartItems(retailerId)
     }
 
     @PreAuthorize("hasRole('RETAILER')")
@@ -308,7 +309,7 @@ class OrderFetcher {
 
     @DgsMutation(field = DgsConstants.MUTATION.OrderBatchCartItems)
     fun orderBatchCartItems(): CommonResponse {
-        cartService.batchCartToOrder()
+        cartService.orderBatchCartItems()
         return CommonResponse(success = true)
     }
 }

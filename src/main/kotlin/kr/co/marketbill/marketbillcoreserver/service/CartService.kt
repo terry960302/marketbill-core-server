@@ -101,7 +101,8 @@ class CartService {
         val needDeletion = arrayListOf<ShoppingSession>()
 
         sessions.map {
-            val selected = it.cartItems.last()
+            val cartItems = cartItemRepository.findAll(CartItemSpecs.byShoppingSessionId(it.id))
+            val selected = cartItems.last()
             if (selected.deletedAt != null || selected.orderedAt != null) {
                 needDeletion.add(it)
             }
@@ -218,21 +219,38 @@ class CartService {
 
             val session: ShoppingSession = if (shoppingSession.isEmpty) {
                 val newSession = ShoppingSession(
-                    retailer = entityManager.getReference(User::class.java, retailerId)
+                    retailer = entityManager.getReference(User::class.java, retailerId),
+                    wholesaler = null,
+                    memo = null,
                 )
                 shoppingSessionRepository.save(newSession)
             } else {
                 shoppingSession.get()
             }
 
+            // 꽃, 등급, 소매상, 세션이 모두 동일하면 수량만 바뀌므로 업데이트처리(그외에 소매상ID가 다르거나 품질이 다르거나 꽃이 다르면 새로 장바구니에 추가)
+            // retailer_id, flower_id, grade, session_id 복수 컬럼에 unique 처리했기에 findOne 사용가능
+            val prevCartItem: Optional<CartItem> =
+                cartItemRepository.findOne(
+                    CartItemSpecs
+                        .byRetailerId(retailerId)
+                        .and(CartItemSpecs.byFlowerId(flowerId))
+                        .and(CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade)))
+                        .and(CartItemSpecs.byShoppingSessionId(session.id))
+                )
+
             val newCartItem = CartItem(
                 retailer = entityManager.getReference(User::class.java, retailerId),
                 wholesaler = session.wholesaler,
                 flower = entityManager.getReference(Flower::class.java, flowerId),
                 quantity = quantity,
-                shoppingSession = shoppingSession.get(),
+                shoppingSession = session,
                 grade = convertFlowerGradeToKor(grade)
             )
+
+            if (prevCartItem.isPresent) {
+                newCartItem.id = prevCartItem.get().id
+            }
 
             val createdCartItem = cartItemRepository.save(newCartItem)
 
@@ -265,8 +283,9 @@ class CartService {
                     CartItemSpecs.byFlowerId(item.flower!!.id)
                 ).and(
                     CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade))
+                ).and(
+                    CartItemSpecs.byShoppingSessionId(item.shoppingSession!!.id)
                 )
-
             )
 
             if (sameCartItem.isPresent) {
@@ -286,7 +305,6 @@ class CartService {
         }
     }
 
-    @Deprecated(message = "Replaced by deleteCartItem")
     @Transactional
     fun removeCartItem(cartItemId: Long): Long {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -300,7 +318,15 @@ class CartService {
                     errorCode = CustomErrorCode.NO_CART_ITEM
                 )
             }
-            cartItemRepository.deleteById(cartItemId)
+            val session: ShoppingSession = cartItem.get().shoppingSession!!
+            val allCartItemsInSession: List<CartItem> =
+                cartItemRepository.findAll(CartItemSpecs.byShoppingSessionId(session.id))
+
+            if (allCartItemsInSession.size == 1) {
+                shoppingSessionRepository.delete(session)
+            } else {
+                cartItemRepository.delete(cartItem.get())
+            }
             logger.info("$className.$executedFunc >> completed.")
             return cartItemId
         } catch (e: Exception) {
@@ -348,7 +374,7 @@ class CartService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            if(wholesalerId == null && memo == null){
+            if (wholesalerId == null && memo == null) {
                 throw CustomException(
                     message = "There's no input data to update.",
                     errorType = ErrorType.NOT_FOUND,

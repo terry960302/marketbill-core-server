@@ -26,7 +26,7 @@ data class ShoppingSession(
     @Column(name = "memo", nullable = true)
     var memo: String? = null,
 
-    @OneToMany(mappedBy = "shoppingSession", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.EAGER)
+    @OneToMany(mappedBy = "shoppingSession", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
     val cartItems: List<CartItem> = listOf(),
 ) : BaseTime() {
     @PostLoad
