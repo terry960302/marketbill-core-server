@@ -16,7 +16,7 @@ group = "kr.co.marketbill"
 version = "0.0.1-SNAPSHOT"
 java.sourceCompatibility = JavaVersion.VERSION_17
 
-extra["kotlin.version"] = "1.6.0"
+extra["kotlin.version"] = "1.7.0"
 extra["graphql-java.version"] = "19.2"
 
 repositories {
@@ -37,7 +37,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
 	// graphql
-	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release"))
+//	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release"))
+	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:5.5.1"))
 	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
 	implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
 
