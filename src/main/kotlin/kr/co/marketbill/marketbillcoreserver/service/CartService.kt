@@ -348,6 +348,14 @@ class CartService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
+            if(wholesalerId == null && memo == null){
+                throw CustomException(
+                    message = "There's no input data to update.",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.INVALID_DATA
+                )
+            }
+
             val shoppingSession: Optional<ShoppingSession> =
                 shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
             if (shoppingSession.isEmpty) {
@@ -403,7 +411,7 @@ class CartService {
      * : 매일 오후 10시에 자동 주문처리
      */
     @Deprecated(message = "Replaced by orderBatchCartItems")
-    @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
+//    @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
     @Transactional
     fun batchCartToOrder() {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name

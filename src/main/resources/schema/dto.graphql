@@ -107,5 +107,5 @@ input DailyOrderItemFilterInput{
 # 둘중에 하나는 필수 입력
 input UpdateShoppingSessionInput{
     wholesalerId : Int,
-    memo : Int,
+    memo : String,
 }

@@ -78,6 +78,21 @@ class OrderFetcher {
         return cartService.getShoppingSession(userId)
     }
 
+    @PreAuthorize("hasRole('RETAILER')")
+    @DgsMutation(field = DgsConstants.MUTATION.UpdateShoppingSession)
+    fun updateShoppingSession(
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
+        @InputArgument input: UpdateShoppingSessionInput,
+    ): ShoppingSession {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId: Long = jwtProvider.parseUserId(token)
+        return cartService.updateShoppingSession(
+            retailerId = userId,
+            wholesalerId = input.wholesalerId?.toLong(),
+            memo = input.memo
+        )
+    }
+
 
     // 공용
     @DgsQuery(field = DgsConstants.QUERY.GetOrderSheet)
