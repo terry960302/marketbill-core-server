@@ -24,6 +24,18 @@ class CartItemSpecs {
             }
         }
 
+        fun byShoppingSessionId(shoppingSessionId: Long?): Specification<CartItem> {
+            return Specification<CartItem> { root, query, builder ->
+                if (shoppingSessionId == null) {
+                    builder.conjunction()
+                } else {
+                    val shoppingSession = root.join<CartItem, ShoppingSession>("shoppingSession")
+                    builder.equal(shoppingSession.get<Long>("id"), shoppingSessionId)
+                }
+
+            }
+        }
+
         fun hasWholesaler(): Specification<CartItem> {
             return Specification<CartItem> { root, query, builder ->
                 val wholesaler: Join<CartItem, User> = root.join("wholesaler")

@@ -10,7 +10,11 @@ import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
-@Table(name = "cart_items")
+@Table(
+    name = "cart_items", uniqueConstraints = [
+        UniqueConstraint(columnNames = ["retailer_id", "session_id", "flower_id", "grade"])
+    ]
+)
 @SQLDelete(sql = "UPDATE cart_items SET deleted_at = current_timestamp WHERE id = ?")
 @Where(clause = "deleted_at is Null AND ordered_at is Null")
 data class CartItem(
@@ -18,7 +22,7 @@ data class CartItem(
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
-    @ManyToOne(cascade = [CascadeType.REMOVE])
+    @ManyToOne()
     @JoinColumn(name = "session_id")
     var shoppingSession: ShoppingSession? = null,
 
