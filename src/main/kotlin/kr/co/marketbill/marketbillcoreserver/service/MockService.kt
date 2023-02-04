@@ -11,10 +11,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.user.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.BiddingFlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerTypeRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.CartRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.DailyOrderItemRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderItemRepository
-import kr.co.marketbill.marketbillcoreserver.domain.repository.order.OrderSheetRepository
+import kr.co.marketbill.marketbillcoreserver.domain.repository.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.*
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
@@ -65,7 +62,7 @@ class MockService {
     private lateinit var flowerRepository: FlowerRepository
 
     @Autowired
-    private lateinit var cartRepository: CartRepository
+    private lateinit var cartItemRepository: CartItemRepository
 
     @Autowired
     private lateinit var orderItemRepository: OrderItemRepository
@@ -238,7 +235,7 @@ class MockService {
                 grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.UPPER)
             )
         }
-        cartRepository.saveAll(cartItems)
+        cartItemRepository.saveAll(cartItems)
         logger.trace("createMockCartItems completed")
     }
 

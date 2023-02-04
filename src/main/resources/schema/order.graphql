@@ -1,3 +1,13 @@
+type ShoppingSession{
+    id : Int!,
+    retailer: User,
+    wholesaler : User,
+    memo : String,
+    cartItems(pagination: PaginationInput) : [CartItem]!,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
 
 type CartItem{
     id : Int!,
@@ -18,6 +28,7 @@ type OrderSheet{
     retailer : User,
     wholesaler : User,
     orderItems(pagination: PaginationInput) : [OrderItem!]!,
+    customOrderItems(pagination : PaginationInput) : [CustomOrderItem!]!,
     # 주문서에 해당하는 꽃의 총 개수
     totalFlowerQuantity : Int!,
     # 주문서에 해당하는 꽃의 품종 개수(중복x)
@@ -34,12 +45,42 @@ type OrderSheet{
     deletedAt : LocalDate,
 }
 
-type OrderItem{
+# OrderItem, CustomOrderItem 엔티티의 공통컬럼
+interface OrderItemInterface{
+    id : Int!,
+    orderSheet : OrderSheet!,
+    retailer : User,
+    wholesaler : User,
+    quantity : Int!,
+    grade : FlowerGrade!,
+    price : Int,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+type OrderItem implements OrderItemInterface{
     id : Int!,
     orderSheet : OrderSheet!,
     retailer : User,
     wholesaler : User,
     flower : Flower!,
+    quantity : Int!,
+    grade : FlowerGrade!,
+    price : Int,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+# 고객이 직접 입력하여 추가한 꽃 품목
+type CustomOrderItem implements OrderItemInterface{
+    id : Int!,
+    orderSheet : OrderSheet!,
+    retailer : User,
+    wholesaler : User,
+    flowerName : String!,
+    flowerTypeName : String!,
     quantity : Int!,
     grade : FlowerGrade!,
     price : Int,
@@ -92,6 +133,9 @@ extend type Query {
     getCartWholesaler : User
     # [소매상] 장바구니 목록 가져오기
     getAllCartItems(pagination : PaginationInput) : [CartItem!]!
+    # [소매상] 장바구니 쇼핑 세션 가져오기
+    # - getCartWholesaler, getAllCartItems 대체
+    getShoppingSession : ShoppingSession,
     # [공통] 주문서 목록 가져오기
     getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!]!,
     # [공통] 주문서 단건(상세) 가져오기
@@ -113,7 +157,9 @@ extend type Mutation {
     # [소매상] 장바구니 항목 삭제
     removeCartItem(cartItemId : Int!) : CommonResponse!,
     # [소매상] 장바구니 항목 수정
-    updateCartItem(input : UpdateCartItemInput) : CartItem!
+    updateCartItem(input : UpdateCartItemInput!) : CartItem!
+    # [소매상] 장바구니 쇼핑 세션값(도매상, 메모) 수정
+    updateShoppingSession(input : UpdateShoppingSessionInput!) : ShoppingSession!,
     # [소매상] 장바구니 거래처 설정 및 수정
     upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem!]!,
     # [소매상] 장바구니 항목들 주문하기
@@ -127,5 +173,5 @@ extend type Mutation {
     # [도매상] 영수증 발행
     issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt!,
     # 정기적 일괄 장바구니 주문처리
-    batchCartToOrder : CommonResponse!
+    orderBatchCartItems : CommonResponse!
 }
