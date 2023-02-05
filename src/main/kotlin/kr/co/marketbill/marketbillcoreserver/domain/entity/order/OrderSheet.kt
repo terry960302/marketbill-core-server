@@ -39,7 +39,7 @@ data class OrderSheet(
     @Column(name = "price_updated_at", nullable = true)
     var priceUpdatedAt: LocalDateTime? = null,
 
-    @Column(name = "memo", nullable = true)
+    @Column(name = "memo", nullable = true, length = 600)
     var memo: String? = null,
 
     @Transient

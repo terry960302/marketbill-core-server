@@ -299,6 +299,24 @@ class OrderService {
         }
     }
 
+    fun getAllCustomOrderItemsByOrderSheetIds(
+        orderSheetIds: List<Long>,
+        pageable: Pageable
+    ): MutableMap<Long, List<CustomOrderItem>> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val customOrderItems =
+                customOrderItemRepository.findAll(CustomOrderItemSpecs.byOrderSheetIds(orderSheetIds), pageable)
+            val groupedCustomOrderItems = customOrderItems.groupFillBy(orderSheetIds) { it.orderSheet!!.id!! }
+                .toMutableMap()
+            logger.info("$className.$executedFunc >> completed.")
+            return groupedCustomOrderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
     fun getAllOrderSheetReceiptsByOrderSheetIds(
         orderSheetIds: List<Long>,
         pageable: Pageable
@@ -511,19 +529,21 @@ class OrderService {
                 )
             }
 
-            val customOrderItems: List<CustomOrderItem> = items.filter { it.id != null }.map {
-                CustomOrderItem(
-                    id = it.id!!.toLong(),
-                    orderSheet = orderSheet.get(),
-                    retailer = orderSheet.get().retailer,
-                    wholesaler = orderSheet.get().wholesaler,
-                    flowerName = it.flowerName,
-                    flowerTypeName = it.flowerTypeName,
-                    grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())),
-                    quantity = it.quantity,
-                    price = it.price,
-                )
-            }
+            val customOrderItems: List<CustomOrderItem> =
+                items.filter { it.flowerName.trim().isEmpty() || it.flowerTypeName.trim().isEmpty() || it.price <= 0 }
+                    .map {
+                        CustomOrderItem(
+                            id = it.id!!.toLong(),
+                            orderSheet = orderSheet.get(),
+                            retailer = orderSheet.get().retailer,
+                            wholesaler = orderSheet.get().wholesaler,
+                            flowerName = it.flowerName.trim(),
+                            flowerTypeName = it.flowerTypeName.trim(),
+                            grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())),
+                            quantity = it.quantity,
+                            price = it.price,
+                        )
+                    }
 
             val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
             logger.info("$className.$executedFunc >> completed.")
