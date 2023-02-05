@@ -64,7 +64,7 @@ class OrderFieldFetcher {
             0
         }
         val customOrderItemCount = if (orderSheet.customOrderItems.isNotEmpty()) {
-            val flowerTypes: List<String> = orderSheet.customOrderItems.map { it.flowerTypeName }.distinct()
+            val flowerTypes: List<String> = orderSheet.customOrderItems.mapNotNull { it.flowerTypeName }.distinct()
             flowerTypes.count()
         } else {
             0

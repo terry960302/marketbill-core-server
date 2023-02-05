@@ -590,6 +590,29 @@ class OrderService {
             )
             logger.info("$className.$executedFunc >> businessInfo of wholesaler is validated.")
 
+            val orderItemsInput = orderSheet.get().orderItems.map {
+                ReceiptProcessInput.OrderItem(
+                    flower = ReceiptProcessInput.Flower(
+                        name = it.flower!!.name,
+                        flowerType = ReceiptProcessInput.FlowerType(name = it.flower!!.flowerType!!.name),
+                    ),
+                    quantity = it.quantity!!,
+                    price = it.price,
+                    grade = it.grade!!,
+                )
+            }
+            val customOrderItemsInput = orderSheet.get().customOrderItems.map {
+                ReceiptProcessInput.OrderItem(
+                    flower = ReceiptProcessInput.Flower(
+                        name = it.flowerName!!,
+                        flowerType = ReceiptProcessInput.FlowerType(name = it.flowerTypeName!!),
+                    ),
+                    quantity = it.quantity!!,
+                    price = it.price,
+                    grade = it.grade!!,
+                )
+            }
+
             val input = ReceiptProcessInput(
                 orderNo = orderSheet.get().orderNo,
                 retailer = ReceiptProcessInput.Retailer(name = orderSheet.get().retailer!!.name!!),
@@ -604,17 +627,7 @@ class OrderService {
                     businessSubCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessSubCategory,
                     bankAccount = orderSheet.get().wholesaler!!.businessInfo!!.bankAccount,
                 ),
-                orderItems = orderSheet.get().orderItems.map {
-                    ReceiptProcessInput.OrderItem(
-                        flower = ReceiptProcessInput.Flower(
-                            name = it.flower!!.name,
-                            flowerType = ReceiptProcessInput.FlowerType(name = it.flower!!.flowerType!!.name),
-                        ),
-                        quantity = it.quantity!!,
-                        price = it.price,
-                        grade = it.grade!!,
-                    )
-                }
+                orderItems = orderItemsInput + customOrderItemsInput
             )
             logger.info("$className.$executedFunc >> receipt object is created.")
 
