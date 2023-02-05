@@ -10,10 +10,12 @@ import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.CartItemLoader
+import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.CustomOrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderSheetReceiptLoader
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
+import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
@@ -33,26 +35,44 @@ class OrderFieldFetcher {
         return dataLoader.load(shoppingSession.id)
     }
 
+    @Transactional(readOnly = true)
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerQuantity)
     fun totalFlowerQuantity(dfe: DgsDataFetchingEnvironment): Int {
         val orderSheet = dfe.getSource<OrderSheet>()
-        return if (orderSheet.orderItems.isNotEmpty()) {
+
+        val orderItemCount = if (orderSheet.orderItems.isNotEmpty()) {
             val quantities: List<Int> = orderSheet.orderItems.map { if (it.quantity == null) 0 else it.quantity!! }
             quantities.reduce { acc, i -> acc + i }
         } else {
             0
         }
+        val customOrderItemCount = if (orderSheet.customOrderItems.isNotEmpty()) {
+            val quantities: List<Int> =
+                orderSheet.customOrderItems.map { if (it.quantity == null) 0 else it.quantity!! }
+            quantities.reduce { acc, i -> acc + i }
+        } else {
+            0
+        }
+        return orderItemCount + customOrderItemCount
     }
 
+    @Transactional(readOnly = true)
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerTypeCount)
     fun totalFlowerTypeCount(dfe: DgsDataFetchingEnvironment): Int {
         val orderSheet = dfe.getSource<OrderSheet>()
-        return if (orderSheet.orderItems.isNotEmpty()) {
+        val orderItemCount = if (orderSheet.orderItems.isNotEmpty()) {
             val flowerTypes: List<Long> = orderSheet.orderItems.mapNotNull { it.flower?.flowerType?.id }.distinct()
             flowerTypes.count()
         } else {
             0
         }
+        val customOrderItemCount = if (orderSheet.customOrderItems.isNotEmpty()) {
+            val flowerTypes: List<String> = orderSheet.customOrderItems.mapNotNull { it.flowerTypeName }.distinct()
+            flowerTypes.count()
+        } else {
+            0
+        }
+        return orderItemCount + customOrderItemCount
     }
 
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
@@ -65,6 +85,20 @@ class OrderFieldFetcher {
 
         val context = DgsContext.Companion.getCustomContext<CustomContext>(dfe)
         context.orderItemsInput.pagination = pagination
+
+        return dataLoader.load(orderSheet.id)
+    }
+
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.CustomOrderItems)
+    fun customOrderItems(
+        dfe: DgsDataFetchingEnvironment,
+        @InputArgument pagination: PaginationInput?
+    ): CompletableFuture<List<CustomOrderItem>> {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        val dataLoader = dfe.getDataLoader<Long, List<CustomOrderItem>>(CustomOrderItemLoader::class.java)
+
+        val context = DgsContext.Companion.getCustomContext<CustomContext>(dfe)
+        context.customOrderItemsInput.pagination = pagination
 
         return dataLoader.load(orderSheet.id)
     }
@@ -113,6 +147,13 @@ class OrderFieldFetcher {
         val orderItem = dfe.getSource<OrderItem>()
         orderItem.gradeValue = EnumConverter.convertFlowerGradeKorToEnum(orderItem.grade!!)
         return orderItem.gradeValue!!
+    }
+
+    @DgsData(parentType = DgsConstants.CUSTOMORDERITEM.TYPE_NAME, field = DgsConstants.CUSTOMORDERITEM.Grade)
+    fun customOrderItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
+        val customOrderItem = dfe.getSource<CustomOrderItem>()
+        customOrderItem.gradeValue = EnumConverter.convertFlowerGradeKorToEnum(customOrderItem.grade!!)
+        return customOrderItem.gradeValue!!
     }
 
     @DgsData(parentType = DgsConstants.DAILYORDERITEM.TYPE_NAME, field = DgsConstants.DAILYORDERITEM.Grade)

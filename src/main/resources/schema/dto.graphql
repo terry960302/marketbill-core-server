@@ -109,3 +109,17 @@ input UpdateShoppingSessionInput{
     wholesalerId : Int,
     memo : String,
 }
+
+input CustomOrderItemInput{
+    id : Int, # Null(Insert), NotNull(Update)
+    flowerName : String!,
+    flowerTypeName : String!,
+    grade : FlowerGrade!,
+    quantity : Int!,
+    price : Int!,
+}
+
+input UpsertCustomOrderItemsInput{
+    orderSheetId : Int!,
+    items : [CustomOrderItemInput!]!,
+}

@@ -23,7 +23,7 @@ data class ShoppingSession(
     @JoinColumn(name = "wholesaler_id", nullable = true)
     var wholesaler: User? = null,
 
-    @Column(name = "memo", nullable = true)
+    @Column(name = "memo", nullable = true, length = 600)
     var memo: String? = null,
 
     @OneToMany(mappedBy = "shoppingSession", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)

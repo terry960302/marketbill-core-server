@@ -9,6 +9,7 @@ import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CustomOrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
@@ -298,6 +299,12 @@ class OrderFetcher {
     @DgsMutation(field = DgsConstants.MUTATION.UpdateDailyOrderItemsPrice)
     fun updateDailyOrderItemsPrice(@InputArgument items: List<OrderItemPriceInput>): List<kr.co.marketbill.marketbillcoreserver.domain.entity.order.DailyOrderItem> {
         return orderService.updateDailyOrderItemsPrice(items)
+    }
+
+    @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
+    @DgsMutation(field = DgsConstants.MUTATION.UpsertCustomOrderItems)
+    fun upsertCustomOrderItems(@InputArgument input: UpsertCustomOrderItemsInput): List<CustomOrderItem> {
+        return orderService.upsertCustomOrderItems(input.orderSheetId.toLong(), input.items)
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR')")
