@@ -149,6 +149,13 @@ class OrderFieldFetcher {
         return orderItem.gradeValue!!
     }
 
+    @DgsData(parentType = DgsConstants.CUSTOMORDERITEM.TYPE_NAME, field = DgsConstants.CUSTOMORDERITEM.Grade)
+    fun customOrderItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
+        val customOrderItem = dfe.getSource<CustomOrderItem>()
+        customOrderItem.gradeValue = EnumConverter.convertFlowerGradeKorToEnum(customOrderItem.grade!!)
+        return customOrderItem.gradeValue!!
+    }
+
     @DgsData(parentType = DgsConstants.DAILYORDERITEM.TYPE_NAME, field = DgsConstants.DAILYORDERITEM.Grade)
     fun dailyOrderItemGrade(dfe: DgsDataFetchingEnvironment): FlowerGrade {
         val dailyOrderItem = dfe.getSource<DailyOrderItem>()

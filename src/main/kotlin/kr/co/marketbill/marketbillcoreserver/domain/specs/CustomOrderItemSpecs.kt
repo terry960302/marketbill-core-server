@@ -18,5 +18,50 @@ class CustomOrderItemSpecs {
                 }
             }
         }
+
+        fun byOrderSheetId(orderSheetId: Long?): Specification<CustomOrderItem> {
+            return Specification<CustomOrderItem> { root, query, builder ->
+                if (orderSheetId == null) {
+                    builder.conjunction()
+                } else {
+                    val orderSheet = root.join<CustomOrderItem, OrderSheet>("orderSheet")
+                    builder.equal(orderSheet.get<Long>("id"), orderSheetId)
+                }
+            }
+        }
+
+        fun byFlowerName(flowerName: String?): Specification<CustomOrderItem> {
+            return Specification<CustomOrderItem> { root, query, builder ->
+                if (flowerName == null) {
+                    builder.conjunction()
+                } else {
+                    builder.equal(root.get<String>("flowerName"), flowerName)
+                }
+            }
+        }
+
+        fun byFlowerTypeName(flowerTypeName: String?): Specification<CustomOrderItem> {
+            return Specification<CustomOrderItem> { root, query, builder ->
+                if (flowerTypeName == null) {
+                    builder.conjunction()
+                } else {
+                    builder.equal(root.get<String>("flowerTypeName"), flowerTypeName)
+                }
+            }
+        }
+
+
+        fun byFlowerGrade(gradeKor: String?): Specification<CustomOrderItem> {
+            return Specification<CustomOrderItem> { root, query, builder ->
+                if (gradeKor == null) {
+                    builder.conjunction()
+                } else {
+                    builder.equal(root.get<String>("grade"), gradeKor)
+                }
+            }
+        }
+
+
+
     }
 }
