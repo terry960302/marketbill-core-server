@@ -37,8 +37,8 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 
 	// graphql
-//	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release"))
-	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:5.5.1"))
+//	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release")) -> SpringBoot 3.0 upgrade 필요
+	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:5.5.1")) // SpringBoot 2.7.5 호환되는 DGS 버전
 	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
 	implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
 

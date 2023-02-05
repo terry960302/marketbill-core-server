@@ -166,12 +166,14 @@ extend type Mutation {
     orderCartItems : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
     removeOrderSheet(orderSheetId : Int!) : CommonResponse!,
-    # [도매상] 주문내역 주문 항목 수정
-    updateOrderItemsPrice(items : [OrderItemPriceInput]) : [OrderItem!]!
+    # [도매상] 주문내역 주문 항목 가격 수정
+    updateOrderItemsPrice(items : [OrderItemPriceInput!]!) : [OrderItem!]!,
+    # [도매상] 커스텀 주문항목 추가
+    upsertCustomOrderItems(input : UpsertCustomOrderItemsInput!) : [CustomOrderItem!]!,
     # [도매상] 판매가 일괄적용 주문 항목 일괄 수정
-    updateDailyOrderItemsPrice(items : [OrderItemPriceInput]) : [DailyOrderItem!]!
+    updateDailyOrderItemsPrice(items : [OrderItemPriceInput!]!) : [DailyOrderItem!]!,
     # [도매상] 영수증 발행
     issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt!,
     # 정기적 일괄 장바구니 주문처리
-    orderBatchCartItems : CommonResponse!
+    orderBatchCartItems : CommonResponse!,
 }

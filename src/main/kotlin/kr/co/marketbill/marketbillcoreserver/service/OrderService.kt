@@ -9,6 +9,7 @@ import kotlinx.serialization.json.Json
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
+import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessOutput
@@ -20,7 +21,9 @@ import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BusinessInfo
 import kr.co.marketbill.marketbillcoreserver.domain.specs.*
 import kr.co.marketbill.marketbillcoreserver.domain.vo.DailyOrderItemKey
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
+import kr.co.marketbill.marketbillcoreserver.types.CustomOrderItemInput
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
+import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import kr.co.marketbill.marketbillcoreserver.util.groupFillBy
 import org.slf4j.Logger
@@ -60,6 +63,9 @@ class OrderService {
     private lateinit var orderItemRepository: OrderItemRepository
 
     @Autowired
+    private lateinit var customOrderItemRepository: CustomOrderItemRepository
+
+    @Autowired
     private lateinit var dailyOrderItemRepository: DailyOrderItemRepository
 
     @Autowired
@@ -80,7 +86,7 @@ class OrderService {
     private val logger: Logger = LoggerFactory.getLogger(OrderService::class.java)
     private val className = this.javaClass.simpleName
 
-    @Deprecated(message="Replaced by orderAllCartItems")
+    @Deprecated(message = "Replaced by orderAllCartItems")
     @Transactional
     fun orderCartItems(retailerId: Long): OrderSheet {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -149,14 +155,15 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val shoppingSession : Optional<ShoppingSession> = shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+            val shoppingSession: Optional<ShoppingSession> =
+                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
             val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
                 .map {
                     it.orderedAt = LocalDateTime.now()
                     it
                 }.get().toList()
 
-            if(shoppingSession.isEmpty){
+            if (shoppingSession.isEmpty) {
                 throw CustomException(
                     message = "There's no shopping_session whose retailerID is $retailerId.",
                     errorType = ErrorType.NOT_FOUND,
@@ -171,7 +178,8 @@ class OrderService {
                 errorCode = CustomErrorCode.NO_CART_ITEM
             )
 
-            val isAllConnectedWithWholesaler = cartItems.mapNotNull { it.wholesaler }.size == cartItems.size && shoppingSession.get().wholesaler != null
+            val isAllConnectedWithWholesaler =
+                cartItems.mapNotNull { it.wholesaler }.size == cartItems.size && shoppingSession.get().wholesaler != null
             if (!isAllConnectedWithWholesaler) throw CustomException(
                 message = "There's no connected wholesaler on cart items.",
                 errorType = ErrorType.NOT_FOUND,
@@ -490,6 +498,43 @@ class OrderService {
     }
 
     @Transactional
+    fun upsertCustomOrderItems(orderSheetId: Long, items: List<CustomOrderItemInput>): List<CustomOrderItem> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val orderSheet = orderSheetRepository.findById(orderSheetId)
+            if (orderSheet.isEmpty) {
+                throw CustomException(
+                    message = "There's no OrderSheet data whose id is $orderSheetId",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                )
+            }
+
+            val customOrderItems: List<CustomOrderItem> = items.filter { it.id != null }.map {
+                CustomOrderItem(
+                    id = it.id!!.toLong(),
+                    orderSheet = orderSheet.get(),
+                    retailer = orderSheet.get().retailer,
+                    wholesaler = orderSheet.get().wholesaler,
+                    flowerName = it.flowerName,
+                    flowerTypeName = it.flowerTypeName,
+                    grade = EnumConverter.convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())),
+                    quantity = it.quantity,
+                    price = it.price,
+                )
+            }
+
+            val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
+            logger.info("$className.$executedFunc >> completed.")
+            return affectedCustomOrderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    @Transactional
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -505,8 +550,8 @@ class OrderService {
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
-            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null}
-            val isAllZeroMinusPrice = orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0}
+            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null }
+            val isAllZeroMinusPrice = orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0 }
             if (isAllNullPrice || isAllZeroMinusPrice) {
                 throw CustomException(
                     message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
