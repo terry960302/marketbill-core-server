@@ -15,6 +15,7 @@ import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderSheetReceiptLoader
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
+import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
@@ -34,6 +35,7 @@ class OrderFieldFetcher {
         return dataLoader.load(shoppingSession.id)
     }
 
+    @Transactional(readOnly = true)
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerQuantity)
     fun totalFlowerQuantity(dfe: DgsDataFetchingEnvironment): Int {
         val orderSheet = dfe.getSource<OrderSheet>()
@@ -54,6 +56,7 @@ class OrderFieldFetcher {
         return orderItemCount + customOrderItemCount
     }
 
+    @Transactional(readOnly = true)
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerTypeCount)
     fun totalFlowerTypeCount(dfe: DgsDataFetchingEnvironment): Int {
         val orderSheet = dfe.getSource<OrderSheet>()

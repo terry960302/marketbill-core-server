@@ -6,10 +6,7 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
-import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
+import kr.co.marketbill.marketbillcoreserver.constants.*
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessOutput
@@ -557,7 +554,7 @@ class OrderService {
     @Transactional
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
+        
         try {
             logger.info("$className.$executedFunc >> init")
 
@@ -612,6 +609,7 @@ class OrderService {
                     grade = it.grade!!,
                 )
             }
+            val totOrderItemsInput = orderItemsInput + customOrderItemsInput
 
             val input = ReceiptProcessInput(
                 orderNo = orderSheet.get().orderNo,
@@ -627,8 +625,9 @@ class OrderService {
                     businessSubCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessSubCategory,
                     bankAccount = orderSheet.get().wholesaler!!.businessInfo!!.bankAccount,
                 ),
-                orderItems = orderItemsInput + customOrderItemsInput
+                orderItems = totOrderItemsInput
             )
+
             logger.info("$className.$executedFunc >> receipt object is created.")
 
             val receiptInfo: ReceiptProcessOutput = runBlocking {
@@ -659,7 +658,7 @@ class OrderService {
                 )
             }
             logger.info("$className.$executedFunc >> Sent issue receipt message.")
-
+            logger.info("$className.$executedFunc >> completed.")
             return createdReceipt
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}")
