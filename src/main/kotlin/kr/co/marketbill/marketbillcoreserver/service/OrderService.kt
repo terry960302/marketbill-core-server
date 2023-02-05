@@ -580,8 +580,10 @@ class OrderService {
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
-            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null }
-            val isAllZeroMinusPrice = orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0 }
+            val isAllNullPrice =
+                orderSheet.get().orderItems.all { it.price == null } && orderSheet.get().customOrderItems.all { it.price == null }
+            val isAllZeroMinusPrice =
+                orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0 } && orderSheet.get().customOrderItems.all { it.price != null && it.price!! <= 0 }
             if (isAllNullPrice || isAllZeroMinusPrice) {
                 throw CustomException(
                     message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
@@ -622,7 +624,6 @@ class OrderService {
                     grade = it.grade!!,
                 )
             }
-            val totOrderItemsInput = orderItemsInput + customOrderItemsInput
 
             val input = ReceiptProcessInput(
                 orderNo = orderSheet.get().orderNo,
@@ -638,13 +639,13 @@ class OrderService {
                     businessSubCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessSubCategory,
                     bankAccount = orderSheet.get().wholesaler!!.businessInfo!!.bankAccount,
                 ),
-                orderItems = totOrderItemsInput
+                orderItems = orderItemsInput + customOrderItemsInput
             )
 
             logger.info("$className.$executedFunc >> receipt object is created.")
 
             val receiptInfo: ReceiptProcessOutput = runBlocking {
-                withContext(Dispatchers.Default) { generateReceipt(input) }
+                withContext(Dispatchers.IO) { generateReceipt(input) }
             }
             logger.info("$className.$executedFunc >> [file-process-service] processing receipt is completed. -> response : ($receiptInfo)")
 
@@ -789,6 +790,7 @@ class OrderService {
                 logger.info("$className.$executedFunc >> completed.")
                 return output
             } else {
+                logger.error("$className.$executedFunc >> invalid status code.")
                 throw Exception(res.awaitBody<String>())
             }
         } catch (e: Exception) {
