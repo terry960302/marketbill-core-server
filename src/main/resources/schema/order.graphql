@@ -40,6 +40,7 @@ type OrderSheet{
     recentReceipt : OrderSheetReceipt,
     # 판매가 저장여부(한번이라도 저장한 적이 있는지)
     isPriceUpdated : Boolean,
+    memo : String,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
