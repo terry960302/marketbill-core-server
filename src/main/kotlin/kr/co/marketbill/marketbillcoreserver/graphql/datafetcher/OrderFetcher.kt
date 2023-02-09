@@ -308,12 +308,11 @@ class OrderFetcher {
     @DgsMutation(field = DgsConstants.MUTATION.UpsertCustomOrderItems)
     fun upsertCustomOrderItems(@InputArgument input: UpsertCustomOrderItemsInput): List<CustomOrderItem> {
         val filteredInput: List<CustomOrderItemInput> = input.items.filter {
-            it.id != null ||
-                    it.grade != null ||
-                    (it.price != null) ||
+            it.grade != null ||
+                    it.price != null ||
                     it.quantity != null ||
-                    it.flowerTypeName != null ||
-                    it.flowerName != null
+                    !it.flowerName.isNullOrBlank() ||
+                    !it.flowerTypeName.isNullOrBlank()
         }
         if (filteredInput.isEmpty()) {
             throw CustomException(

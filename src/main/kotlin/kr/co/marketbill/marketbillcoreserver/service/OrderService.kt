@@ -526,7 +526,6 @@ class OrderService {
                 )
             }
 
-
             val customOrderItems = items.map {
                 val item = CustomOrderItem(
                     id = it.id?.toLong(),
@@ -539,10 +538,7 @@ class OrderService {
                     quantity = it.quantity,
                     price = it.price,
                 )
-                if ((item.flowerName != null && item.flowerName!!.isNotBlank()) &&
-                    (item.flowerTypeName != null && item.flowerTypeName!!.isNotBlank()) &&
-                    item.grade != null
-                ) {
+                if (!item.flowerName.isNullOrBlank() && !item.flowerTypeName.isNullOrBlank() && item.grade != null) {
                     val prevItem = customOrderItemRepository.findOne(
                         CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
                             .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
@@ -579,10 +575,18 @@ class OrderService {
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
+            val orderItems: List<OrderItem> = orderSheet.get().orderItems
+            val customOrderItems: List<CustomOrderItem> = orderSheet.get().customOrderItems.filter {
+                !it.flowerTypeName.isNullOrBlank() &&
+                        !it.flowerName.isNullOrBlank() &&
+                        it.grade != null &&
+                        it.quantity != null
+            }
+
             val isAllNullPrice =
-                orderSheet.get().orderItems.all { it.price == null } && orderSheet.get().customOrderItems.all { it.price == null }
+                orderItems.all { it.price == null } && customOrderItems.all { it.price == null }
             val isAllZeroMinusPrice =
-                orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0 } && orderSheet.get().customOrderItems.all { it.price != null && it.price!! <= 0 }
+                orderItems.all { it.price != null && it.price!! <= 0 } && customOrderItems.all { it.price != null && it.price!! <= 0 }
             if (isAllNullPrice || isAllZeroMinusPrice) {
                 throw CustomException(
                     message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
@@ -601,7 +605,7 @@ class OrderService {
             )
             logger.info("$className.$executedFunc >> businessInfo of wholesaler is validated.")
 
-            val orderItemsInput = orderSheet.get().orderItems.map {
+            val orderItemsInput = orderItems.map {
                 ReceiptProcessInput.OrderItem(
                     flower = ReceiptProcessInput.Flower(
                         name = it.flower!!.name,
@@ -612,7 +616,7 @@ class OrderService {
                     grade = it.grade!!,
                 )
             }
-            val customOrderItemsInput = orderSheet.get().customOrderItems.map {
+            val customOrderItemsInput = customOrderItems.map {
                 ReceiptProcessInput.OrderItem(
                     flower = ReceiptProcessInput.Flower(
                         name = it.flowerName!!,
