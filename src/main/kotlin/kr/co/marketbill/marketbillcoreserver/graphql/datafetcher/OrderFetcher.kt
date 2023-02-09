@@ -4,8 +4,10 @@ import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
+import com.netflix.graphql.types.errors.ErrorType
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
@@ -14,6 +16,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
@@ -304,7 +307,21 @@ class OrderFetcher {
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
     @DgsMutation(field = DgsConstants.MUTATION.UpsertCustomOrderItems)
     fun upsertCustomOrderItems(@InputArgument input: UpsertCustomOrderItemsInput): List<CustomOrderItem> {
-        return orderService.upsertCustomOrderItems(input.orderSheetId.toLong(), input.items)
+        val filteredInput: List<CustomOrderItemInput> = input.items.filter {
+            it.grade != null ||
+                    it.price != null ||
+                    it.quantity != null ||
+                    !it.flowerName.isNullOrBlank() ||
+                    !it.flowerTypeName.isNullOrBlank()
+        }
+        if (filteredInput.isEmpty()) {
+            throw CustomException(
+                message = "All custom_order_items are composed of empty objects.",
+                errorType = ErrorType.BAD_REQUEST,
+                errorCode = CustomErrorCode.INVALID_DATA
+            )
+        }
+        return orderService.upsertCustomOrderItems(input.orderSheetId.toLong(), filteredInput)
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR')")

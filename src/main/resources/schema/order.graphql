@@ -46,21 +46,21 @@ type OrderSheet{
     deletedAt : LocalDate,
 }
 
-# OrderItem, CustomOrderItem 엔티티의 공통컬럼
-interface OrderItemInterface{
-    id : Int!,
-    orderSheet : OrderSheet!,
-    retailer : User,
-    wholesaler : User,
-    quantity : Int!,
-    grade : FlowerGrade!,
-    price : Int,
-    createdAt : LocalDate!,
-    updatedAt : LocalDate!,
-    deletedAt : LocalDate,
-}
+## OrderItem, CustomOrderItem 엔티티의 공통컬럼
+#interface OrderItemInterface{
+#    id : Int!,
+#    orderSheet : OrderSheet!,
+#    retailer : User,
+#    wholesaler : User,
+#    quantity : Int!,
+#    grade : FlowerGrade!,
+#    price : Int,
+#    createdAt : LocalDate!,
+#    updatedAt : LocalDate!,
+#    deletedAt : LocalDate,
+#}
 
-type OrderItem implements OrderItemInterface{
+type OrderItem {
     id : Int!,
     orderSheet : OrderSheet!,
     retailer : User,
@@ -75,15 +75,15 @@ type OrderItem implements OrderItemInterface{
 }
 
 # 고객이 직접 입력하여 추가한 꽃 품목
-type CustomOrderItem implements OrderItemInterface{
+type CustomOrderItem{
     id : Int!,
     orderSheet : OrderSheet!,
     retailer : User,
     wholesaler : User,
-    flowerName : String!,
-    flowerTypeName : String!,
-    quantity : Int!,
-    grade : FlowerGrade!,
+    flowerName : String,
+    flowerTypeName : String,
+    quantity : Int,
+    grade : FlowerGrade,
     price : Int,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,

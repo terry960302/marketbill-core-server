@@ -112,11 +112,11 @@ input UpdateShoppingSessionInput{
 
 input CustomOrderItemInput{
     id : Int, # Null(Insert), NotNull(Update)
-    flowerName : String!,
-    flowerTypeName : String!,
-    grade : FlowerGrade!,
-    quantity : Int!,
-    price : Int!,
+    flowerName : String,
+    flowerTypeName : String,
+    grade : FlowerGrade,
+    quantity : Int,
+    price : Int,
 }
 
 input UpsertCustomOrderItemsInput{

@@ -526,34 +526,29 @@ class OrderService {
                 )
             }
 
-            val customOrderItems: List<CustomOrderItem> =
-                items.filter {
-                    it.flowerName.trim().isNotEmpty() && it.flowerTypeName.trim().isNotEmpty() && it.price > 0
+            val customOrderItems = items.map {
+                val item = CustomOrderItem(
+                    id = it.id?.toLong(),
+                    orderSheet = orderSheet.get(),
+                    retailer = orderSheet.get().retailer,
+                    wholesaler = orderSheet.get().wholesaler,
+                    flowerName = it.flowerName?.trim(),
+                    flowerTypeName = it.flowerTypeName?.trim(),
+                    grade = if (it.grade != null) convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())) else null,
+                    quantity = it.quantity,
+                    price = it.price,
+                )
+                if (!item.flowerName.isNullOrBlank() && !item.flowerTypeName.isNullOrBlank() && item.grade != null) {
+                    val prevItem = customOrderItemRepository.findOne(
+                        CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
+                            .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
+                            .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
+                            .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
+                    )
+                    item.id = if (prevItem.isEmpty) null else prevItem.get().id
                 }
-                    .map {
-                        val item = CustomOrderItem(
-                            id = it.id?.toLong(),
-                            orderSheet = orderSheet.get(),
-                            retailer = orderSheet.get().retailer,
-                            wholesaler = orderSheet.get().wholesaler,
-                            flowerName = it.flowerName.trim(),
-                            flowerTypeName = it.flowerTypeName.trim(),
-                            grade = convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())),
-                            quantity = it.quantity,
-                            price = it.price,
-                        )
-
-                        if (item.id == null) {
-                            val prevItem = customOrderItemRepository.findOne(
-                                CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
-                                    .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
-                                    .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
-                                    .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
-                            )
-                            item.id = if (prevItem.isEmpty) null else prevItem.get().id
-                        }
-                        item
-                    }
+                item
+            }
 
             val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
             logger.info("$className.$executedFunc >> completed.")
@@ -580,10 +575,18 @@ class OrderService {
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
+            val orderItems: List<OrderItem> = orderSheet.get().orderItems
+            val customOrderItems: List<CustomOrderItem> = orderSheet.get().customOrderItems.filter {
+                !it.flowerTypeName.isNullOrBlank() &&
+                        !it.flowerName.isNullOrBlank() &&
+                        it.grade != null &&
+                        it.quantity != null
+            }
+
             val isAllNullPrice =
-                orderSheet.get().orderItems.all { it.price == null } && orderSheet.get().customOrderItems.all { it.price == null }
+                orderItems.all { it.price == null } && customOrderItems.all { it.price == null }
             val isAllZeroMinusPrice =
-                orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0 } && orderSheet.get().customOrderItems.all { it.price != null && it.price!! <= 0 }
+                orderItems.all { it.price != null && it.price!! <= 0 } && customOrderItems.all { it.price != null && it.price!! <= 0 }
             if (isAllNullPrice || isAllZeroMinusPrice) {
                 throw CustomException(
                     message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
@@ -602,7 +605,7 @@ class OrderService {
             )
             logger.info("$className.$executedFunc >> businessInfo of wholesaler is validated.")
 
-            val orderItemsInput = orderSheet.get().orderItems.map {
+            val orderItemsInput = orderItems.map {
                 ReceiptProcessInput.OrderItem(
                     flower = ReceiptProcessInput.Flower(
                         name = it.flower!!.name,
@@ -613,7 +616,7 @@ class OrderService {
                     grade = it.grade!!,
                 )
             }
-            val customOrderItemsInput = orderSheet.get().customOrderItems.map {
+            val customOrderItemsInput = customOrderItems.map {
                 ReceiptProcessInput.OrderItem(
                     flower = ReceiptProcessInput.Flower(
                         name = it.flowerName!!,
