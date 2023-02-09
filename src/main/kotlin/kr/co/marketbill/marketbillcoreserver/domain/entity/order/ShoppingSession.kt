@@ -19,7 +19,7 @@ data class ShoppingSession(
     @JoinColumn(name = "retailer_id")
     var retailer: User? = null,
 
-    @OneToOne
+    @ManyToOne
     @JoinColumn(name = "wholesaler_id", nullable = true)
     var wholesaler: User? = null,
 

@@ -132,10 +132,10 @@ data class User(
     val orderItemsByWholesaler: List<OrderItem> = listOf(),
 
     @OneToOne(mappedBy = "retailer")
-    val retailerShoppingSession : ShoppingSession? =null,
+    val retailerShoppingSession: ShoppingSession? = null,
 
-    @OneToOne(mappedBy = "wholesaler")
-    val wholesalerShoppingSession : ShoppingSession? =null,
+    @OneToMany(mappedBy = "wholesaler")
+    val wholesalerShoppingSessions: List<ShoppingSession> = listOf(),
 
     @Transient
     var applyStatus: ApplyStatus? = null,
