@@ -551,6 +551,12 @@ class OrderService {
             }
 
             val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
+
+            if(customOrderItems.any { it.price != null }){
+                orderSheet.get()
+                    .priceUpdatedAt = LocalDateTime.now()
+                orderSheetRepository.save(orderSheet.get())
+            }
             logger.info("$className.$executedFunc >> completed.")
             return affectedCustomOrderItems
         } catch (e: Exception) {
