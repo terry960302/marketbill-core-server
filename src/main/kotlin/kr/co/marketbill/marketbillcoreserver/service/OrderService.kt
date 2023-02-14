@@ -6,27 +6,21 @@ import kotlinx.coroutines.runBlocking
 import kotlinx.coroutines.withContext
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
-import kr.co.marketbill.marketbillcoreserver.constants.DEFAULT_PAGE
+import kr.co.marketbill.marketbillcoreserver.constants.*
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessOutput
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.DailyOrderItem
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BusinessInfoRepository
-import kr.co.marketbill.marketbillcoreserver.domain.specs.DailyOrderItemSpecs
-import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderItemSpecs
-import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetReceiptSpecs
-import kr.co.marketbill.marketbillcoreserver.domain.specs.OrderSheetSpecs
+import kr.co.marketbill.marketbillcoreserver.domain.specs.*
 import kr.co.marketbill.marketbillcoreserver.domain.vo.DailyOrderItemKey
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
+import kr.co.marketbill.marketbillcoreserver.types.CustomOrderItemInput
 import kr.co.marketbill.marketbillcoreserver.types.OrderItemPriceInput
+import kr.co.marketbill.marketbillcoreserver.util.EnumConverter.Companion.convertFlowerGradeToKor
 import kr.co.marketbill.marketbillcoreserver.util.StringGenerator
 import kr.co.marketbill.marketbillcoreserver.util.groupFillBy
 import org.slf4j.Logger
@@ -57,10 +51,16 @@ class OrderService {
     private lateinit var entityManager: EntityManager
 
     @Autowired
-    private lateinit var cartRepository: CartRepository
+    private lateinit var cartItemRepository: CartItemRepository
+
+    @Autowired
+    private lateinit var shoppingSessionRepository: ShoppingSessionRepository
 
     @Autowired
     private lateinit var orderItemRepository: OrderItemRepository
+
+    @Autowired
+    private lateinit var customOrderItemRepository: CustomOrderItemRepository
 
     @Autowired
     private lateinit var dailyOrderItemRepository: DailyOrderItemRepository
@@ -83,12 +83,13 @@ class OrderService {
     private val logger: Logger = LoggerFactory.getLogger(OrderService::class.java)
     private val className = this.javaClass.simpleName
 
+    @Deprecated(message = "Replaced by orderAllCartItems")
     @Transactional
     fun orderCartItems(retailerId: Long): OrderSheet {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val cartItems = cartRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
                 .map {
                     it.orderedAt = LocalDateTime.now()
                     it
@@ -108,7 +109,7 @@ class OrderService {
             )
             logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
 
-            cartRepository.saveAll(cartItems)
+            cartItemRepository.saveAll(cartItems)
             logger.info("$className.$executedFunc >> All cart items are ordered.")
 
             val selectedRetailer: User = cartItems[0].retailer!!
@@ -145,6 +146,83 @@ class OrderService {
             throw e
         }
     }
+
+    @Transactional
+    fun orderAllCartItems(retailerId: Long): OrderSheet {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val shoppingSession: Optional<ShoppingSession> =
+                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+                .map {
+                    it.orderedAt = LocalDateTime.now()
+                    it
+                }.get().toList()
+
+            if (shoppingSession.isEmpty) {
+                throw CustomException(
+                    message = "There's no shopping_session whose retailerID is $retailerId.",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION
+                )
+
+            }
+
+            if (cartItems.isEmpty()) throw CustomException(
+                message = "There's no cart items to order.",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_CART_ITEM
+            )
+
+            val isAllConnectedWithWholesaler =
+                cartItems.mapNotNull { it.wholesaler }.size == cartItems.size && shoppingSession.get().wholesaler != null
+            if (!isAllConnectedWithWholesaler) throw CustomException(
+                message = "There's no connected wholesaler on cart items.",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.NO_CART_WHOLESALER
+            )
+            logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
+
+            cartItemRepository.saveAll(cartItems)
+            logger.info("$className.$executedFunc >> All cart items are ordered.")
+
+            shoppingSessionRepository.delete(shoppingSession.get())
+            logger.info("$className.$executedFunc >> Shopping_session of retailer($retailerId) is deleted(closed).")
+
+            val orderSheet = OrderSheet(
+                orderNo = "",
+                retailer = shoppingSession.get().retailer,
+                wholesaler = shoppingSession.get().wholesaler,
+                memo = shoppingSession.get().memo,
+            )
+            val savedOrderSheet = orderSheetRepository.save(orderSheet)
+            logger.info("$className.$executedFunc >> OrderSheet is created.")
+            savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
+            val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
+
+            val orderItems = cartItems.map {
+                OrderItem(
+                    retailer = it.retailer,
+                    orderSheet = updatedOrderSheet,
+                    wholesaler = shoppingSession.get().wholesaler,
+                    flower = it.flower,
+                    quantity = it.quantity,
+                    grade = it.grade,
+                    price = null,
+                )
+            }
+            val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
+            logger.info("$className.$executedFunc >> Order items are created by cart items.")
+            createOrderItemGroups(createdOrderItems)
+            logger.info("$className.$executedFunc >> completed.")
+            return updatedOrderSheet
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
 
     @Transactional(readOnly = true)
     fun getOrderSheets(userId: Long?, role: AccountRole?, date: LocalDate?, pageable: Pageable): Page<OrderSheet> {
@@ -212,6 +290,24 @@ class OrderService {
                 .toMutableMap()
             logger.info("$className.$executedFunc >> completed.")
             return groupedOrderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    fun getAllCustomOrderItemsByOrderSheetIds(
+        orderSheetIds: List<Long>,
+        pageable: Pageable
+    ): MutableMap<Long, List<CustomOrderItem>> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val customOrderItems =
+                customOrderItemRepository.findAll(CustomOrderItemSpecs.byOrderSheetIds(orderSheetIds), pageable)
+            val groupedCustomOrderItems = customOrderItems.groupFillBy(orderSheetIds) { it.orderSheet!!.id!! }
+                .toMutableMap()
+            logger.info("$className.$executedFunc >> completed.")
+            return groupedCustomOrderItems
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
             throw e
@@ -417,6 +513,59 @@ class OrderService {
     }
 
     @Transactional
+    fun upsertCustomOrderItems(orderSheetId: Long, items: List<CustomOrderItemInput>): List<CustomOrderItem> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val orderSheet = orderSheetRepository.findById(orderSheetId)
+            if (orderSheet.isEmpty) {
+                throw CustomException(
+                    message = "There's no OrderSheet data whose id is $orderSheetId",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                )
+            }
+
+            val customOrderItems = items.map {
+                val item = CustomOrderItem(
+                    id = it.id?.toLong(),
+                    orderSheet = orderSheet.get(),
+                    retailer = orderSheet.get().retailer,
+                    wholesaler = orderSheet.get().wholesaler,
+                    flowerName = it.flowerName?.trim(),
+                    flowerTypeName = it.flowerTypeName?.trim(),
+                    grade = if (it.grade != null) convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())) else null,
+                    quantity = it.quantity,
+                    price = it.price,
+                )
+                if (!item.flowerName.isNullOrBlank() && !item.flowerTypeName.isNullOrBlank() && item.grade != null) {
+                    val prevItem = customOrderItemRepository.findOne(
+                        CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
+                            .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
+                            .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
+                            .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
+                    )
+                    item.id = if (prevItem.isEmpty) null else prevItem.get().id
+                }
+                item
+            }
+
+            val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
+
+            if(customOrderItems.any { it.price != null }){
+                orderSheet.get()
+                    .priceUpdatedAt = LocalDateTime.now()
+                orderSheetRepository.save(orderSheet.get())
+            }
+            logger.info("$className.$executedFunc >> completed.")
+            return affectedCustomOrderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    @Transactional
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
@@ -432,8 +581,18 @@ class OrderService {
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
 
-            val isAllNullPrice = orderSheet.get().orderItems.all { it.price == null}
-            val isAllZeroMinusPrice = orderSheet.get().orderItems.all { it.price != null && it.price!! <= 0}
+            val orderItems: List<OrderItem> = orderSheet.get().orderItems
+            val customOrderItems: List<CustomOrderItem> = orderSheet.get().customOrderItems.filter {
+                !it.flowerTypeName.isNullOrBlank() &&
+                        !it.flowerName.isNullOrBlank() &&
+                        it.grade != null &&
+                        it.quantity != null
+            }
+
+            val isAllNullPrice =
+                orderItems.all { it.price == null } && customOrderItems.all { it.price == null }
+            val isAllZeroMinusPrice =
+                orderItems.all { it.price != null && it.price!! <= 0 } && customOrderItems.all { it.price != null && it.price!! <= 0 }
             if (isAllNullPrice || isAllZeroMinusPrice) {
                 throw CustomException(
                     message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
@@ -452,6 +611,29 @@ class OrderService {
             )
             logger.info("$className.$executedFunc >> businessInfo of wholesaler is validated.")
 
+            val orderItemsInput = orderItems.map {
+                ReceiptProcessInput.OrderItem(
+                    flower = ReceiptProcessInput.Flower(
+                        name = it.flower!!.name,
+                        flowerType = ReceiptProcessInput.FlowerType(name = it.flower!!.flowerType!!.name),
+                    ),
+                    quantity = it.quantity!!,
+                    price = it.price,
+                    grade = it.grade!!,
+                )
+            }
+            val customOrderItemsInput = customOrderItems.map {
+                ReceiptProcessInput.OrderItem(
+                    flower = ReceiptProcessInput.Flower(
+                        name = it.flowerName!!,
+                        flowerType = ReceiptProcessInput.FlowerType(name = it.flowerTypeName!!),
+                    ),
+                    quantity = it.quantity!!,
+                    price = it.price,
+                    grade = it.grade!!,
+                )
+            }
+
             val input = ReceiptProcessInput(
                 orderNo = orderSheet.get().orderNo,
                 retailer = ReceiptProcessInput.Retailer(name = orderSheet.get().retailer!!.name!!),
@@ -466,22 +648,13 @@ class OrderService {
                     businessSubCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessSubCategory,
                     bankAccount = orderSheet.get().wholesaler!!.businessInfo!!.bankAccount,
                 ),
-                orderItems = orderSheet.get().orderItems.map {
-                    ReceiptProcessInput.OrderItem(
-                        flower = ReceiptProcessInput.Flower(
-                            name = it.flower!!.name,
-                            flowerType = ReceiptProcessInput.FlowerType(name = it.flower!!.flowerType!!.name),
-                        ),
-                        quantity = it.quantity!!,
-                        price = it.price,
-                        grade = it.grade!!,
-                    )
-                }
+                orderItems = orderItemsInput + customOrderItemsInput
             )
+
             logger.info("$className.$executedFunc >> receipt object is created.")
 
             val receiptInfo: ReceiptProcessOutput = runBlocking {
-                withContext(Dispatchers.Default) { generateReceipt(input) }
+                withContext(Dispatchers.IO) { generateReceipt(input) }
             }
             logger.info("$className.$executedFunc >> [file-process-service] processing receipt is completed. -> response : ($receiptInfo)")
 
@@ -508,7 +681,7 @@ class OrderService {
                 )
             }
             logger.info("$className.$executedFunc >> Sent issue receipt message.")
-
+            logger.info("$className.$executedFunc >> completed.")
             return createdReceipt
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}")
@@ -626,6 +799,7 @@ class OrderService {
                 logger.info("$className.$executedFunc >> completed.")
                 return output
             } else {
+                logger.error("$className.$executedFunc >> invalid status code.")
                 throw Exception(res.awaitBody<String>())
             }
         } catch (e: Exception) {

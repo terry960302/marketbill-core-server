@@ -5,9 +5,9 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
-import javax.annotation.PostConstruct
 import javax.persistence.*
 
 @Entity
@@ -130,6 +130,12 @@ data class User(
         fetch = FetchType.LAZY,
     )
     val orderItemsByWholesaler: List<OrderItem> = listOf(),
+
+    @OneToOne(mappedBy = "retailer")
+    val retailerShoppingSession: ShoppingSession? = null,
+
+    @OneToMany(mappedBy = "wholesaler")
+    val wholesalerShoppingSessions: List<ShoppingSession> = listOf(),
 
     @Transient
     var applyStatus: ApplyStatus? = null,

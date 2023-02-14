@@ -4,14 +4,19 @@ import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
+import com.netflix.graphql.types.errors.ErrorType
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.constants.CustomErrorCode
 import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.dto.OrderSheetsAggregate
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CustomOrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.service.OrderService
@@ -43,6 +48,7 @@ class OrderFetcher {
 
     val logger: Logger = LoggerFactory.getLogger(OrderFetcher::class.java)
 
+    @Deprecated(message = "Replaced by getShoppingSession")
     @PreAuthorize("hasRole('RETAILER')")
     @DgsQuery(field = DgsConstants.QUERY.GetCartWholesaler)
     fun getCartWholesaler(
@@ -53,6 +59,7 @@ class OrderFetcher {
         return cartService.getConnectedWholesalerOnCartItems(userId)
     }
 
+    @Deprecated(message = "Replaced by getShoppingSession")
     @PreAuthorize("hasRole('RETAILER')")
     @DgsQuery(field = DgsConstants.QUERY.GetAllCartItems)
     fun getAllCartItems(
@@ -64,6 +71,32 @@ class OrderFetcher {
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.getAllCartItems(userId, pageable)
     }
+
+    @PreAuthorize("hasRole('RETAILER')")
+    @DgsQuery(field = DgsConstants.QUERY.GetShoppingSession)
+    fun getShoppingSession(
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String
+    ): Optional<ShoppingSession> {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId: Long = jwtProvider.parseUserId(token)
+        return cartService.getShoppingSession(userId)
+    }
+
+    @PreAuthorize("hasRole('RETAILER')")
+    @DgsMutation(field = DgsConstants.MUTATION.UpdateShoppingSession)
+    fun updateShoppingSession(
+        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
+        @InputArgument input: UpdateShoppingSessionInput,
+    ): ShoppingSession {
+        val token = jwtProvider.filterOnlyToken(authorization)
+        val userId: Long = jwtProvider.parseUserId(token)
+        return cartService.updateShoppingSession(
+            retailerId = userId,
+            wholesalerId = input.wholesalerId?.toLong(),
+            memo = input.memo
+        )
+    }
+
 
     // 공용
     @DgsQuery(field = DgsConstants.QUERY.GetOrderSheet)
@@ -88,7 +121,7 @@ class OrderFetcher {
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
 
-            if (role == AccountRole.WHOLESALER_EMPE){
+            if (role == AccountRole.WHOLESALER_EMPE) {
                 userId = userService.getConnectedEmployerId(userId)
             }
         }
@@ -202,11 +235,11 @@ class OrderFetcher {
     ): CartItem {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
-        return cartService.addToCart(
-            userId,
-            input.flowerId.toLong(),
-            input.quantity,
-            FlowerGrade.valueOf(input.grade.toString())
+        return cartService.addCartItem(
+            retailerId = userId,
+            flowerId = input.flowerId.toLong(),
+            quantity = input.quantity,
+            grade = FlowerGrade.valueOf(input.grade.toString())
         )
     }
 
@@ -228,6 +261,7 @@ class OrderFetcher {
         return CommonResponse(success = true)
     }
 
+    @Deprecated(message = "Replaced by updateShoppingSession")
     @PreAuthorize("hasRole('RETAILER')")
     @DgsMutation(field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
     fun upsertWholesalerOnCartItems(
@@ -246,7 +280,7 @@ class OrderFetcher {
     ): OrderSheet {
         val token = jwtProvider.filterOnlyToken(authorization)
         val retailerId = jwtProvider.parseUserId(token)
-        return orderService.orderCartItems(retailerId)
+        return orderService.orderAllCartItems(retailerId)
     }
 
     @PreAuthorize("hasRole('RETAILER')")
@@ -270,6 +304,26 @@ class OrderFetcher {
         return orderService.updateDailyOrderItemsPrice(items)
     }
 
+    @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
+    @DgsMutation(field = DgsConstants.MUTATION.UpsertCustomOrderItems)
+    fun upsertCustomOrderItems(@InputArgument input: UpsertCustomOrderItemsInput): List<CustomOrderItem> {
+        val filteredInput: List<CustomOrderItemInput> = input.items.filter {
+            it.grade != null ||
+                    it.price != null ||
+                    it.quantity != null ||
+                    !it.flowerName.isNullOrBlank() ||
+                    !it.flowerTypeName.isNullOrBlank()
+        }
+        if (filteredInput.isEmpty()) {
+            throw CustomException(
+                message = "All custom_order_items are composed of empty objects.",
+                errorType = ErrorType.BAD_REQUEST,
+                errorCode = CustomErrorCode.INVALID_DATA
+            )
+        }
+        return orderService.upsertCustomOrderItems(input.orderSheetId.toLong(), filteredInput)
+    }
+
     @PreAuthorize("hasRole('WHOLESALER_EMPR')")
     @DgsMutation(field = DgsConstants.MUTATION.IssueOrderSheetReceipt)
     fun issueOrderSheetReceipt(@InputArgument orderSheetId: Long): kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt {
@@ -277,9 +331,9 @@ class OrderFetcher {
     }
 
 
-    @DgsMutation(field = DgsConstants.MUTATION.BatchCartToOrder)
-    fun batchCartToOrder(): CommonResponse {
-        cartService.batchCartToOrder()
+    @DgsMutation(field = DgsConstants.MUTATION.OrderBatchCartItems)
+    fun orderBatchCartItems(): CommonResponse {
+        cartService.orderBatchCartItems()
         return CommonResponse(success = true)
     }
 }

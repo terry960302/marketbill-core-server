@@ -103,3 +103,23 @@ input UpdatePasswordInput{
 input DailyOrderItemFilterInput{
     dateRange : DateRangeInput,
 }
+
+# 둘중에 하나는 필수 입력
+input UpdateShoppingSessionInput{
+    wholesalerId : Int,
+    memo : String,
+}
+
+input CustomOrderItemInput{
+    id : Int, # Null(Insert), NotNull(Update)
+    flowerName : String,
+    flowerTypeName : String,
+    grade : FlowerGrade,
+    quantity : Int,
+    price : Int,
+}
+
+input UpsertCustomOrderItemsInput{
+    orderSheetId : Int!,
+    items : [CustomOrderItemInput!]!,
+}

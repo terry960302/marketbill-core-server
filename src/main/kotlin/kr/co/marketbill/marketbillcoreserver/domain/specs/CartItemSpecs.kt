@@ -2,6 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.domain.specs
 
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Component
@@ -10,6 +11,31 @@ import javax.persistence.criteria.Join
 @Component
 class CartItemSpecs {
     companion object {
+
+        fun byShoppingSessionIds(shoppingSessionIds: List<Long>): Specification<CartItem> {
+            return Specification<CartItem> { root, query, builder ->
+                if (shoppingSessionIds.isEmpty()) {
+                    builder.conjunction()
+                } else {
+                    val shoppingSession = root.join<CartItem, ShoppingSession>("shoppingSession")
+                    shoppingSession.get<Long>("id").`in`(shoppingSessionIds)
+                }
+
+            }
+        }
+
+        fun byShoppingSessionId(shoppingSessionId: Long?): Specification<CartItem> {
+            return Specification<CartItem> { root, query, builder ->
+                if (shoppingSessionId == null) {
+                    builder.conjunction()
+                } else {
+                    val shoppingSession = root.join<CartItem, ShoppingSession>("shoppingSession")
+                    builder.equal(shoppingSession.get<Long>("id"), shoppingSessionId)
+                }
+
+            }
+        }
+
         fun hasWholesaler(): Specification<CartItem> {
             return Specification<CartItem> { root, query, builder ->
                 val wholesaler: Join<CartItem, User> = root.join("wholesaler")

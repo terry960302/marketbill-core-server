@@ -22,6 +22,7 @@ enum class CustomErrorCode {
     /**
      * Order
      */
+    NO_SHOPPING_SESSION,
     NO_CART_ITEM, // id에 해당하는 cart_item 데이터가 없음.(혹은 처리에 필요한 장바구니 데이터가 없음.)
     NO_CART_WHOLESALER, // 장바구니에 도매상이 연결되어 있지 않음.
     NO_ORDER_SHEET, // id에 해당하는 orderSheet 데이터가 없음.
