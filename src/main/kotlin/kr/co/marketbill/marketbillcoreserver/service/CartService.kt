@@ -21,13 +21,11 @@ import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
-import org.springframework.data.domain.Sort
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.util.*
-import javax.annotation.PostConstruct
 import javax.persistence.EntityManager
 
 @Service
@@ -549,6 +547,21 @@ class CartService {
                 .toMutableMap()
             logger.info("$className.$executedFunc >> completed.")
             return groupedCartItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+    fun getCartItemsByShoppingSessionId(
+        shoppingSessionId: Long,
+        pageable: Pageable
+    ): Page<CartItem> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val cartItems = cartItemRepository.findAll(CartItemSpecs.byShoppingSessionId(shoppingSessionId), pageable)
+            logger.info("$className.$executedFunc >> completed.")
+            return cartItems
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
             throw e

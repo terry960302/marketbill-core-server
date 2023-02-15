@@ -15,7 +15,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CustomOrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.graphql.error.CustomException
 import kr.co.marketbill.marketbillcoreserver.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.service.CartService
@@ -48,29 +47,29 @@ class OrderFetcher {
 
     val logger: Logger = LoggerFactory.getLogger(OrderFetcher::class.java)
 
-    @Deprecated(message = "Replaced by getShoppingSession")
-    @PreAuthorize("hasRole('RETAILER')")
-    @DgsQuery(field = DgsConstants.QUERY.GetCartWholesaler)
-    fun getCartWholesaler(
-        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String
-    ): Optional<User> {
-        val token = jwtProvider.filterOnlyToken(authorization)
-        val userId: Long = jwtProvider.parseUserId(token)
-        return cartService.getConnectedWholesalerOnCartItems(userId)
-    }
-
-    @Deprecated(message = "Replaced by getShoppingSession")
-    @PreAuthorize("hasRole('RETAILER')")
-    @DgsQuery(field = DgsConstants.QUERY.GetAllCartItems)
-    fun getAllCartItems(
-        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
-        @InputArgument pagination: PaginationInput?
-    ): Page<CartItem> {
-        val token = jwtProvider.filterOnlyToken(authorization)
-        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
-        val userId: Long = jwtProvider.parseUserId(token)
-        return cartService.getAllCartItems(userId, pageable)
-    }
+//    @Deprecated(message = "Replaced by getShoppingSession")
+//    @PreAuthorize("hasRole('RETAILER')")
+//    @DgsQuery(field = DgsConstants.QUERY.GetCartWholesaler)
+//    fun getCartWholesaler(
+//        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String
+//    ): Optional<User> {
+//        val token = jwtProvider.filterOnlyToken(authorization)
+//        val userId: Long = jwtProvider.parseUserId(token)
+//        return cartService.getConnectedWholesalerOnCartItems(userId)
+//    }
+//
+//    @Deprecated(message = "Replaced by getShoppingSession")
+//    @PreAuthorize("hasRole('RETAILER')")
+//    @DgsQuery(field = DgsConstants.QUERY.GetAllCartItems)
+//    fun getAllCartItems(
+//        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
+//        @InputArgument pagination: PaginationInput?
+//    ): Page<CartItem> {
+//        val token = jwtProvider.filterOnlyToken(authorization)
+//        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
+//        val userId: Long = jwtProvider.parseUserId(token)
+//        return cartService.getAllCartItems(userId, pageable)
+//    }
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsQuery(field = DgsConstants.QUERY.GetShoppingSession)
@@ -261,17 +260,17 @@ class OrderFetcher {
         return CommonResponse(success = true)
     }
 
-    @Deprecated(message = "Replaced by updateShoppingSession")
-    @PreAuthorize("hasRole('RETAILER')")
-    @DgsMutation(field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
-    fun upsertWholesalerOnCartItems(
-        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
-        @InputArgument wholesalerId: Long
-    ): List<CartItem> {
-        val token = jwtProvider.filterOnlyToken(authorization)
-        val retailerId = jwtProvider.parseUserId(token)
-        return cartService.upsertWholesalerOnCartItems(retailerId, wholesalerId)
-    }
+//    @Deprecated(message = "Replaced by updateShoppingSession")
+//    @PreAuthorize("hasRole('RETAILER')")
+//    @DgsMutation(field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
+//    fun upsertWholesalerOnCartItems(
+//        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
+//        @InputArgument wholesalerId: Long
+//    ): List<CartItem> {
+//        val token = jwtProvider.filterOnlyToken(authorization)
+//        val retailerId = jwtProvider.parseUserId(token)
+//        return cartService.upsertWholesalerOnCartItems(retailerId, wholesalerId)
+//    }
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsMutation(field = DgsConstants.MUTATION.OrderCartItems)
