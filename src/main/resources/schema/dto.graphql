@@ -123,3 +123,17 @@ input UpsertCustomOrderItemsInput{
     orderSheetId : Int!,
     items : [CustomOrderItemInput!]!,
 }
+
+interface PaginationOutput{
+    resultCount : Int!,
+}
+
+type FlowersOutput implements PaginationOutput{
+    resultCount : Int!
+    items : [Flower!]!
+}
+
+type CartItemsOutput implements PaginationOutput{
+    resultCount : Int!
+    items : [CartItem!]!
+}

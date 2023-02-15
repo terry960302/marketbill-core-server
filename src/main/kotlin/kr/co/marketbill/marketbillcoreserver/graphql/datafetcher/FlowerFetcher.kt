@@ -4,7 +4,7 @@ import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
-import kr.co.marketbill.marketbillcoreserver.domain.dto.GetFlowersOutput
+import kr.co.marketbill.marketbillcoreserver.domain.dto.FlowersOutput
 import kr.co.marketbill.marketbillcoreserver.service.FlowerService
 import kr.co.marketbill.marketbillcoreserver.types.FlowerFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
@@ -21,7 +21,7 @@ class FlowerFetcher {
     fun getFlowers(
         @InputArgument filter: FlowerFilterInput?,
         @InputArgument pagination: PaginationInput?
-    ): GetFlowersOutput {
+    ): FlowersOutput {
         var fromDate: LocalDate? = null
         var toDate: LocalDate? = null
         var keyword: String? = null
@@ -38,9 +38,9 @@ class FlowerFetcher {
         }
 
         val res = flowerService.getFlowers(fromDate, toDate, keyword, pageable)
-        return GetFlowersOutput(
+        return FlowersOutput(
             resultCount = res.totalElements,
-            flowers = res
+            items = res,
         )
     }
 }
