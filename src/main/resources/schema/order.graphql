@@ -3,7 +3,7 @@ type ShoppingSession{
     retailer: User,
     wholesaler : User,
     memo : String,
-    cartItems(pagination: PaginationInput) : [CartItem]!,
+    cartItems(pagination: PaginationInput) : CartItemsOutput!,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
@@ -45,20 +45,6 @@ type OrderSheet{
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
 }
-
-## OrderItem, CustomOrderItem 엔티티의 공통컬럼
-#interface OrderItemInterface{
-#    id : Int!,
-#    orderSheet : OrderSheet!,
-#    retailer : User,
-#    wholesaler : User,
-#    quantity : Int!,
-#    grade : FlowerGrade!,
-#    price : Int,
-#    createdAt : LocalDate!,
-#    updatedAt : LocalDate!,
-#    deletedAt : LocalDate,
-#}
 
 type OrderItem {
     id : Int!,
@@ -126,7 +112,6 @@ type OrderSheetsAggregate{
     # 주문 수
     orderSheetsCount : Int!,
 }
-
 
 ## -------------- QUERY ------------------
 extend type Query {
