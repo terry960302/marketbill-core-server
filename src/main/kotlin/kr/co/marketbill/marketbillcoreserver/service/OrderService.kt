@@ -229,10 +229,7 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val orderSheets = orderSheetRepository.findAll(
-                OrderSheetSpecs.byUserId(userId, role).and(OrderSheetSpecs.atDate(date)),
-                pageable
-            )
+            val orderSheets : Page<OrderSheet> = orderSheetRepository.findAllWithFilters(pageable, userId, role, date)
             logger.info("$className.$executedFunc >> completed.")
             return orderSheets
         } catch (e: Exception) {
@@ -552,7 +549,7 @@ class OrderService {
 
             val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
 
-            if(customOrderItems.any { it.price != null }){
+            if (customOrderItems.any { it.price != null }) {
                 orderSheet.get()
                     .priceUpdatedAt = LocalDateTime.now()
                 orderSheetRepository.save(orderSheet.get())

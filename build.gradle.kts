@@ -10,6 +10,7 @@ plugins {
 	kotlin("plugin.noarg") version "1.6.21"
 	kotlin("plugin.allopen") version "1.6.21"
 	id("com.netflix.dgs.codegen") version "5.6.0"
+	kotlin("kapt") version "1.7.10"
 }
 
 group = "kr.co.marketbill"
@@ -62,6 +63,10 @@ dependencies {
 	testImplementation("io.kotest:kotest-assertions-core:5.5.4")
 	testImplementation("io.kotest:kotest-property:5.5.4")
 	testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.2")
+
+	// queryDSL
+	implementation("com.querydsl:querydsl-jpa:5.0.0")
+	kapt("com.querydsl:querydsl-apt:5.0.0:jpa")
 }
 
 tasks.withType<KotlinCompile> {
@@ -99,4 +104,3 @@ tasks.withType<com.netflix.graphql.dgs.codegen.gradle.GenerateJavaTask> {
 	)
 //	generateClient = true
 }
-
