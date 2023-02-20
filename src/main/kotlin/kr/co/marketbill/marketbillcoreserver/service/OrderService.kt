@@ -120,6 +120,7 @@ class OrderService {
             logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
 
             cartItemRepository.saveAll(cartItems)
+            cartItemRepository.flush()
             logger.info("$className.$executedFunc >> All cart items are ordered.")
 
             shoppingSessionRepository.delete(shoppingSession.get())
