@@ -115,26 +115,35 @@ type OrderSheetsAggregate{
 
 ## -------------- QUERY ------------------
 extend type Query {
-    # [소매상] 장바구니 항목들에 기등록된 거래처 정보 가져오기
-    getCartWholesaler : User
-    # [소매상] 장바구니 목록 가져오기
-    getAllCartItems(pagination : PaginationInput) : [CartItem!]!
     # [소매상] 장바구니 쇼핑 세션 가져오기
-    # - getCartWholesaler, getAllCartItems 대체
-    getShoppingSession : ShoppingSession,
+    shoppingSession : ShoppingSession,
     # [공통] 주문서 목록 가져오기
-    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!]!,
+    orderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!]!,
     # [공통] 주문서 단건(상세) 가져오기
-    getOrderSheet(orderSheetId : Int!) : OrderSheet!,
+    orderSheet(orderSheetId : Int!) : OrderSheet!,
     # [공통] 주문 항목 가져오기
-    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!]!,
+    orderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!]!,
     # [도매상] 일자별 주문 집계 목록
-    getAllDailyOrderSheetAggregates(pagination : PaginationInput) : [OrderSheetsAggregate!]!
+    dailyOrderSheetAggregates(pagination : PaginationInput) : [OrderSheetsAggregate!]!,
     # [도매상] 오늘의 주문합계
     # - date : "yyyy-MM-dd" 문자열 포맷(없는 경우 오늘 날짜 들어감)
-    getDailyOrderSheetAggregate(date : String) : OrderSheetsAggregate
+    dailyOrderSheetAggregate(date : String) : OrderSheetsAggregate,
     # [도매상] 판매가 일괄적용시 불러오는 주문항목들
-    getDailyOrderItems(filter : DailyOrderItemFilterInput, pagination : PaginationInput) : [DailyOrderItem!]!
+    dailyOrderItems(filter : DailyOrderItemFilterInput, pagination : PaginationInput) : [DailyOrderItem!]!,
+
+
+    # [소매상] 장바구니 목록 가져오기
+    getAllCartItems(pagination : PaginationInput) : [CartItem!]! @deprecated(reason: "getAllCartItems is deprecated. Use 'getShoppingSession' instead.")
+    # [소매상] 장바구니 항목들에 기등록된 거래처 정보 가져오기
+    getCartWholesaler : User  @deprecated(reason: "getAllCartItems is deprecated. Use 'getShoppingSession' instead.")
+    getShoppingSession : ShoppingSession,  @deprecated(reason: "getShoppingSession is deprecated. Use 'shoppingSession' instead.")
+    getOrderSheets(filter : DateFilterInput,  pagination : PaginationInput) : [OrderSheet!]!, @deprecated(reason: "getOrderSheets is deprecated. Use 'orderSheets' instead.")
+    getOrderSheet(orderSheetId : Int!) : OrderSheet!, @deprecated(reason: "getOrderSheet is deprecated. Use 'orderSheet' instead.")
+    getOrderItems(filter : DateFilterInput,  pagination : PaginationInput) : [OrderItem!]!, @deprecated(reason: "getOrderItems is deprecated. Use 'orderItems' instead.")
+    getAllDailyOrderSheetAggregates(pagination : PaginationInput) : [OrderSheetsAggregate!]!, @deprecated(reason: "getAllDailyOrderSheetAggregates is deprecated. Use 'dailyOrderSheetAggregates' instead.")
+    getDailyOrderSheetAggregate(date : String) : OrderSheetsAggregate, @deprecated(reason: "getDailyOrderSheetAggregate is deprecated. Use 'dailyOrderSheetAggregate' instead.")
+    getDailyOrderItems(filter : DailyOrderItemFilterInput, pagination : PaginationInput) : [DailyOrderItem!]!,  @deprecated(reason: "getDailyOrderItems is deprecated. Use 'dailyOrderItems' instead.")
+
 }
 ## -------------- MUTATION ------------------
 extend type Mutation {
@@ -146,8 +155,6 @@ extend type Mutation {
     updateCartItem(input : UpdateCartItemInput!) : CartItem!
     # [소매상] 장바구니 쇼핑 세션값(도매상, 메모) 수정
     updateShoppingSession(input : UpdateShoppingSessionInput!) : ShoppingSession!,
-    # [소매상] 장바구니 거래처 설정 및 수정
-    upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem!]!,
     # [소매상] 장바구니 항목들 주문하기
     orderCartItems : OrderSheet,
     # [소매상] 주문서 삭제하기(주문 취소)
@@ -162,4 +169,7 @@ extend type Mutation {
     issueOrderSheetReceipt(orderSheetId : Int!) : OrderSheetReceipt!,
     # 정기적 일괄 장바구니 주문처리
     orderBatchCartItems : CommonResponse!,
+
+    # [소매상] 장바구니 거래처 설정 및 수정
+    upsertWholesalerOnCartItems(wholesalerId : Int!) : [CartItem!]!, @deprecated(reason: "upsertWholesalerOnCartItems is deprecated. Use 'updateShoppingSession' instead.")
 }
