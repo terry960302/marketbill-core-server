@@ -5,7 +5,7 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*
 
-// 품종
+// 품목
 @Entity
 @Table(name = "flower_types")
 @SQLDelete(sql = "UPDATE flower_types SET deleted_at = current_timestamp WHERE id = ?")

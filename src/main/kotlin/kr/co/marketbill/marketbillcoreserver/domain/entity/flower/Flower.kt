@@ -6,7 +6,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*
-// 품목
+// 품종
 @Entity
 @Table(name = "flowers")
 @SQLDelete(sql = "UPDATE flowers SET deleted_at = current_timestamp WHERE id = ?")
