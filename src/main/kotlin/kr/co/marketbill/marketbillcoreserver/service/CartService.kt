@@ -19,6 +19,7 @@ import org.slf4j.Logger
 import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
 import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.scheduling.annotation.Scheduled
@@ -27,6 +28,8 @@ import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.util.*
 import javax.persistence.EntityManager
+import kotlin.collections.ArrayList
+import kotlin.collections.LinkedHashMap
 
 @Service
 class CartService {
@@ -335,6 +338,49 @@ class CartService {
         } finally {
             batchCartToOrderLogsRepository.save(log)
             logger.info("$className.$executedFunc >> completed.")
+        }
+    }
+
+    // TODO: Pagination + Dataloader (PARTITION BY 쿼리 사용)
+    @Transactional(readOnly = true)
+    fun getAllPaginatedCartItemsByShoppingSessionIds(
+        shoppingSessionIds: List<Long>,
+        pageable: Pageable
+    ): MutableMap<Long, Page<CartItem>> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val startRow = pageable.pageSize * pageable.pageNumber
+            val endRow = startRow + pageable.pageSize
+
+            val groupedCounts = cartItemRepository.countTotalPaginatedCartItemsBySessionIds(shoppingSessionIds)
+            val groupedCountMap = LinkedHashMap<Long, Long>()
+            groupedCounts.forEach {
+                groupedCountMap[it.sessionId] = it.count
+            }
+
+            val cartItems =
+                cartItemRepository.getAllPaginatedCartItemsBySessionIds(shoppingSessionIds, startRow, endRow)
+
+            val groupedCartItems = LinkedHashMap<Long, ArrayList<CartItem>>()
+            for (id in shoppingSessionIds) {
+                groupedCartItems[id] = ArrayList()
+            }
+            for (item in cartItems) {
+                val list = groupedCartItems.getOrPut(item.shoppingSession!!.id!!) { ArrayList() }
+                list.add(item)
+            }
+
+            val groupedPaginatedCartItems = LinkedHashMap<Long, Page<CartItem>>()
+
+            groupedCartItems.forEach { (sessionId, cartItems) ->
+                val totCount: Long = groupedCountMap[sessionId] ?: 0
+                groupedPaginatedCartItems[sessionId] = PageImpl(cartItems, pageable, totCount)
+            }
+            logger.info("$className.$executedFunc >> completed.")
+            return groupedPaginatedCartItems.toMutableMap()
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
         }
     }
 
