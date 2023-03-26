@@ -11,7 +11,8 @@ type Flower{
 type FlowerType {
     id : Int!,
     name : String!,
-    flowers : [Flower!]
+    flowers : [Flower!],
+    imgUrl : String
 }
 
 type BiddingFlower {
@@ -20,18 +21,14 @@ type BiddingFlower {
     biddingDate : LocalDate!,
 }
 
-#type GetFlowersOutput{
-#    resultCount : Int!,
-#    flowers : [Flower!]!,
-#}
-
 ## -------------- QUERY ------------------
 
 extend type Query{
     # 꽃 목록 가져오기(기간별, 검색)
     # - 사입가능한 꽃 목록(기간별)
     # - 꽃 검색(검색)
-    getFlowers(filter : FlowerFilterInput, pagination : PaginationInput) : FlowersOutput!,
+    getFlowers(filter : FlowerFilterInput, pagination : PaginationInput) : FlowersOutput!, # v1
+    flowers(filter : FlowerFilterInput, pagination : PaginationInput) : FlowersOutput!, # v2
 }
 
 ## -------------- MUTATION ------------------
