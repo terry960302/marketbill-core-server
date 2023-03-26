@@ -25,7 +25,6 @@ import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
 import java.time.LocalDateTime
 import java.util.*
-import javax.annotation.PostConstruct
 import javax.persistence.EntityManager
 import kotlin.streams.asSequence
 
@@ -81,7 +80,7 @@ class MockService {
     @Value("\${spring.config.activate.on-profile}")
     private lateinit var profile: String
 
-    @PostConstruct
+//    @PostConstruct
     fun createAllMockToDB() {
         if (profile == "local") {
 //            createMockFlowers()
