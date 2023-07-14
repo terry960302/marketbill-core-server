@@ -1,7 +1,6 @@
 # MarketBill Core Server
 : graphql, spring boot
 
-
 ## Performance
 ### Receipt Process
 
