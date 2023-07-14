@@ -4,6 +4,7 @@ type Flower{
     id : Int!,
     flowerType : FlowerType!,
     name : String!,
+    images : [String],
     # 꽃의 경매 일자 목록(진행했던 경매일자들)
     biddingFlowers : [BiddingFlower!]!,
 }

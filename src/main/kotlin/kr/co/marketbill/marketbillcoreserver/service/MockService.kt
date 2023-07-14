@@ -206,10 +206,10 @@ class MockService {
         )
 
         val flowers1 = flowerNames1.map { name ->
-            Flower(flowerType = entityManager.getReference(FlowerType::class.java, 1.toLong()), name = name)
+            Flower(flowerType = entityManager.getReference(FlowerType::class.java, 1.toLong()), name = name, images = emptyList())
         }
         val flowers2 = flowerNames2.map { name ->
-            Flower(flowerType = entityManager.getReference(FlowerType::class.java, 2.toLong()), name = name)
+            Flower(flowerType = entityManager.getReference(FlowerType::class.java, 2.toLong()), name = name, images = emptyList())
         }
         val flowers = flowerRepository.saveAll(flowers1 + flowers2)
 

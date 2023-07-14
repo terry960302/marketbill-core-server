@@ -35,6 +35,7 @@ dependencies {
 	implementation("org.postgresql:postgresql:42.5.1")
 	implementation("org.springframework:spring-jdbc:6.0.3")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
+	implementation("com.vladmihalcea:hibernate-types-52:2.16.0")
 
 	// graphql
 //	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release")) -> SpringBoot 3.0 upgrade 필요
