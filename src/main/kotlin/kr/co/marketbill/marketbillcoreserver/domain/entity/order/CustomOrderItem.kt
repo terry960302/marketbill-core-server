@@ -7,9 +7,6 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*
 
-/**
- * 고객(도매상)이 '직접 입력'해서 추가할 수 있는 항목(OrderItem 과 테이블 분리)
- */
 @Entity
 @Table(name = "custom_order_items")
 @SQLDelete(sql = "UPDATE custom_order_items SET deleted_at = current_timestamp WHERE id = ?")

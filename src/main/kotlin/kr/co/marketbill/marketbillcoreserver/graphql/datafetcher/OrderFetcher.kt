@@ -1,7 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 
 import com.netflix.graphql.dgs.DgsComponent
-import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
@@ -48,11 +47,32 @@ class OrderFetcher {
 
     val logger: Logger = LoggerFactory.getLogger(OrderFetcher::class.java)
 
+//    @Deprecated(message = "Replaced by getShoppingSession")
+//    @PreAuthorize("hasRole('RETAILER')")
+//    @DgsQuery(field = DgsConstants.QUERY.GetCartWholesaler)
+//    fun getCartWholesaler(
+//        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String
+//    ): Optional<User> {
+//        val token = jwtProvider.filterOnlyToken(authorization)
+//        val userId: Long = jwtProvider.parseUserId(token)
+//        return cartService.getConnectedWholesalerOnCartItems(userId)
+//    }
+//
+//    @Deprecated(message = "Replaced by getShoppingSession")
+//    @PreAuthorize("hasRole('RETAILER')")
+//    @DgsQuery(field = DgsConstants.QUERY.GetAllCartItems)
+//    fun getAllCartItems(
+//        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
+//        @InputArgument pagination: PaginationInput?
+//    ): Page<CartItem> {
+//        val token = jwtProvider.filterOnlyToken(authorization)
+//        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
+//        val userId: Long = jwtProvider.parseUserId(token)
+//        return cartService.getAllCartItems(userId, pageable)
+//    }
+
     @PreAuthorize("hasRole('RETAILER')")
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetShoppingSession),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.ShoppingSession)
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetShoppingSession)
     fun getShoppingSession(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String
     ): Optional<ShoppingSession> {
@@ -78,19 +98,13 @@ class OrderFetcher {
 
 
     // 공용
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheet),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.OrderSheet),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetOrderSheet)
     fun getOrderSheet(@InputArgument orderSheetId: Long): OrderSheet {
         return orderService.getOrderSheet(orderSheetId)
     }
 
     // 공용
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderSheets),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.OrderSheets),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetOrderSheets)
     fun getOrderSheets(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: Optional<String>,
         @InputArgument filter: DateFilterInput?,
@@ -119,10 +133,7 @@ class OrderFetcher {
     }
 
     // 공용
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetOrderItems),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.OrderItems),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetOrderItems)
     fun getOrderItems(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: Optional<String>,
         @InputArgument filter: DateFilterInput?,
@@ -152,10 +163,7 @@ class OrderFetcher {
 
     // 도매상
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetAllDailyOrderSheetAggregates),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.DailyOrderSheetAggregates),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetAllDailyOrderSheetAggregates)
     fun getAllDailyOrderSheetAggregates(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument pagination: PaginationInput?
@@ -173,10 +181,7 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderSheetAggregate),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.DailyOrderSheetAggregate),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetDailyOrderSheetAggregate)
     fun getDailyOrderSheetAggregate(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument date: String?,
@@ -192,10 +197,7 @@ class OrderFetcher {
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetDailyOrderItems),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.DailyOrderItems),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetDailyOrderItems)
     fun getDailyOrderItems(
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
         @InputArgument filter: DailyOrderItemFilterInput?,
@@ -236,8 +238,7 @@ class OrderFetcher {
             retailerId = userId,
             flowerId = input.flowerId.toLong(),
             quantity = input.quantity,
-            grade = FlowerGrade.valueOf(input.grade.toString()),
-            memo = input.memo
+            grade = FlowerGrade.valueOf(input.grade.toString())
         )
     }
 
@@ -258,6 +259,18 @@ class OrderFetcher {
         logger.info("[removeCartItem] removed $removedCartItemId")
         return CommonResponse(success = true)
     }
+
+//    @Deprecated(message = "Replaced by updateShoppingSession")
+//    @PreAuthorize("hasRole('RETAILER')")
+//    @DgsMutation(field = DgsConstants.MUTATION.UpsertWholesalerOnCartItems)
+//    fun upsertWholesalerOnCartItems(
+//        @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
+//        @InputArgument wholesalerId: Long
+//    ): List<CartItem> {
+//        val token = jwtProvider.filterOnlyToken(authorization)
+//        val retailerId = jwtProvider.parseUserId(token)
+//        return cartService.upsertWholesalerOnCartItems(retailerId, wholesalerId)
+//    }
 
     @PreAuthorize("hasRole('RETAILER')")
     @DgsMutation(field = DgsConstants.MUTATION.OrderCartItems)

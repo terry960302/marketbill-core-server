@@ -12,7 +12,7 @@ import org.springframework.stereotype.Repository
 import java.util.Date
 
 @Repository
-interface OrderSheetRepository : JpaRepository<OrderSheet, Long>, JpaSpecificationExecutor<OrderSheet>, OrderSheetRepositoryCustom {
+interface OrderSheetRepository : JpaRepository<OrderSheet, Long>, JpaSpecificationExecutor<OrderSheet> {
 
     companion object {
         private const val FIELD_DATE = "date"
@@ -44,10 +44,11 @@ interface OrderSheetRepository : JpaRepository<OrderSheet, Long>, JpaSpecificati
                     "\t\tON os.id = oi.order_sheet_id\n" +
                     "\tJOIN (SELECT * FROM flowers WHERE $SOFT_DELETE_CLAUSE) AS f \n" +
                     "\t\tON f.id = oi.flower_id\n" +
+                    // TODO: 영수증 발행 병합 후 주석 풀어야함(영수증 있는 경우만 나오게 필터건 쿼리)
                     "\tINNER JOIN (SELECT * FROM order_sheet_receipts WHERE $SOFT_DELETE_CLAUSE) AS osr \n" +
                     "\t\tON osr.order_sheet_id = os.id\n" +
                     "\tWHERE CAST(os.created_at AS DATE) BETWEEN :fromDate AND :toDate\n" +
-                    "\tGROUP BY $FIELD_DATE"
+                    "\tGROUP BY date"
     }
 
     @Query(OPTIMIZED_FIND_ALL_QUERY, nativeQuery = true)
