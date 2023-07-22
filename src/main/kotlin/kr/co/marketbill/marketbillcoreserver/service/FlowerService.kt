@@ -24,8 +24,8 @@ class FlowerService {
     fun getFlowers(fromDate: LocalDate?, toDate: LocalDate?, keyword: String?, pageable: Pageable): Page<Flower> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
-            val flowers = flowerRepository.findAll(
-                FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
+            val flowers = flowerRepository.findAllByOrderByImagesDesc(
+//                FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
                 pageable
             )
             logger.info("$className.$executedFunc >> completed.")
