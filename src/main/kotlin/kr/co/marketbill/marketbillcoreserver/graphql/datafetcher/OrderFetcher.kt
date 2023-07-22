@@ -236,7 +236,8 @@ class OrderFetcher {
             retailerId = userId,
             flowerId = input.flowerId.toLong(),
             quantity = input.quantity,
-            grade = FlowerGrade.valueOf(input.grade.toString())
+            grade = FlowerGrade.valueOf(input.grade.toString()),
+            memo = input.memo
         )
     }
 
