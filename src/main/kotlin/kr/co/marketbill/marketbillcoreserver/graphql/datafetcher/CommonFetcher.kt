@@ -16,8 +16,8 @@ class CommonFetcher {
     @Autowired
     private lateinit var messagingService: MessagingService
 
-    @DgsQuery(field = DgsConstants.QUERY.GetCurrentDateTime)
-    fun getCurrentDateTime(): LocalDateTime {
+    @DgsQuery(field = DgsConstants.QUERY.CurrentDateTime)
+    fun currentDateTime(): LocalDateTime {
         return LocalDateTime.now()
     }
 
