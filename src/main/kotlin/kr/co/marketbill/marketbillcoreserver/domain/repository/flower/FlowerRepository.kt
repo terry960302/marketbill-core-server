@@ -23,4 +23,5 @@ interface FlowerRepository : JpaRepository<Flower, Long>, JpaSpecificationExecut
 //
 //    @Query("SELECT COUNT(*) FROM flowers AS f WHERE f.name LIKE %:keyword% AND f.$SOFT_DELETE_CLAUSE", nativeQuery = true)
 //    fun getSearchFlowersCount(keyword : String) : Long
+    fun findAllByOrderByImagesDesc(pageable: Pageable): Page<Flower> // @TODO: 임시로 이미지 우선 정렬 추가
 }
