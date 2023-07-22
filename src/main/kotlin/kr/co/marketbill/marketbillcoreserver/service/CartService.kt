@@ -69,7 +69,7 @@ class CartService {
     }
 
     @Transactional
-    fun addCartItem(retailerId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {
+    fun addCartItem(retailerId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade, memo: String?): CartItem {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
@@ -104,7 +104,8 @@ class CartService {
                 flower = entityManager.getReference(Flower::class.java, flowerId),
                 quantity = quantity,
                 shoppingSession = session,
-                grade = convertFlowerGradeToKor(grade)
+                grade = convertFlowerGradeToKor(grade),
+                memo = memo,
             )
 
             if (prevCartItem.isPresent) {
@@ -200,7 +201,7 @@ class CartService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            if (wholesalerId == null && memo == null) {
+            if (wholesalerId == null) {
                 throw CustomException(
                     message = "There's no input data to update.",
                     errorType = ErrorType.NOT_FOUND,
@@ -208,49 +209,45 @@ class CartService {
                 )
             }
 
-            val shoppingSession: Optional<ShoppingSession> =
-                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-            if (shoppingSession.isEmpty) {
-                throw CustomException(
-                    message = "There's no shopping session whose retailerID is $retailerId",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION
-                )
-            }
-            val session = shoppingSession.get()
+            val shoppingSession = shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+                .orElseThrow {
+                    CustomException(
+                        message = "There's no shopping session whose retailerID is $retailerId",
+                        errorType = ErrorType.NOT_FOUND,
+                        errorCode = CustomErrorCode.NO_SHOPPING_SESSION
+                    )
+                }
 
-            if (wholesalerId != null) {
-                val wholesaler = userRepository.findById(wholesalerId)
-                if (wholesaler.isEmpty) {
-                    throw CustomException(
+            val wholesaler = userRepository.findById(wholesalerId)
+                .orElseThrow {
+                    CustomException(
                         message = "There's no wholesaler whose ID is $wholesalerId",
                         errorType = ErrorType.NOT_FOUND,
                         errorCode = CustomErrorCode.NO_USER
                     )
                 }
-                logger.info("$className.$executedFunc >> wholesaler both are exists.")
+            logger.info("$className.$executedFunc >> wholesaler both are exists.")
 
-                session.wholesaler = wholesaler.get()
-                shoppingSessionRepository.save(session)
-                logger.info("$className.$executedFunc >> wholesaler data on shopping_session updated.")
+            shoppingSession.wholesaler = wholesaler
+            shoppingSessionRepository.save(shoppingSession)
+            logger.info("$className.$executedFunc >> wholesaler data on shopping_session updated.")
 
-                val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
-                val updatedCartItemObjs = cartItems.map {
-                    it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
-                    it
-                }
-                cartItemRepository.saveAll(updatedCartItemObjs)
-                logger.info("$className.$executedFunc >> wholesaler data on cart_items updated.")
+            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+            val updatedCartItemObjs = cartItems.map {
+                it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
+                it
             }
+            cartItemRepository.saveAll(updatedCartItemObjs)
+            logger.info("$className.$executedFunc >> wholesaler data on cart_items updated.")
 
-            if (memo != null) {
-                session.memo = memo
-                shoppingSessionRepository.save(session)
+            memo?.run {
+                shoppingSession.memo = memo
+                shoppingSessionRepository.save(shoppingSession)
                 logger.info("$className.$executedFunc >> memo data on shopping_session updated.")
             }
 
             logger.info("$className.$executedFunc >> completed.")
-            return session
+            return shoppingSession
 
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
