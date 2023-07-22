@@ -10,7 +10,6 @@ plugins {
 	kotlin("plugin.noarg") version "1.6.21"
 	kotlin("plugin.allopen") version "1.6.21"
 	id("com.netflix.dgs.codegen") version "5.6.0"
-	kotlin("kapt") version "1.7.10"
 }
 
 group = "kr.co.marketbill"
@@ -33,19 +32,19 @@ dependencies {
 	implementation("org.jetbrains.kotlinx:kotlinx-coroutines-core:1.6.4")
 
 	// jpa + db conn
-	implementation("org.postgresql:postgresql:42.5.4")
-	implementation("org.springframework:spring-jdbc:6.0.6")
+	implementation("org.postgresql:postgresql:42.5.1")
+	implementation("org.springframework:spring-jdbc:6.0.3")
 	implementation("org.springframework.boot:spring-boot-starter-data-jpa")
 	implementation("com.vladmihalcea:hibernate-types-52:2.16.0")
 
 	// graphql
-//	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release")) // SpringBoot 3.0.0 이상 호환되는 DGS 버전
+//	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:latest.release")) -> SpringBoot 3.0 upgrade 필요
 	implementation(platform("com.netflix.graphql.dgs:graphql-dgs-platform-dependencies:5.5.1")) // SpringBoot 2.7.5 호환되는 DGS 버전
 	implementation("com.netflix.graphql.dgs:graphql-dgs-spring-boot-starter")
 	implementation("com.netflix.graphql.dgs:graphql-dgs-extended-scalars")
 
 	// actuator
-	implementation("org.springframework.boot:spring-boot-starter-actuator:3.0.4")
+	implementation("org.springframework.boot:spring-boot-starter-actuator:3.0.1")
 
 	// security
 	implementation("org.springframework.boot:spring-boot-starter-security")
@@ -57,17 +56,13 @@ dependencies {
 	implementation("org.springframework.boot:spring-boot-starter-webflux")
 
 	// serialization
-	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.5.0")
+	implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.4.1")
 
 	// kotest
-	testImplementation("io.kotest:kotest-runner-junit5:5.5.5")
-	testImplementation("io.kotest:kotest-assertions-core:5.5.5")
-	testImplementation("io.kotest:kotest-property:5.5.5")
+	testImplementation("io.kotest:kotest-runner-junit5:5.5.4")
+	testImplementation("io.kotest:kotest-assertions-core:5.5.4")
+	testImplementation("io.kotest:kotest-property:5.5.4")
 	testImplementation("io.kotest.extensions:kotest-extensions-spring:1.1.2")
-
-	// queryDSL
-	implementation("com.querydsl:querydsl-jpa:5.0.0")
-	kapt("com.querydsl:querydsl-apt:5.0.0:jpa")
 }
 
 tasks.withType<KotlinCompile> {
@@ -105,3 +100,4 @@ tasks.withType<com.netflix.graphql.dgs.codegen.gradle.GenerateJavaTask> {
 	)
 //	generateClient = true
 }
+

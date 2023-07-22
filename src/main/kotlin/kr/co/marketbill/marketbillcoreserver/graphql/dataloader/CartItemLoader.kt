@@ -9,27 +9,29 @@ import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.dataloader.BatchLoaderEnvironment
 import org.dataloader.MappedBatchLoaderWithContext
 import org.springframework.beans.factory.annotation.Autowired
-import org.springframework.data.domain.Page
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 
 
 @DgsDataLoader(name = "cart_items")
-class CartItemLoader : MappedBatchLoaderWithContext<Long, Page<CartItem>> {
+class CartItemLoader : MappedBatchLoaderWithContext<Long, List<CartItem>> {
     @Autowired
     private lateinit var cartService: CartService
 
     override fun load(
         keys: MutableSet<Long>?,
         env: BatchLoaderEnvironment
-    ): CompletionStage<MutableMap<Long, Page<CartItem>>> {
+    ): CompletionStage<MutableMap<Long, List<CartItem>>> {
         val cartContext =
             DgsContext.getCustomContext<CustomContext>(env)
         val pagination = cartContext.cartItemsInput.pagination
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
         val shoppingSessionIds = keys!!.stream().toList()
-        val mappedCartItems = cartService.getAllPaginatedCartItemsByShoppingSessionIds(shoppingSessionIds, pageable)
+        val mappedCartItems: MutableMap<Long, List<CartItem>> = cartService.getAllCartItemsByShoppingSessionIds(
+            shoppingSessionIds,
+            pageable
+        )
 
         return CompletableFuture.supplyAsync { mappedCartItems }
     }

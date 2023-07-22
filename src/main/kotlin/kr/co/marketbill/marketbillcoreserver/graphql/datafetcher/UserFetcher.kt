@@ -1,7 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 
 import com.netflix.graphql.dgs.DgsComponent
-import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsDataFetchingEnvironment
 import com.netflix.graphql.dgs.DgsMutation
 import com.netflix.graphql.dgs.DgsQuery
@@ -51,18 +50,12 @@ class UserFetcher {
         return userService.getUser(userId)
     }
 
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetUser),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.User),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetUser)
     fun getUser(@InputArgument id: Long): User {
         return userService.getUser(id)
     }
 
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetUsers),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.Users),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetUsers)
     fun getUsers(
         dfe: DgsDataFetchingEnvironment,
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = false) authorization: Optional<String>,
@@ -98,10 +91,7 @@ class UserFetcher {
         }
     }
 
-    @DgsData.List(
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.GetConnectableUsers),
-        DgsData(parentType = DgsConstants.QUERY.TYPE_NAME, field = DgsConstants.QUERY.ConnectableUsers),
-    )
+    @DgsQuery(field = DgsConstants.QUERY.GetConnectableUsers)
     fun getConnectableUsers(
         dfe: DgsDataFetchingEnvironment,
         @RequestHeader(value = JwtProvider.AUTHORIZATION_HEADER_NAME, required = true) authorization: String,
