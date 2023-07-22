@@ -49,6 +49,9 @@ data class CartItem(
 
     @Column(name = "ordered_at")
     var orderedAt: LocalDateTime? = null,
+
+    @Column(name = "memo", nullable = true, length = 600)
+    var memo: String? = null,
 ) : BaseTime() {
     @PostLoad
     @PostUpdate

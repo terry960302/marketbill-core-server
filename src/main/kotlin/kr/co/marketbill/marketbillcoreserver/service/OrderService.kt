@@ -12,7 +12,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BusinessInfoRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.*
@@ -83,70 +82,6 @@ class OrderService {
     private val logger: Logger = LoggerFactory.getLogger(OrderService::class.java)
     private val className = this.javaClass.simpleName
 
-    @Deprecated(message = "Replaced by orderAllCartItems")
-    @Transactional
-    fun orderCartItems(retailerId: Long): OrderSheet {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
-        try {
-            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
-                .map {
-                    it.orderedAt = LocalDateTime.now()
-                    it
-                }.get().toList()
-
-            if (cartItems.isEmpty()) throw CustomException(
-                message = "There's no cart items to order.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_CART_ITEM
-            )
-
-            val isAllConnectedWithWholesaler = cartItems.mapNotNull { it.wholesaler }.size == cartItems.size
-            if (!isAllConnectedWithWholesaler) throw CustomException(
-                message = "There's no connected wholesaler on cart items.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_CART_WHOLESALER
-            )
-            logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
-
-            cartItemRepository.saveAll(cartItems)
-            logger.info("$className.$executedFunc >> All cart items are ordered.")
-
-            val selectedRetailer: User = cartItems[0].retailer!!
-            val selectedWholesaler: User = cartItems[0].wholesaler!!
-
-            val orderSheet = OrderSheet(
-                orderNo = "",
-                retailer = selectedRetailer,
-                wholesaler = selectedWholesaler,
-            )
-            val savedOrderSheet = orderSheetRepository.save(orderSheet)
-            logger.info("$className.$executedFunc >> OrderSheet is created.")
-            savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
-            val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
-
-            val orderItems = cartItems.map {
-                OrderItem(
-                    retailer = it.retailer,
-                    orderSheet = updatedOrderSheet,
-                    wholesaler = selectedWholesaler,
-                    flower = it.flower,
-                    quantity = it.quantity,
-                    grade = it.grade,
-                    price = null,
-                )
-            }
-            val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
-            logger.info("$className.$executedFunc >> Order items are created by cart items.")
-            createOrderItemGroups(createdOrderItems)
-            logger.info("$className.$executedFunc >> completed.")
-            return updatedOrderSheet
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}")
-            throw e
-        }
-    }
-
     @Transactional
     fun orderAllCartItems(retailerId: Long): OrderSheet {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -185,6 +120,7 @@ class OrderService {
             logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
 
             cartItemRepository.saveAll(cartItems)
+            cartItemRepository.flush()
             logger.info("$className.$executedFunc >> All cart items are ordered.")
 
             shoppingSessionRepository.delete(shoppingSession.get())
@@ -229,10 +165,7 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val orderSheets = orderSheetRepository.findAll(
-                OrderSheetSpecs.byUserId(userId, role).and(OrderSheetSpecs.atDate(date)),
-                pageable
-            )
+            val orderSheets : Page<OrderSheet> = orderSheetRepository.findAllWithFilters(pageable, userId, role, date)
             logger.info("$className.$executedFunc >> completed.")
             return orderSheets
         } catch (e: Exception) {
@@ -552,7 +485,7 @@ class OrderService {
 
             val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
 
-            if(customOrderItems.any { it.price != null }){
+            if (customOrderItems.any { it.price != null }) {
                 orderSheet.get()
                     .priceUpdatedAt = LocalDateTime.now()
                 orderSheetRepository.save(orderSheet.get())
