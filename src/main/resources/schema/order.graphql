@@ -16,6 +16,7 @@ type CartItem{
     flower : Flower!,
     quantity : Int!,
     grade : FlowerGrade!,
+    memo : String,
     orderedAt : LocalDate,
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
