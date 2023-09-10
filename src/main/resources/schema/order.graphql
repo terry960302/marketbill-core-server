@@ -59,6 +59,7 @@ type OrderItem {
     createdAt : LocalDate!,
     updatedAt : LocalDate!,
     deletedAt : LocalDate,
+    memo: String,
 }
 
 # 고객이 직접 입력하여 추가한 꽃 품목
