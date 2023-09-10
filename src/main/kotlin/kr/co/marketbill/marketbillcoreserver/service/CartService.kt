@@ -201,14 +201,6 @@ class CartService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            if (wholesalerId == null) {
-                throw CustomException(
-                    message = "There's no input data to update.",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.INVALID_DATA
-                )
-            }
-
             val shoppingSession = shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
                 .orElseThrow {
                     CustomException(
@@ -218,10 +210,17 @@ class CartService {
                     )
                 }
 
-            val wholesaler = userRepository.findById(wholesalerId)
+            val currentWholesalerId = wholesalerId ?: shoppingSession.wholesaler?.id
+            ?: throw CustomException(
+                message = "There's no input data to update.",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = CustomErrorCode.INVALID_DATA
+            )
+
+            val wholesaler = userRepository.findById(currentWholesalerId)
                 .orElseThrow {
                     CustomException(
-                        message = "There's no wholesaler whose ID is $wholesalerId",
+                        message = "There's no wholesaler whose ID is $currentWholesalerId",
                         errorType = ErrorType.NOT_FOUND,
                         errorCode = CustomErrorCode.NO_USER
                     )
@@ -234,7 +233,7 @@ class CartService {
 
             val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
             val updatedCartItemObjs = cartItems.map {
-                it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
+                it.wholesaler = entityManager.getReference(User::class.java, currentWholesalerId)
                 it
             }
             cartItemRepository.saveAll(updatedCartItemObjs)
