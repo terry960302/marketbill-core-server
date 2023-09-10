@@ -123,7 +123,7 @@ class CartService {
     }
 
     @Transactional
-    fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade): CartItem {
+    fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade, memo: String?): CartItem {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
@@ -156,6 +156,7 @@ class CartService {
                 item.quantity = quantity
             }
             item.grade = convertFlowerGradeToKor(grade)
+            memo?.let { item.memo = it }
 
             val updatedCartItem = cartItemRepository.save(item)
             logger.info("$className.$executedFunc >> completed.")

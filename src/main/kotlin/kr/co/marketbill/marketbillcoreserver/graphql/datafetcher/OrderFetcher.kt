@@ -247,7 +247,8 @@ class OrderFetcher {
         return cartService.updateCartItem(
             input.id.toLong(),
             input.quantity,
-            FlowerGrade.valueOf(input.grade.toString())
+            FlowerGrade.valueOf(input.grade.toString()),
+            input.memo
         )
     }
 

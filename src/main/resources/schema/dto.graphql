@@ -22,6 +22,7 @@ input UpdateCartItemInput{
     id : Int!,
     quantity : Int!,
     grade : FlowerGrade!,
+    memo: String,
 }
 
 input OrderCartItemsInput {
