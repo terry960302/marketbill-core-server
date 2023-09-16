@@ -41,4 +41,8 @@ class Flower(
 
         @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)
         val orderItems: List<OrderItem>? = null,
+
+        @ManyToOne
+        @JoinColumn(name = "flower_color_id")
+        val flowerColor: FlowerColor? = null,
 ) : BaseTime()

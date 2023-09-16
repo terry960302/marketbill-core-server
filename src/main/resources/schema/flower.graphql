@@ -7,6 +7,7 @@ type Flower{
     images : [String!]!,
     # 꽃의 경매 일자 목록(진행했던 경매일자들)
     biddingFlowers : [BiddingFlower!]!,
+    flowerColor : FlowerColor,
 }
 
 type FlowerType {
@@ -14,6 +15,11 @@ type FlowerType {
     name : String!,
     flowers : [Flower!],
     imgUrl : String
+}
+
+type FlowerColor {
+    id : Int!,
+    name : String!
 }
 
 type BiddingFlower {
