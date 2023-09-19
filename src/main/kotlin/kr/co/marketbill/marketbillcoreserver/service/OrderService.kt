@@ -146,6 +146,7 @@ class OrderService {
                     quantity = it.quantity,
                     grade = it.grade,
                     price = null,
+                    memo = it.memo,
                 )
             }
             val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
