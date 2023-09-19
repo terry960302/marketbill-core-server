@@ -34,6 +34,8 @@ type OrderSheet{
     totalFlowerQuantity : Int!,
     # 주문서에 해당하는 꽃의 품종 개수(중복x)
     totalFlowerTypeCount : Int!,
+    # 주문서에 해당하는 꽃의 총 금액
+    totalFlowerPrice : Int!,
     # 영수증 발행 여부
     hasReceipt : Boolean!,
     orderSheetReceipts (pagination: PaginationInput): [OrderSheetReceipt!]!,

@@ -80,6 +80,26 @@ class OrderFieldFetcher {
         return orderItemCount + customOrderItemCount
     }
 
+    // total price
+    @Transactional(readOnly = true)
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerPrice)
+    fun totalFlowerPrice(dfe: DgsDataFetchingEnvironment): Int {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        val orderItemPrice = if (orderSheet.orderItems.isNotEmpty()) {
+            val prices: List<Int> = orderSheet.orderItems.map { if (it.price == null) 0 else it.price!! }
+            prices.reduce { acc, i -> acc + i }
+        } else {
+            0
+        }
+        val customOrderItemPrice = if (orderSheet.customOrderItems.isNotEmpty()) {
+            val prices: List<Int> = orderSheet.customOrderItems.map { if (it.price == null) 0 else it.price!! }
+            prices.reduce { acc, i -> acc + i }
+        } else {
+            0
+        }
+        return orderItemPrice + customOrderItemPrice
+    }
+
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)
     fun orderItems(
         dfe: DgsDataFetchingEnvironment,
