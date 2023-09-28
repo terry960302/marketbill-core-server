@@ -36,5 +36,12 @@ class FlowerSpecs {
                 }
             }
         }
+
+        fun imagesDesc(): Specification<Flower> {
+            return Specification<Flower> { root, query, builder ->
+                query.orderBy(builder.desc(root.get<String>("images")))
+                builder.conjunction()
+            }
+        }
     }
 }

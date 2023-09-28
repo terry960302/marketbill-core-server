@@ -23,10 +23,16 @@ class FlowerService {
     @Transactional(readOnly = true)
     fun getFlowers(fromDate: LocalDate?, toDate: LocalDate?, keyword: String?, pageable: Pageable): Page<Flower> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        // pageable에 order가 존재 하는 경우 우선순위에 밀려 필터가 적용되지 않기 때문에 order를 제거
+        val basePageable = Pageable.ofSize(pageable.pageSize)
+            .withPage(pageable.pageNumber)
         try {
-            val flowers = flowerRepository.findAllByOrderByImagesDesc(
-//                FlowerSpecs.btwDates(fromDate, toDate).and(FlowerSpecs.nameLike(keyword)),
-                pageable
+            val flowers = flowerRepository.findAll(
+                FlowerSpecs.btwDates(fromDate, toDate)
+                    .and(FlowerSpecs.nameLike(keyword))
+                    .and(FlowerSpecs.imagesDesc()),
+                basePageable
             )
             logger.info("$className.$executedFunc >> completed.")
             return flowers
