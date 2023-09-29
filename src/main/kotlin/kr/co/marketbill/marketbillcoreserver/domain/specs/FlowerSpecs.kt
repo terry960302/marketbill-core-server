@@ -25,7 +25,7 @@ class FlowerSpecs {
                 } else {
                     val namePredicate = builder.like(root.get("name"), "%${keyword}%")
                     val flowerType = root.join<Flower, FlowerType>("flowerType")
-                    val typeNamePredicate = builder.like(flowerType.get<String>("name"), "%${keyword}%")
+                    val typeNamePredicate = builder.like(flowerType.get("name"), "%${keyword}%")
                     builder.or(namePredicate, typeNamePredicate)
                 }
             }
