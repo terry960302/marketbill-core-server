@@ -11,6 +11,13 @@ import java.time.LocalDateTime
 @Component
 class FlowerSpecs {
     companion object {
+        fun createdAtDesc(): Specification<Flower> {
+            return Specification<Flower> { root, query, builder ->
+                query.orderBy(builder.desc(root.get<LocalDateTime>("createdAt")))
+                null
+            }
+        }
+
         fun nameLike(keyword: String?): Specification<Flower> {
             return Specification<Flower> { root, query, builder ->
                 if (keyword == null) {

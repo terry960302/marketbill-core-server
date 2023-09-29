@@ -1,14 +1,11 @@
 package kr.co.marketbill.marketbillcoreserver.domain.repository.flower
 
-import kr.co.marketbill.marketbillcoreserver.constants.SOFT_DELETE_CLAUSE
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.Pageable
 import org.springframework.data.jpa.repository.JpaRepository
 import org.springframework.data.jpa.repository.JpaSpecificationExecutor
-import org.springframework.data.jpa.repository.Query
 import org.springframework.stereotype.Repository
-import java.util.*
 
 @Repository
 interface FlowerRepository : JpaRepository<Flower, Long>, JpaSpecificationExecutor<Flower> {
@@ -23,5 +20,5 @@ interface FlowerRepository : JpaRepository<Flower, Long>, JpaSpecificationExecut
 //
 //    @Query("SELECT COUNT(*) FROM flowers AS f WHERE f.name LIKE %:keyword% AND f.$SOFT_DELETE_CLAUSE", nativeQuery = true)
 //    fun getSearchFlowersCount(keyword : String) : Long
-    fun findAllByOrderByImagesDesc(pageable: Pageable): Page<Flower> // @TODO: 임시로 이미지 우선 정렬 추가
+    fun findAllByOrderByImagesDesc(pageable: Pageable): Page<Flower>
 }
