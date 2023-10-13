@@ -1,0 +1,19 @@
+type AuctionResult {
+    id: Int!,
+    flowerName: String!,
+    flowerTypeName: String!,
+    flowerGrade: String!,
+    boxCount: Int!,
+    flowerCount: Int!,
+    price: Int!,
+    totalPrice: Int!,
+    serialCode: String!,
+    wholesalerId: Int!,
+    auctionDate: Int!
+}
+
+## -------------- QUERY ------------------
+
+extend type Query {
+    auctionResult(filter : AuctionResultFilterInput, pagination : PaginationInput): AuctionResultsOutput!
+}
