@@ -159,3 +159,13 @@ input AuctionResultDetailFilterInput{
 type AuctionResultDetailOutput{
     item : AuctionResult!
 }
+
+input AuctionResultUpdateFilterInput{
+    id : Int!,
+    retailPrice : Int,
+    isSoldOut : Boolean,
+}
+
+type AuctionResultUpdateOutput{
+    item : AuctionResult!
+}

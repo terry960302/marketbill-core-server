@@ -111,4 +111,22 @@ class AuctionService {
             throw e
         }
     }
+
+    @Transactional
+    fun updateAuctionResult(id: Long, retailPrice: Int?, isSoldOut: Boolean?): AuctionResult {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val oldAuctionResult = auctionResultRepository.findById(id).orElseThrow { Exception("Not Found") }
+
+            val newAuctionResult = oldAuctionResult.copy(
+                retailPrice = retailPrice ?: oldAuctionResult.retailPrice,
+                isSoldOut = isSoldOut ?: oldAuctionResult.isSoldOut,
+            )
+
+            return auctionResultRepository.save(newAuctionResult)
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
 }

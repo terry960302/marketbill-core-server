@@ -20,4 +20,5 @@ type AuctionResult {
 extend type Query {
     auctionResult(filter : AuctionResultFilterInput, pagination : PaginationInput): AuctionResultsOutput!
     auctionResultDetail(filter : AuctionResultDetailFilterInput) : AuctionResultDetailOutput!
+    updateAuctionResult(filter : AuctionResultUpdateFilterInput!) : AuctionResultUpdateOutput!
 }

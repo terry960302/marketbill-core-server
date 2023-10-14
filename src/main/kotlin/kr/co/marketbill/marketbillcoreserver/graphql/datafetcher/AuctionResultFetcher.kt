@@ -10,13 +10,14 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.AuctionResultsOutput
 import kr.co.marketbill.marketbillcoreserver.service.AuctionService
 import kr.co.marketbill.marketbillcoreserver.types.AuctionResultDetailFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.AuctionResultFilterInput
+import kr.co.marketbill.marketbillcoreserver.types.AuctionResultUpdateFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
 
 @DgsComponent
-class AuctionFetcher {
+class AuctionResultFetcher {
     @Autowired
     private lateinit var auctionService: AuctionService
 
@@ -47,6 +48,21 @@ class AuctionFetcher {
         @InputArgument filter: AuctionResultDetailFilterInput,
     ): AuctionResultDetailOutput {
         val result = this.auctionService.getAuctionResultDetail(filter.id.toLong())
+
+        return AuctionResultDetailOutput(
+            item = result
+        )
+    }
+
+    @DgsQuery
+    fun updateAuctionResult(
+        @InputArgument filter: AuctionResultUpdateFilterInput,
+    ): AuctionResultDetailOutput {
+        val result = this.auctionService.updateAuctionResult(
+            id = filter.id.toLong(),
+            retailPrice = filter.retailPrice,
+            isSoldOut = filter.isSoldOut
+        )
 
         return AuctionResultDetailOutput(
             item = result
