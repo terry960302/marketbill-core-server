@@ -10,3 +10,11 @@ data class AuctionResultsOutput(
 data class AuctionResultDetailOutput(
     val item: AuctionResult
 )
+
+data class AuctionResultForSaleOutput(
+    val items: Page<AuctionResult>
+)
+
+data class AuctionResultForSaleDetailOutput(
+    val item: AuctionResult
+)

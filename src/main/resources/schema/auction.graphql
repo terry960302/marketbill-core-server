@@ -18,7 +18,15 @@ type AuctionResult {
 ## -------------- QUERY ------------------
 
 extend type Query {
+    # 경매 결과 리스트(도매상용)
     auctionResult(filter : AuctionResultFilterInput, pagination : PaginationInput): AuctionResultsOutput!
+    # 경매 결과 세부(도매상용)
     auctionResultDetail(filter : AuctionResultDetailFilterInput) : AuctionResultDetailOutput!
+    # 경매 매물 업데이트(도매상용)
     updateAuctionResult(filter : AuctionResultUpdateFilterInput!) : AuctionResultUpdateOutput!
+
+    # 경매 결과 리스트(소매상용)
+    auctionResultForSale(filter : AuctionResultForSaleFilterInput, pagination : PaginationInput): AuctionResultForSaleOutput!
+    # 경매 결과 세부(소매상용)
+    auctionResultForSaleDetail(filter : AuctionResultForSaleDetailFilterInput) : AuctionResultForSaleDetailOutput!
 }

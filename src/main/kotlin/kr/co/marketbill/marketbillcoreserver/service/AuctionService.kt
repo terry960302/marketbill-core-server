@@ -129,4 +129,76 @@ class AuctionService {
             throw e
         }
     }
+
+    @Transactional(readOnly = true)
+    fun getAuctionResultForSale(wholesalerId: Long, pageable: Pageable): Page<AuctionResult> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val auctionResult = auctionResultRepository.findAll(
+                AuctionResultSpecs.byWholesalerId(wholesalerId)
+                    .and(AuctionResultSpecs.hasRetailPrice())
+                    .and(AuctionResultSpecs.isNotSoldOut()),
+                pageable
+            ).map {
+                val flower = flowerRepository.findAll(
+                    FlowerSpecs.nameAndTypeNameLike(it.flowerName, it.flowerTypeName)
+                )
+
+                AuctionResult(
+                    id = it.id,
+                    flowerName = it.flowerName,
+                    flowerTypeName = it.flowerTypeName,
+                    flowerGrade = it.flowerGrade,
+                    boxCount = it.boxCount,
+                    flowerCount = it.flowerCount,
+                    price = it.price,
+                    totalPrice = it.totalPrice,
+                    serialCode = it.serialCode,
+                    wholesalerId = it.wholesalerId,
+                    auctionDate = it.auctionDate,
+                    images = flower.firstOrNull()?.images ?: emptyList(),
+                    retailPrice = it.retailPrice,
+                    isSoldOut = it.isSoldOut
+                )
+            }
+
+            logger.info("$className.$executedFunc >> completed.")
+            return auctionResult
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
+    @Transactional(readOnly = true)
+    fun getAuctionResultForSaleDetail(id: Long) : AuctionResult {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+        try {
+            val auctionResult = auctionResultRepository.findById(id).orElseThrow { Exception("Not Found") }
+            val flower = flowerRepository.findAll(
+                FlowerSpecs.nameAndTypeNameLike(auctionResult.flowerName, auctionResult.flowerTypeName)
+            )
+
+            logger.info("$className.$executedFunc >> completed.")
+            return AuctionResult(
+                id = auctionResult.id,
+                flowerName = auctionResult.flowerName,
+                flowerTypeName = auctionResult.flowerTypeName,
+                flowerGrade = auctionResult.flowerGrade,
+                boxCount = auctionResult.boxCount,
+                flowerCount = auctionResult.flowerCount,
+                price = auctionResult.price,
+                totalPrice = auctionResult.totalPrice,
+                serialCode = auctionResult.serialCode,
+                wholesalerId = auctionResult.wholesalerId,
+                auctionDate = auctionResult.auctionDate,
+                images = flower.firstOrNull()?.images ?: emptyList(),
+                retailPrice = auctionResult.retailPrice,
+                isSoldOut = auctionResult.isSoldOut
+            )
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
 }

@@ -18,5 +18,17 @@ class AuctionResultSpecs {
                 root.get<Int>("auctionDate").`in`(auctionDates)
             }
         }
+
+        fun hasRetailPrice(): Specification<AuctionResult> {
+            return Specification<AuctionResult> { root, query, builder ->
+                builder.isNotNull(root.get<Long>("retailPrice"))
+            }
+        }
+
+        fun isNotSoldOut(): Specification<AuctionResult> {
+            return Specification<AuctionResult> { root, query, builder ->
+                builder.isFalse(root.get("isSoldOut"))
+            }
+        }
     }
 }
