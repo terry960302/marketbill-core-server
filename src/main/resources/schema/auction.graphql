@@ -9,11 +9,15 @@ type AuctionResult {
     totalPrice: Int!,
     serialCode: String!,
     wholesalerId: Int!,
-    auctionDate: Int!
+    auctionDate: Int!,
+    images: [String!]!,
+    retailPrice: Int, # 도매상 설정 가격(null 인경우 미설정 상태)
+    isSoldOut: Boolean! # 품절 여부
 }
 
 ## -------------- QUERY ------------------
 
 extend type Query {
     auctionResult(filter : AuctionResultFilterInput, pagination : PaginationInput): AuctionResultsOutput!
+    auctionResultDetail(filter : AuctionResultDetailFilterInput) : AuctionResultDetailOutput!
 }

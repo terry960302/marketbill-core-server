@@ -2,16 +2,18 @@ package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
+import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
+import kr.co.marketbill.marketbillcoreserver.domain.dto.AuctionResultDetailOutput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuctionResultsOutput
 import kr.co.marketbill.marketbillcoreserver.service.AuctionService
+import kr.co.marketbill.marketbillcoreserver.types.AuctionResultDetailFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.AuctionResultFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
-import java.time.format.DateTimeFormatter
 
 @DgsComponent
 class AuctionFetcher {
@@ -37,6 +39,17 @@ class AuctionFetcher {
 
         return AuctionResultsOutput(
             items = result
+        )
+    }
+
+    @DgsQuery(field = "auctionResultDetail") // v1
+    fun getAuctionResultDetail(
+        @InputArgument filter: AuctionResultDetailFilterInput,
+    ): AuctionResultDetailOutput {
+        val result = this.auctionService.getAuctionResultDetail(filter.id.toLong())
+
+        return AuctionResultDetailOutput(
+            item = result
         )
     }
 }

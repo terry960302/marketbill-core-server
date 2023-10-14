@@ -151,3 +151,11 @@ type AuctionResultsOutput implements PaginationOutput{
     resultCount : Int!
     items : [AuctionResult!]!
 }
+
+input AuctionResultDetailFilterInput{
+    id : Int!,
+}
+
+type AuctionResultDetailOutput{
+    item : AuctionResult!
+}

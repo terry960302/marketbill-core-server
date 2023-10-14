@@ -31,6 +31,15 @@ class FlowerSpecs {
             }
         }
 
+        fun nameAndTypeNameLike(name: String?, typeName: String?): Specification<Flower> {
+            return Specification<Flower> { root, query, builder ->
+                val namePredicate = builder.like(root.get("name"), "%${name}%")
+                val flowerType = root.join<Flower, FlowerType>("flowerType")
+                val typeNamePredicate = builder.like(flowerType.get("name"), "%${typeName}%")
+                builder.and(namePredicate, typeNamePredicate)
+            }
+        }
+
         fun btwDates(fromDate: LocalDate?, toDate: LocalDate?): Specification<Flower> {
             return Specification<Flower> { root, query, builder ->
                 if (fromDate == null || toDate == null) {

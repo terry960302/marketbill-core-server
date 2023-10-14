@@ -1,36 +1,14 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.flower
 
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
+import org.hibernate.annotations.Type
+import org.hibernate.annotations.Where
 import javax.persistence.*
-
-//create table public.auction_results
-//(
-//id               bigserial,
-//flower_name      varchar(50),
-//flower_type_name varchar(50),
-//flower_grade     varchar(10) default ''::character varying,
-//box_count        integer,
-//flower_count     integer,
-//price            integer,
-//total_price      integer,
-//serial_code      varchar(50),
-//created_at       timestamp,
-//updated_at       timestamp,
-//deleted_at       timestamp,
-//wholesaler_id    bigint,
-//auction_date     integer     default 0 not null
-//);
-//
-//alter table public.auction_results
-//owner to marketbill;
-//
-//create index ix_wholesalerid_auctiondate
-//on public.auction_results (wholesaler_id, auction_date);
-//
-
+import kotlin.jvm.Transient
 
 @Entity
 @Table(name = "auction_results")
+@Where(clause = "deleted_at is Null")
 data class AuctionResult(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -64,5 +42,15 @@ data class AuctionResult(
     val wholesalerId: Long? = null,
 
     @Column(name = "auction_date")
-    val auctionDate: Int? = null
+    val auctionDate: Int? = null,
+
+    @Column(name = "retail_price")
+    val retailPrice: Int? = null,
+
+    @Column(name = "is_sold_out")
+    val isSoldOut: Boolean = false,
+
+    @Transient
+    @Type(type = "list-string")
+    val images: List<String> = emptyList(),
 ): BaseTime()
