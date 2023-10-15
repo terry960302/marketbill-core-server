@@ -22,8 +22,9 @@ interface AuctionResultRepository : JpaRepository<AuctionResult, Long>, JpaSpeci
             "   WHERE deleted_at IS NULL" +
             "   AND wholesaler_id = ?1" +
             "   AND retail_price IS NOT NULL" +
+            "   AND auction_date IN  ?2" +
             " GROUP BY flower_name, flower_type_name, auction_date"
         , nativeQuery = true
     )
-    fun findGroupByFlowerNameAndAuctionDate(wholesalerId: Long, pageable: Pageable): List<InterfaceAuctionResultWithGroupBy> = emptyList()
+    fun findGroupByFlowerNameAndAuctionDate(wholesalerId: Long, auctionDates: List<Int>, pageable: Pageable): List<InterfaceAuctionResultWithGroupBy> = emptyList()
 }

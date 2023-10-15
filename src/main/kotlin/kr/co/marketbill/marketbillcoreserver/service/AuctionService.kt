@@ -137,8 +137,17 @@ class AuctionService {
     fun getAuctionResultForSale(wholesalerId: Long, pageable: Pageable): Page<AuctionResultWithGroupBy> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
+            val currentDate = LocalDate.now()
+            val formatter = DateTimeFormatter.ofPattern("yyyyMMdd")
+            val auctionDates = IntStream.rangeClosed(0, DEFAULT_BEFORE_DAYS)
+                .boxed()
+                .map {
+                    val previousDate = currentDate.minusDays(it.toLong())
+                    previousDate.format(formatter).toInt()
+                }.toList()
+
             val auctionResultWithGroupBy =
-                auctionResultRepository.findGroupByFlowerNameAndAuctionDate(wholesalerId, pageable)
+                auctionResultRepository.findGroupByFlowerNameAndAuctionDate(wholesalerId, auctionDates, pageable)
                     .map {
                         val flower = flowerRepository.findAll(
                             FlowerSpecs.nameAndTypeNameLike(it.flowerName, it.flowerTypeName)
