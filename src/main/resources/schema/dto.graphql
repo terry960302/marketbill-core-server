@@ -169,3 +169,21 @@ input AuctionResultUpdateFilterInput{
 type AuctionResultUpdateOutput{
     item : AuctionResult!
 }
+
+input AuctionResultForSaleFilterInput{
+    wholesalerId : Int
+}
+
+input AuctionResultForSaleDetailFilterInput{
+    id : Int!,
+}
+
+type AuctionResultForSaleOutput implements PaginationOutput{
+    resultCount : Int!
+    wholesalerId : Int!
+    items : [AuctionResultWithGroupBy!]!
+}
+
+type AuctionResultForSaleDetailOutput{
+    item : AuctionResult!
+}

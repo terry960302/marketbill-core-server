@@ -7,11 +7,10 @@ import com.netflix.graphql.dgs.InputArgument
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuctionResultDetailOutput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.AuctionResultsOutput
+import kr.co.marketbill.marketbillcoreserver.domain.dto.AuctionResultForSaleOutput
+import kr.co.marketbill.marketbillcoreserver.domain.dto.AuctionResultForSaleDetailOutput
 import kr.co.marketbill.marketbillcoreserver.service.AuctionService
-import kr.co.marketbill.marketbillcoreserver.types.AuctionResultDetailFilterInput
-import kr.co.marketbill.marketbillcoreserver.types.AuctionResultFilterInput
-import kr.co.marketbill.marketbillcoreserver.types.AuctionResultUpdateFilterInput
-import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
+import kr.co.marketbill.marketbillcoreserver.types.*
 import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
 import org.springframework.beans.factory.annotation.Autowired
 import java.time.LocalDate
@@ -65,6 +64,34 @@ class AuctionResultFetcher {
         )
 
         return AuctionResultDetailOutput(
+            item = result
+        )
+    }
+
+    @DgsQuery(field = "auctionResultForSale") // v1
+    fun auctionResultForSale(
+        filter: AuctionResultForSaleFilterInput,
+        pagination: PaginationInput?,
+    ): AuctionResultForSaleOutput {
+        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination, "id")
+        val result = this.auctionService.getAuctionResultForSale(
+            wholesalerId = filter.wholesalerId?.toLong() ?: 0L,
+            pageable = pageable
+        )
+
+        return AuctionResultForSaleOutput(
+            wholesalerId = filter.wholesalerId?.toLong() ?: 0L,
+            items = result
+        )
+    }
+
+    @DgsQuery(field = "auctionResultForSaleDetail") // v1
+    fun auctionResultForSaleDetail(
+        filter: AuctionResultForSaleDetailFilterInput,
+    ): AuctionResultForSaleDetailOutput {
+        val result = this.auctionService.getAuctionResultForSaleDetail(filter.id.toLong())
+
+        return AuctionResultForSaleDetailOutput(
             item = result
         )
     }
