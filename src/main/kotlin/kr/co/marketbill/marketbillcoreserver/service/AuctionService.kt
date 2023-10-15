@@ -1,6 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.service
 
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.AuctionResult
+import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.AuctionResultWithGroupBy
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.AuctionResultRepository
 import kr.co.marketbill.marketbillcoreserver.domain.repository.flower.FlowerRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.AuctionResultSpecs
@@ -8,6 +9,8 @@ import kr.co.marketbill.marketbillcoreserver.domain.specs.FlowerSpecs
 import org.slf4j.Logger
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.data.domain.Page
+import org.springframework.data.domain.PageImpl
+import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
@@ -131,39 +134,28 @@ class AuctionService {
     }
 
     @Transactional(readOnly = true)
-    fun getAuctionResultForSale(wholesalerId: Long, pageable: Pageable): Page<AuctionResult> {
+    fun getAuctionResultForSale(wholesalerId: Long, pageable: Pageable): Page<AuctionResultWithGroupBy> {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
-            val auctionResult = auctionResultRepository.findAll(
-                AuctionResultSpecs.byWholesalerId(wholesalerId)
-                    .and(AuctionResultSpecs.hasRetailPrice())
-                    .and(AuctionResultSpecs.isNotSoldOut()),
-                pageable
-            ).map {
-                val flower = flowerRepository.findAll(
-                    FlowerSpecs.nameAndTypeNameLike(it.flowerName, it.flowerTypeName)
-                )
+            val auctionResultWithGroupBy =
+                auctionResultRepository.findGroupByFlowerNameAndAuctionDate(wholesalerId, pageable)
+                    .map {
+                        val flower = flowerRepository.findAll(
+                            FlowerSpecs.nameAndTypeNameLike(it.flowerName, it.flowerTypeName)
+                        )
 
-                AuctionResult(
-                    id = it.id,
-                    flowerName = it.flowerName,
-                    flowerTypeName = it.flowerTypeName,
-                    flowerGrade = it.flowerGrade,
-                    boxCount = it.boxCount,
-                    flowerCount = it.flowerCount,
-                    price = it.price,
-                    totalPrice = it.totalPrice,
-                    serialCode = it.serialCode,
-                    wholesalerId = it.wholesalerId,
-                    auctionDate = it.auctionDate,
-                    images = flower.firstOrNull()?.images ?: emptyList(),
-                    retailPrice = it.retailPrice,
-                    isSoldOut = it.isSoldOut
-                )
-            }
+                        AuctionResultWithGroupBy.of(it, flower.firstOrNull()?.images ?: emptyList())
+                    }
 
             logger.info("$className.$executedFunc >> completed.")
-            return auctionResult
+            val pageRequest = PageRequest.of(pageable.pageNumber, pageable.pageSize)
+            val start = pageRequest.offset
+            val end = (start + pageRequest.pageSize).coerceAtMost(auctionResultWithGroupBy.size.toLong()).toInt()
+            return PageImpl(
+                auctionResultWithGroupBy.subList(start.toInt(), end),
+                pageRequest,
+                auctionResultWithGroupBy.size.toLong()
+            )
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}")
             throw e
@@ -171,7 +163,7 @@ class AuctionService {
     }
 
     @Transactional(readOnly = true)
-    fun getAuctionResultForSaleDetail(id: Long) : AuctionResult {
+    fun getAuctionResultForSaleDetail(id: Long): AuctionResult {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         try {
             val auctionResult = auctionResultRepository.findById(id).orElseThrow { Exception("Not Found") }

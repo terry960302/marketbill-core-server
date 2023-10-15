@@ -180,7 +180,8 @@ input AuctionResultForSaleDetailFilterInput{
 
 type AuctionResultForSaleOutput implements PaginationOutput{
     resultCount : Int!
-    items : [AuctionResult!]!
+    wholesalerId : Int!
+    items : [AuctionResultWithGroupBy!]!
 }
 
 type AuctionResultForSaleDetailOutput{
