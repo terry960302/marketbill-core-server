@@ -76,12 +76,12 @@ class AuctionResultFetcher {
     ): AuctionResultForSaleOutput {
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination, "id")
         val result = this.auctionService.getAuctionResultForSale(
-            wholesalerId = filter.wholesalerId?.toLong() ?: 0L,
+            wholesalerId = filter.wholesalerId.toLong(),
             pageable = pageable
         )
 
         return AuctionResultForSaleOutput(
-            wholesalerId = filter.wholesalerId?.toLong() ?: 0L,
+            wholesalerId = filter.wholesalerId.toLong(),
             resultCount = result.count(),
             items = result
         )
