@@ -8,6 +8,7 @@ type AuctionResult {
     price: Int!,
     totalPrice: Int!,
     serialCode: String!,
+    shipper: String!,
     wholesalerId: Int!,
     auctionDate: Int!, # 경매일자 YYYYMMDD
     images: [String!]!,

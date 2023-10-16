@@ -38,6 +38,9 @@ data class AuctionResult(
     @Column(name = "serial_code")
     val serialCode: String? = null,
 
+    @Column(name = "shipper")
+    val shipper: String? = null,
+
     @Column(name = "wholesaler_id")
     val wholesalerId: Long? = null,
 
