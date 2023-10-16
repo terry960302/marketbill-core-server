@@ -38,6 +38,7 @@ class AuctionResultFetcher {
         )
 
         return AuctionResultsOutput(
+            resultCount = result.count(),
             items = result
         )
     }
@@ -81,6 +82,7 @@ class AuctionResultFetcher {
 
         return AuctionResultForSaleOutput(
             wholesalerId = filter.wholesalerId?.toLong() ?: 0L,
+            resultCount = result.count(),
             items = result
         )
     }

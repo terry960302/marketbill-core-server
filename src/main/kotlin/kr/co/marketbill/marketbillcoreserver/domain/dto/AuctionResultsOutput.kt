@@ -5,6 +5,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.AuctionResultW
 import org.springframework.data.domain.Page
 
 data class AuctionResultsOutput(
+    val resultCount: Int,
     val items: Page<AuctionResult>
 )
 
@@ -14,6 +15,7 @@ data class AuctionResultDetailOutput(
 
 data class AuctionResultForSaleOutput(
     val wholesalerId: Long,
+    val resultCount: Int,
     val items: Page<AuctionResultWithGroupBy>
 )
 
