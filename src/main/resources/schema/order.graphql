@@ -167,6 +167,8 @@ extend type Mutation {
     updateOrderItemsPrice(items : [OrderItemPriceInput!]!) : [OrderItem!]!,
     # [도매상] 커스텀 주문항목 추가
     upsertCustomOrderItems(input : UpsertCustomOrderItemsInput!) : [CustomOrderItem!]!,
+    # [도매상] 커스텀 주문항목 삭제
+    removeCustomOrderItem(customOrderItemIds: [Int!]!) : CommonResponse!,
     # [도매상] 판매가 일괄적용 주문 항목 일괄 수정
     updateDailyOrderItemsPrice(items : [OrderItemPriceInput!]!) : [DailyOrderItem!]!,
     # [도매상] 영수증 발행

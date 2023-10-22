@@ -3,7 +3,6 @@ package kr.co.marketbill.marketbillcoreserver.graphql.datafetcher
 import com.netflix.graphql.dgs.DgsComponent
 import com.netflix.graphql.dgs.DgsData
 import com.netflix.graphql.dgs.DgsMutation
-import com.netflix.graphql.dgs.DgsQuery
 import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.types.errors.ErrorType
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
@@ -309,6 +308,14 @@ class OrderFetcher {
             )
         }
         return orderService.upsertCustomOrderItems(input.orderSheetId.toLong(), filteredInput)
+    }
+
+    @PreAuthorize("hasRole('WHOLESALER_EMPR') or hasRole('WHOLESALER_EMPE')")
+    @DgsMutation(field = DgsConstants.MUTATION.RemoveCustomOrderItem)
+    fun removeCustomOrderItem(@InputArgument customOrderItemIds: List<Long>): CommonResponse {
+        val removedCustomOrderItemId = orderService.removeCustomOrderItems(customOrderItemIds)
+        logger.info("[removeCustomOrderItem] removed $removedCustomOrderItemId")
+        return CommonResponse(success = true)
     }
 
     @PreAuthorize("hasRole('WHOLESALER_EMPR')")

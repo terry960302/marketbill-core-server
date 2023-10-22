@@ -564,6 +564,29 @@ class OrderService {
         }
     }
 
+
+    @Transactional
+    fun removeCustomOrderItems(itemIds: List<Long>): List<Long> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val customOrderItems = customOrderItemRepository.findAllById(itemIds)
+            if (customOrderItems.isEmpty()) {
+                throw CustomException(
+                    message = "There's no custom order items data want to delete",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                )
+            }
+            customOrderItemRepository.deleteAll(customOrderItems)
+            logger.info("$className.$executedFunc >> completed.")
+            return itemIds
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
     @Transactional
     fun issueOrderSheetReceipt(orderSheetId: Long): OrderSheetReceipt {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
