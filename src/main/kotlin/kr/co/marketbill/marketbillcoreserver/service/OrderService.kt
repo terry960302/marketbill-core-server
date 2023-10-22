@@ -460,31 +460,96 @@ class OrderService {
                 )
             }
 
-            val customOrderItems = items.map {
-                val item = CustomOrderItem(
-                    id = it.id?.toLong(),
-                    orderSheet = orderSheet.get(),
-                    retailer = orderSheet.get().retailer,
-                    wholesaler = orderSheet.get().wholesaler,
-                    flowerName = it.flowerName?.trim(),
-                    flowerTypeName = it.flowerTypeName?.trim(),
-                    grade = if (it.grade != null) convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())) else null,
-                    quantity = it.quantity,
-                    price = it.price,
-                )
-                if (!item.flowerName.isNullOrBlank() && !item.flowerTypeName.isNullOrBlank() && item.grade != null) {
-                    val prevItem = customOrderItemRepository.findOne(
-                        CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
-                            .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
-                            .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
-                            .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
+            val oldShippingPrice =
+                orderSheet.get().customOrderItems.filter { it.flowerName.equals("배송비") }.maxByOrNull { it.id ?: 0 }
+            val shippingPriceItemFilter = items.filter { it.flowerName.equals("배송비") }
+            val newShippingPriceItem =
+                shippingPriceItemFilter.firstOrNull() ?: shippingPriceItemFilter.maxByOrNull { it.id ?: 0 }
+            val shippingPriceItem = if (newShippingPriceItem != null) {
+                if (oldShippingPrice == null) {
+                    CustomOrderItem(
+                        id = newShippingPriceItem.id?.toLong(),
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = newShippingPriceItem.flowerName?.trim(),
+                        flowerTypeName = newShippingPriceItem.flowerTypeName?.trim(),
+                        grade = if (newShippingPriceItem.grade != null) convertFlowerGradeToKor(
+                            FlowerGrade.valueOf(
+                                newShippingPriceItem.grade.toString()
+                            )
+                        ) else null,
+                        quantity = newShippingPriceItem.quantity,
+                        price = newShippingPriceItem.price,
                     )
-                    item.id = if (prevItem.isEmpty) null else prevItem.get().id
+                } else {
+                    oldShippingPrice.price = newShippingPriceItem.price
+                    CustomOrderItem(
+                        id = oldShippingPrice.id,
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = oldShippingPrice.flowerName?.trim(),
+                        flowerTypeName = oldShippingPrice.flowerTypeName?.trim(),
+                        grade = if (oldShippingPrice.grade != null) convertFlowerGradeToKor(
+                            FlowerGrade.valueOf(
+                                oldShippingPrice.grade.toString()
+                            )
+                        ) else null,
+                        quantity = oldShippingPrice.quantity,
+                        price = oldShippingPrice.price,
+                    )
                 }
-                item
+            } else {
+                if (oldShippingPrice == null) {
+                    null
+                } else {
+                    CustomOrderItem(
+                        id = oldShippingPrice.id,
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = oldShippingPrice.flowerName?.trim(),
+                        flowerTypeName = oldShippingPrice.flowerTypeName?.trim(),
+                        grade = if (oldShippingPrice.grade != null) convertFlowerGradeToKor(
+                            FlowerGrade.valueOf(
+                                oldShippingPrice.grade.toString()
+                            )
+                        ) else null,
+                        quantity = oldShippingPrice.quantity,
+                        price = oldShippingPrice.price,
+                    )
+                }
             }
 
-            val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
+            val customOrderItems = items.filter { !it.flowerName.equals("배송비") }
+                .map {
+                    val item = CustomOrderItem(
+                        id = it.id?.toLong(),
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = it.flowerName?.trim(),
+                        flowerTypeName = it.flowerTypeName?.trim(),
+                        grade = if (it.grade != null) convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())) else null,
+                        quantity = it.quantity,
+                        price = it.price,
+                    )
+
+                    if (!item.flowerName.isNullOrBlank() && !item.flowerTypeName.isNullOrBlank() && item.grade != null) {
+                        val prevItem = customOrderItemRepository.findOne(
+                            CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
+                                .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
+                                .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
+                                .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
+                        )
+                        item.id = if (prevItem.isEmpty) null else prevItem.get().id
+                    }
+                    item
+                }
+
+            val updateItems = customOrderItems + (shippingPriceItem?.let { listOf(it) } ?: listOf())
+            val affectedCustomOrderItems = customOrderItemRepository.saveAll(updateItems)
 
             if (customOrderItems.any { it.price != null }) {
                 orderSheet.get()
@@ -657,7 +722,7 @@ class OrderService {
     }
 
     @Transactional
-    private fun deleteOrderItemGroups(orderSheetId: Long) {
+    fun deleteOrderItemGroups(orderSheetId: Long) {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
