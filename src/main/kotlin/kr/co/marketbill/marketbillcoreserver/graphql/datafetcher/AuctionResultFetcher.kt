@@ -54,7 +54,9 @@ class AuctionResultFetcher {
         )
     }
 
-    @DgsQuery
+    @DgsData.List(
+        DgsData(parentType = DgsConstants.MUTATION.TYPE_NAME, field = DgsConstants.MUTATION.UpdateAuctionResult),
+    )
     fun updateAuctionResult(
         @InputArgument filter: AuctionResultUpdateFilterInput,
     ): AuctionResultDetailOutput {
@@ -87,7 +89,7 @@ class AuctionResultFetcher {
         )
     }
 
-    @DgsQuery(field = "auctionResultForSaleDetail") // v1
+    @DgsQuery
     fun auctionResultForSaleDetail(
         filter: AuctionResultForSaleDetailFilterInput,
     ): AuctionResultForSaleDetailOutput {
