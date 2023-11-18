@@ -501,9 +501,7 @@ class OrderService {
                     )
                 }
             } else {
-                if (oldShippingPrice == null) {
-                    null
-                } else {
+                oldShippingPrice?.let {
                     CustomOrderItem(
                         id = oldShippingPrice.id,
                         orderSheet = orderSheet.get(),
@@ -552,8 +550,9 @@ class OrderService {
             val affectedCustomOrderItems = customOrderItemRepository.saveAll(updateItems)
 
             if (customOrderItems.any { it.price != null }) {
-                orderSheet.get()
-                    .priceUpdatedAt = LocalDateTime.now()
+                orderSheet.get().apply {
+                    priceUpdatedAt = LocalDateTime.now()
+                }
                 orderSheetRepository.save(orderSheet.get())
             }
             logger.info("$className.$executedFunc >> completed.")
@@ -610,6 +609,9 @@ class OrderService {
                         it.grade != null &&
                         it.quantity != null
             }
+            val shippingItems: List<CustomOrderItem> = orderSheet.get().customOrderItems.filter {
+                it.flowerName.equals("배송비")
+            }
 
             val isAllNullPrice =
                 orderItems.all { it.price == null } && customOrderItems.all { it.price == null }
@@ -644,7 +646,7 @@ class OrderService {
                     grade = it.grade!!,
                 )
             }
-            val customOrderItemsInput = customOrderItems.map {
+            val customOrderItemsInput = (customOrderItems + shippingItems).map {
                 ReceiptProcessInput.OrderItem(
                     flower = ReceiptProcessInput.Flower(
                         name = it.flowerName!!,
