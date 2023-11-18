@@ -22,6 +22,7 @@ interface AuctionResultRepository : JpaRepository<AuctionResult, Long>, JpaSpeci
             "   WHERE deleted_at IS NULL" +
             "   AND wholesaler_id = ?1" +
             "   AND retail_price IS NOT NULL" +
+            "   AND is_sold_out IS FALSE" +
             "   AND auction_date IN  ?2" +
             " GROUP BY flower_name, flower_type_name, auction_date"
         , nativeQuery = true
