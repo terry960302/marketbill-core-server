@@ -10,39 +10,34 @@ import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.dto.CartItemsOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
 import kr.co.marketbill.marketbillcoreserver.graphql.context.CustomContext
+import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.CartItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.CustomOrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderItemLoader
 import kr.co.marketbill.marketbillcoreserver.graphql.dataloader.OrderSheetReceiptLoader
-import kr.co.marketbill.marketbillcoreserver.service.CartService
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
 import kr.co.marketbill.marketbillcoreserver.util.EnumConverter
-import kr.co.marketbill.marketbillcoreserver.util.GqlDtoConverter
-import org.springframework.beans.factory.annotation.Autowired
+import org.springframework.data.domain.Page
 import org.springframework.transaction.annotation.Transactional
 import java.util.Optional
 import java.util.concurrent.CompletableFuture
 
 @DgsComponent
 class OrderFieldFetcher {
-    @Autowired
-    private lateinit var cartService: CartService
 
     @DgsData(parentType = DgsConstants.SHOPPINGSESSION.TYPE_NAME, field = DgsConstants.SHOPPINGSESSION.CartItems)
     fun cartItems(
         dfe: DgsDataFetchingEnvironment, @InputArgument pagination: PaginationInput?
-    ): CartItemsOutput {
+    ): CompletableFuture<CartItemsOutput> {
         val shoppingSession = dfe.getSource<ShoppingSession>()
-//        val dataLoader = dfe.getDataLoader<Long, List<CartItem>>(CartItemLoader::class.java)
-//
-//        val context = DgsContext.Companion.getCustomContext<CustomContext>(dfe)
-//        context.cartItemsInput.pagination = pagination
-//        return dataLoader.load(shoppingSession.id).get()
-        val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
-        val cartItems = cartService.getCartItemsByShoppingSessionId(shoppingSession.id!!, pageable)
-        return CartItemsOutput(
-            resultCount = cartItems.totalElements,
-            items = cartItems,
-        )
+        val context = DgsContext.getCustomContext<CustomContext>(dfe)
+        context.cartItemsInput.pagination = pagination
+
+        val dataLoader = dfe.getDataLoader<Long, Page<CartItem>>(CartItemLoader::class.java)
+        val  result = dataLoader.load(shoppingSession.id)
+        return result.thenApply { CartItemsOutput(
+            resultCount = it.totalElements,
+            items = it
+        ) }
     }
 
     @Transactional(readOnly = true)
@@ -83,6 +78,26 @@ class OrderFieldFetcher {
             0
         }
         return orderItemCount + customOrderItemCount
+    }
+
+    // total price
+    @Transactional(readOnly = true)
+    @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.TotalFlowerPrice)
+    fun totalFlowerPrice(dfe: DgsDataFetchingEnvironment): Int {
+        val orderSheet = dfe.getSource<OrderSheet>()
+        val orderItemPrice = if (orderSheet.orderItems.isNotEmpty()) {
+            val prices: List<Int> = orderSheet.orderItems.map { if (it.price == null) 0 else it.price!! }
+            prices.reduce { acc, i -> acc + i }
+        } else {
+            0
+        }
+        val customOrderItemPrice = if (orderSheet.customOrderItems.isNotEmpty()) {
+            val prices: List<Int> = orderSheet.customOrderItems.map { if (it.price == null) 0 else it.price!! }
+            prices.reduce { acc, i -> acc + i }
+        } else {
+            0
+        }
+        return orderItemPrice + customOrderItemPrice
     }
 
     @DgsData(parentType = DgsConstants.ORDERSHEET.TYPE_NAME, field = DgsConstants.ORDERSHEET.OrderItems)

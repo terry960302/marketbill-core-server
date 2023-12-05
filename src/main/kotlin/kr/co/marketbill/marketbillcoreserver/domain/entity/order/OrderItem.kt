@@ -44,6 +44,9 @@ data class OrderItem(
 
     @Column(name = "price", nullable = true)
     var price: Int? = null,
+
+    @Column(name = "memo", nullable = true, length = 600)
+    var memo: String? = null,
 ) : BaseTime() {
     @PostLoad
     @PostUpdate

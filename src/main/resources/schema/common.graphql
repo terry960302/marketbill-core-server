@@ -3,7 +3,7 @@ type CommonResponse{
 }
 
 extend type Query {
-    getCurrentDateTime : LocalDate
+    currentDateTime : LocalDate
 }
 
 extend type Mutation{

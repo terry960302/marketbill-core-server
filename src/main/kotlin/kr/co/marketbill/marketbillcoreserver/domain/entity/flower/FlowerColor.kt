@@ -5,24 +5,18 @@ import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*
 
-// 품목
+// 색상
 @Entity
-@Table(name = "flower_types")
-@SQLDelete(sql = "UPDATE flower_types SET deleted_at = current_timestamp WHERE id = ?")
+@Table(name = "flower_colors")
+@SQLDelete(sql = "UPDATE flower_colors SET deleted_at = current_timestamp WHERE id = ?")
 @Where(clause = "deleted_at is Null")
-data class FlowerType(
+data class FlowerColor(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
     val id: Long? = null,
 
     @Column(name = "name")
     val name: String = "",
-
-    @OneToMany(mappedBy = "flowerType", fetch = FetchType.LAZY)
-    val flowers: List<Flower> = arrayListOf(),
-
-    @Column(name = "img_url", length = 255, nullable = true)
-    val imgUrl: String? = null,
 
     ) : BaseTime() {
 }

@@ -15,12 +15,14 @@ input AddToCartInput{
     flowerId : Int!,
     quantity : Int!,
     grade : FlowerGrade!,
+    memo : String,
 }
 
 input UpdateCartItemInput{
     id : Int!,
     quantity : Int!,
     grade : FlowerGrade!,
+    memo: String,
 }
 
 input OrderCartItemsInput {
@@ -104,7 +106,6 @@ input DailyOrderItemFilterInput{
     dateRange : DateRangeInput,
 }
 
-# 둘중에 하나는 필수 입력
 input UpdateShoppingSessionInput{
     wholesalerId : Int,
     memo : String,
@@ -136,4 +137,53 @@ type FlowersOutput implements PaginationOutput{
 type CartItemsOutput implements PaginationOutput{
     resultCount : Int!
     items : [CartItem!]!
+}
+
+input AuctionResultFilterInput{
+    # "yyyy-MM-dd" 포맷 날짜 문자열(default 현재 날짜)
+    auctionDate: String,
+    # 이전 n일까지 조회(default 3일)
+    beforeDays: Int,
+    wholesalerId : Int!,
+}
+
+type AuctionResultsOutput implements PaginationOutput{
+    resultCount : Int!
+    items : [AuctionResult!]!
+}
+
+input AuctionResultDetailFilterInput{
+    id : Int!,
+}
+
+type AuctionResultDetailOutput{
+    item : AuctionResult!
+}
+
+input AuctionResultUpdateFilterInput{
+    id : Int!,
+    retailPrice : Int,
+    isSoldOut : Boolean,
+}
+
+type AuctionResultUpdateOutput{
+    item : AuctionResult!
+}
+
+input AuctionResultForSaleFilterInput{
+    wholesalerId : Int!
+}
+
+input AuctionResultForSaleDetailFilterInput{
+    id : Int!,
+}
+
+type AuctionResultForSaleOutput implements PaginationOutput{
+    resultCount : Int!
+    wholesalerId : Int!
+    items : [AuctionResultWithGroupBy!]!
+}
+
+type AuctionResultForSaleDetailOutput{
+    item : AuctionResult!
 }

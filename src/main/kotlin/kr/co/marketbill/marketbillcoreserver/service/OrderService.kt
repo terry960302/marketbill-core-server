@@ -12,7 +12,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessInput
 import kr.co.marketbill.marketbillcoreserver.domain.dto.ReceiptProcessOutput
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.repository.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.repository.user.BusinessInfoRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.*
@@ -83,70 +82,6 @@ class OrderService {
     private val logger: Logger = LoggerFactory.getLogger(OrderService::class.java)
     private val className = this.javaClass.simpleName
 
-    @Deprecated(message = "Replaced by orderAllCartItems")
-    @Transactional
-    fun orderCartItems(retailerId: Long): OrderSheet {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
-        try {
-            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
-                .map {
-                    it.orderedAt = LocalDateTime.now()
-                    it
-                }.get().toList()
-
-            if (cartItems.isEmpty()) throw CustomException(
-                message = "There's no cart items to order.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_CART_ITEM
-            )
-
-            val isAllConnectedWithWholesaler = cartItems.mapNotNull { it.wholesaler }.size == cartItems.size
-            if (!isAllConnectedWithWholesaler) throw CustomException(
-                message = "There's no connected wholesaler on cart items.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_CART_WHOLESALER
-            )
-            logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
-
-            cartItemRepository.saveAll(cartItems)
-            logger.info("$className.$executedFunc >> All cart items are ordered.")
-
-            val selectedRetailer: User = cartItems[0].retailer!!
-            val selectedWholesaler: User = cartItems[0].wholesaler!!
-
-            val orderSheet = OrderSheet(
-                orderNo = "",
-                retailer = selectedRetailer,
-                wholesaler = selectedWholesaler,
-            )
-            val savedOrderSheet = orderSheetRepository.save(orderSheet)
-            logger.info("$className.$executedFunc >> OrderSheet is created.")
-            savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
-            val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
-
-            val orderItems = cartItems.map {
-                OrderItem(
-                    retailer = it.retailer,
-                    orderSheet = updatedOrderSheet,
-                    wholesaler = selectedWholesaler,
-                    flower = it.flower,
-                    quantity = it.quantity,
-                    grade = it.grade,
-                    price = null,
-                )
-            }
-            val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
-            logger.info("$className.$executedFunc >> Order items are created by cart items.")
-            createOrderItemGroups(createdOrderItems)
-            logger.info("$className.$executedFunc >> completed.")
-            return updatedOrderSheet
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}")
-            throw e
-        }
-    }
-
     @Transactional
     fun orderAllCartItems(retailerId: Long): OrderSheet {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
@@ -185,6 +120,7 @@ class OrderService {
             logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
 
             cartItemRepository.saveAll(cartItems)
+            cartItemRepository.flush()
             logger.info("$className.$executedFunc >> All cart items are ordered.")
 
             shoppingSessionRepository.delete(shoppingSession.get())
@@ -210,6 +146,7 @@ class OrderService {
                     quantity = it.quantity,
                     grade = it.grade,
                     price = null,
+                    memo = it.memo,
                 )
             }
             val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
@@ -229,10 +166,7 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val orderSheets = orderSheetRepository.findAll(
-                OrderSheetSpecs.byUserId(userId, role).and(OrderSheetSpecs.atDate(date)),
-                pageable
-            )
+            val orderSheets : Page<OrderSheet> = orderSheetRepository.findAllWithFilters(pageable, userId, role, date)
             logger.info("$className.$executedFunc >> completed.")
             return orderSheets
         } catch (e: Exception) {
@@ -526,39 +460,126 @@ class OrderService {
                 )
             }
 
-            val customOrderItems = items.map {
-                val item = CustomOrderItem(
-                    id = it.id?.toLong(),
-                    orderSheet = orderSheet.get(),
-                    retailer = orderSheet.get().retailer,
-                    wholesaler = orderSheet.get().wholesaler,
-                    flowerName = it.flowerName?.trim(),
-                    flowerTypeName = it.flowerTypeName?.trim(),
-                    grade = if (it.grade != null) convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())) else null,
-                    quantity = it.quantity,
-                    price = it.price,
-                )
-                if (!item.flowerName.isNullOrBlank() && !item.flowerTypeName.isNullOrBlank() && item.grade != null) {
-                    val prevItem = customOrderItemRepository.findOne(
-                        CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
-                            .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
-                            .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
-                            .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
+            val oldShippingPrice =
+                orderSheet.get().customOrderItems.filter { it.flowerName.equals("배송비") }.maxByOrNull { it.id ?: 0 }
+            val shippingPriceItemFilter = items.filter { it.flowerName.equals("배송비") }
+            val newShippingPriceItem =
+                shippingPriceItemFilter.firstOrNull() ?: shippingPriceItemFilter.maxByOrNull { it.id ?: 0 }
+            val shippingPriceItem = if (newShippingPriceItem != null) {
+                if (oldShippingPrice == null) {
+                    CustomOrderItem(
+                        id = newShippingPriceItem.id?.toLong(),
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = newShippingPriceItem.flowerName?.trim(),
+                        flowerTypeName = newShippingPriceItem.flowerTypeName?.trim(),
+                        grade = if (newShippingPriceItem.grade != null) convertFlowerGradeToKor(
+                            FlowerGrade.valueOf(
+                                newShippingPriceItem.grade.toString()
+                            )
+                        ) else null,
+                        quantity = newShippingPriceItem.quantity,
+                        price = newShippingPriceItem.price,
                     )
-                    item.id = if (prevItem.isEmpty) null else prevItem.get().id
+                } else {
+                    oldShippingPrice.price = newShippingPriceItem.price
+                    CustomOrderItem(
+                        id = oldShippingPrice.id,
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = oldShippingPrice.flowerName?.trim(),
+                        flowerTypeName = oldShippingPrice.flowerTypeName?.trim(),
+                        grade = if (oldShippingPrice.grade != null) convertFlowerGradeToKor(
+                            FlowerGrade.valueOf(
+                                oldShippingPrice.grade.toString()
+                            )
+                        ) else null,
+                        quantity = oldShippingPrice.quantity,
+                        price = oldShippingPrice.price,
+                    )
                 }
-                item
+            } else {
+                oldShippingPrice?.let {
+                    CustomOrderItem(
+                        id = oldShippingPrice.id,
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = oldShippingPrice.flowerName?.trim(),
+                        flowerTypeName = oldShippingPrice.flowerTypeName?.trim(),
+                        grade = if (oldShippingPrice.grade != null) convertFlowerGradeToKor(
+                            FlowerGrade.valueOf(
+                                oldShippingPrice.grade.toString()
+                            )
+                        ) else null,
+                        quantity = oldShippingPrice.quantity,
+                        price = oldShippingPrice.price,
+                    )
+                }
             }
 
-            val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
+            val customOrderItems = items.filter { !it.flowerName.equals("배송비") }
+                .map {
+                    val item = CustomOrderItem(
+                        id = it.id?.toLong(),
+                        orderSheet = orderSheet.get(),
+                        retailer = orderSheet.get().retailer,
+                        wholesaler = orderSheet.get().wholesaler,
+                        flowerName = it.flowerName?.trim(),
+                        flowerTypeName = it.flowerTypeName?.trim(),
+                        grade = if (it.grade != null) convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())) else null,
+                        quantity = it.quantity,
+                        price = it.price,
+                    )
 
-            if(customOrderItems.any { it.price != null }){
-                orderSheet.get()
-                    .priceUpdatedAt = LocalDateTime.now()
+                    if (!item.flowerName.isNullOrBlank() && !item.flowerTypeName.isNullOrBlank() && item.grade != null) {
+                        val prevItem = customOrderItemRepository.findOne(
+                            CustomOrderItemSpecs.byOrderSheetId(orderSheetId)
+                                .and(CustomOrderItemSpecs.byFlowerName(item.flowerName))
+                                .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
+                                .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
+                        )
+                        item.id = if (prevItem.isEmpty) null else prevItem.get().id
+                    }
+                    item
+                }
+
+            val updateItems = customOrderItems + (shippingPriceItem?.let { listOf(it) } ?: listOf())
+            val affectedCustomOrderItems = customOrderItemRepository.saveAll(updateItems)
+
+            if (customOrderItems.any { it.price != null }) {
+                orderSheet.get().apply {
+                    priceUpdatedAt = LocalDateTime.now()
+                }
                 orderSheetRepository.save(orderSheet.get())
             }
             logger.info("$className.$executedFunc >> completed.")
             return affectedCustomOrderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}.")
+            throw e
+        }
+    }
+
+
+    @Transactional
+    fun removeCustomOrderItems(itemIds: List<Long>): List<Long> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val customOrderItems = customOrderItemRepository.findAllById(itemIds)
+            if (customOrderItems.isEmpty()) {
+                throw CustomException(
+                    message = "There's no custom order items data want to delete",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                )
+            }
+            customOrderItemRepository.deleteAll(customOrderItems)
+            logger.info("$className.$executedFunc >> completed.")
+            return itemIds
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
             throw e
@@ -587,6 +608,9 @@ class OrderService {
                         !it.flowerName.isNullOrBlank() &&
                         it.grade != null &&
                         it.quantity != null
+            }
+            val shippingItems: List<CustomOrderItem> = orderSheet.get().customOrderItems.filter {
+                it.flowerName.equals("배송비")
             }
 
             val isAllNullPrice =
@@ -622,7 +646,7 @@ class OrderService {
                     grade = it.grade!!,
                 )
             }
-            val customOrderItemsInput = customOrderItems.map {
+            val customOrderItemsInput = (customOrderItems + shippingItems).map {
                 ReceiptProcessInput.OrderItem(
                     flower = ReceiptProcessInput.Flower(
                         name = it.flowerName!!,
@@ -723,7 +747,7 @@ class OrderService {
     }
 
     @Transactional
-    private fun deleteOrderItemGroups(orderSheetId: Long) {
+    fun deleteOrderItemGroups(orderSheetId: Long) {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
