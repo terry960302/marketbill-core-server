@@ -1,6 +1,6 @@
-# Market Bill Core Server
+# MarketBill Core Server
 
-Market Bill은 화훼 시장의 경매와 거래를 디지털화하는 플랫폼입니다. 이 프로젝트는 Market Bill의 코어 백엔드 서버를 구현합니다.
+MarketBill은 화훼 시장의 경매와 거래를 디지털화하는 플랫폼입니다. 이 프로젝트는 MarketBill의 코어 백엔드 서버를 구현합니다.
 
 ## 기술 스택
 
@@ -52,4 +52,4 @@ Market Bill은 화훼 시장의 경매와 거래를 디지털화하는 플랫폼
 - JPA Specification을 활용한 동적 쿼리 구현
 - 페이지네이션 지원
 
-Market Bill 개발팀 (terry960302@gmail.com)
+MarketBill 개발팀 (terry960302@gmail.com)
