@@ -1,8 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.domain.specs
 
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.UserCredential
+import kr.co.marketbill.marketbillcoreserver.shared.constants.AccountRole
 import org.springframework.data.jpa.domain.Specification
 import javax.persistence.criteria.Join
 

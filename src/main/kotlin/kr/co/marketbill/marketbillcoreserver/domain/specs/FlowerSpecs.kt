@@ -11,13 +11,6 @@ import java.time.LocalDateTime
 @Component
 class FlowerSpecs {
     companion object {
-        fun createdAtDesc(): Specification<Flower> {
-            return Specification<Flower> { root, query, builder ->
-                query.orderBy(builder.desc(root.get<LocalDateTime>("createdAt")))
-                null
-            }
-        }
-
         fun nameLike(keyword: String?): Specification<Flower> {
             return Specification<Flower> { root, query, builder ->
                 if (keyword == null) {
@@ -25,18 +18,9 @@ class FlowerSpecs {
                 } else {
                     val namePredicate = builder.like(root.get("name"), "%${keyword}%")
                     val flowerType = root.join<Flower, FlowerType>("flowerType")
-                    val typeNamePredicate = builder.like(flowerType.get("name"), "%${keyword}%")
+                    val typeNamePredicate = builder.like(flowerType.get<String>("name"), "%${keyword}%")
                     builder.or(namePredicate, typeNamePredicate)
                 }
-            }
-        }
-
-        fun nameAndTypeNameLike(name: String?, typeName: String?): Specification<Flower> {
-            return Specification<Flower> { root, query, builder ->
-                val namePredicate = builder.like(root.get("name"), "%${name}%")
-                val flowerType = root.join<Flower, FlowerType>("flowerType")
-                val typeNamePredicate = builder.like(flowerType.get("name"), "%${typeName}%")
-                builder.and(namePredicate, typeNamePredicate)
             }
         }
 
@@ -50,13 +34,6 @@ class FlowerSpecs {
                     val biddingDate = biddingFlower.get<LocalDateTime>("biddingDate").`as`(LocalDate::class.java)
                     builder.between(biddingDate, fromDate, toDate)
                 }
-            }
-        }
-
-        fun imagesDesc(): Specification<Flower> {
-            return Specification<Flower> { root, query, builder ->
-                query.orderBy(builder.desc(root.get<String>("images")))
-                builder.conjunction()
             }
         }
     }

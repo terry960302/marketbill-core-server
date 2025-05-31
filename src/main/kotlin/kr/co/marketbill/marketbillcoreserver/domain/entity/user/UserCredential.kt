@@ -1,7 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.user
 
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
+import kr.co.marketbill.marketbillcoreserver.shared.constants.AccountRole
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*

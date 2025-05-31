@@ -1,6 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.domain.vo
 
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
+import kr.co.marketbill.marketbillcoreserver.shared.constants.AccountRole
 import org.springframework.security.core.GrantedAuthority
 import org.springframework.security.core.authority.SimpleGrantedAuthority
 import org.springframework.security.core.userdetails.UserDetails

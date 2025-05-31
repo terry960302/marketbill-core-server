@@ -1,11 +1,11 @@
 package kr.co.marketbill.marketbillcoreserver.domain.specs
 
-import kr.co.marketbill.marketbillcoreserver.constants.ApplyStatus
+import javax.persistence.criteria.Join
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BizConnection
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ApplyStatus
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Component
-import javax.persistence.criteria.Join
 
 @Component
 class BizConnSpecs {
@@ -54,7 +54,6 @@ class BizConnSpecs {
             }
         }
 
-
         fun isRetailerId(retailerId: Long?): Specification<BizConnection> {
             return Specification<BizConnection> { root, query, builder ->
                 if (retailerId == null) {
@@ -63,7 +62,7 @@ class BizConnSpecs {
                     val retailer: Join<BizConnection, User> = root.join("retailer")
                     builder.equal(retailer.get<Long>("id"), retailerId)
                 }
-            };
+            }
         }
 
         fun isWholesalerId(wholesalerId: Long?): Specification<BizConnection> {
@@ -74,8 +73,7 @@ class BizConnSpecs {
                     val wholesaler: Join<BizConnection, User> = root.join("wholesaler")
                     builder.equal(wholesaler.get<Long>("id"), wholesalerId)
                 }
-            };
+            }
         }
-
     }
 }

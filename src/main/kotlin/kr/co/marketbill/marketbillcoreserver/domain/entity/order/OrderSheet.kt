@@ -49,9 +49,6 @@ data class OrderSheet(
     var totalFlowerTypeCount: Int = 0,
 
     @Transient
-    var totalFlowerPrice: Int = 0,
-
-    @Transient
     var hasReceipt: Boolean = false,
 
     @Transient

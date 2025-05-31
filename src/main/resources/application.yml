@@ -1,0 +1,28 @@
+spring:
+  profiles:
+    active: local
+
+dgs:
+  graphql:
+    graphiql:
+      title: "MarketBill-Core-Server"
+      enabled: true
+    path: /graphql # 서버 엔드포인트(콘솔x)
+logging:
+  file:
+    max-history: 9999999
+    max-size: 100MB
+    name: logs/all_logs.log
+  level: # Trace < Debug < Info < Warn < Error < Fatal
+    jdbc: OFF
+    jdbc.sqlonly: DEBUG
+    org.springframework.web: WARN
+    org.hibernate.SQL: DEBUG
+    org.hibernate.type: DEBUG
+    kr.co.marketbill.marketbillcoreserver: DEBUG
+    
+server:
+  host: localhost
+  port: 8080
+
+

@@ -1,10 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.domain.specs
 
-import kr.co.marketbill.marketbillcoreserver.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheetReceipt
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import org.springframework.data.jpa.domain.Specification
 import org.springframework.stereotype.Component
 

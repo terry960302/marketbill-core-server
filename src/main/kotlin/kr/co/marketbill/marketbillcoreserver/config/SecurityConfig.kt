@@ -1,8 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.config
 
 import graphql.com.google.common.collect.ImmutableList
-import kr.co.marketbill.marketbillcoreserver.security.JwtAuthFilter
-import kr.co.marketbill.marketbillcoreserver.security.JwtExceptionFilter
+import kr.co.marketbill.marketbillcoreserver.infrastructure.security.JwtAuthFilter
+import kr.co.marketbill.marketbillcoreserver.infrastructure.security.JwtExceptionFilter
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration

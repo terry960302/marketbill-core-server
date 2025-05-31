@@ -1,8 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
-import kr.co.marketbill.marketbillcoreserver.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
 import javax.persistence.*
