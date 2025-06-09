@@ -27,7 +27,8 @@ import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.net.URL
+import kr.co.marketbill.marketbillcoreserver.domain.validator.PasswordValidator
+import kr.co.marketbill.marketbillcoreserver.domain.validator.UrlValidator
 import java.util.*
 import javax.persistence.EntityManager
 
@@ -186,7 +187,7 @@ class UserService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val isValidPassword = validatePassword(input.password)
+            val isValidPassword = PasswordValidator.isValid(input.password)
             if (!isValidPassword) {
                 throw CustomException(
                     message = "Invalid format of password. Password must be at least 8 letters including english, number, special characters with no whitespaces.",
@@ -269,7 +270,7 @@ class UserService {
     fun upsertBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
-        val isValidStampUrl = validateUrl(input.sealStampImgUrl)
+        val isValidStampUrl = UrlValidator.isValid(input.sealStampImgUrl)
         if (!isValidStampUrl) {
             val msg = "Invalid seal stamp img url. Please check url format."
             logger.error("$className.$executedFunc >> $msg")
@@ -621,19 +622,5 @@ class UserService {
         }
     }
 
-    private fun validateUrl(urlString: String?): Boolean {
-        return try {
-            URL(urlString)
-            true
-        } catch (ignored: Exception) {
-            false
-        }
-    }
-
-    private fun validatePassword(password: String): Boolean {
-        // 영문, 숫자, 특수문자 조합 + 공백없음 + 8자 이상
-        val minLength = 8
-        val passwordPattern = "^(?!.* )(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@#\$%^&*]).{$minLength,}\$".toRegex()
-        return password.matches(passwordPattern)
-    }
+    
 }
