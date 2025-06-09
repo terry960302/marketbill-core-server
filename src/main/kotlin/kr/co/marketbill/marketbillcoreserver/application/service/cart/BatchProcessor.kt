@@ -8,8 +8,6 @@ import kr.co.marketbill.marketbillcoreserver.domain.validator.CartItemValidator
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.BatchCartToOrderLogsRepository
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.CartItemRepository
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.user.UserRepository
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Component
 import org.springframework.transaction.annotation.Transactional
@@ -24,14 +22,11 @@ class BatchProcessor(
         private val orderConverter: OrderConverter,
         private val cartItemValidator: CartItemValidator
 ) {
-    private val logger: Logger = LoggerFactory.getLogger(BatchProcessor::class.java)
-    private val className = this.javaClass.simpleName
 
     /** 매일 오후 10시에 자동으로 장바구니 상품을 주문으로 변환합니다. */
     @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
     @Transactional
     fun processBatchOrder() {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
         val log =
                 BatchCartToOrderLogs(
                         cartItemsCount = 0,
@@ -49,14 +44,11 @@ class BatchProcessor(
 
             log.orderSheetCount = cartItemGroup.size
             log.orderItemCount = validCartItems.size
-            logger.info("$className.$executedFunc >> done(no issue).")
         } catch (e: Exception) {
             log.errLogs = e.message
-            logger.error("$className.$executedFunc >> ${e.message}")
             throw e
         } finally {
             batchCartToOrderLogsRepository.save(log)
-            logger.info("$className.$executedFunc >> completed.")
         }
     }
 
