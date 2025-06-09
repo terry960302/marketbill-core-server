@@ -8,25 +8,29 @@ import java.util.stream.Collectors
 
 
 class CustomUserDetails(
-    private val phoneNo: String, private val role: AccountRole
+    private val phoneNo: String,
+    private val role: AccountRole,
+    private val password: String,
+    private val accountNonExpired: Boolean = true,
+    private val accountNonLocked: Boolean = true,
+    private val credentialsNonExpired: Boolean = true,
+    private val enabled: Boolean = true,
 ) : UserDetails {
 
-
     override fun getAuthorities(): Collection<GrantedAuthority> {
-        return arrayListOf(role).stream().map { role -> SimpleGrantedAuthority("ROLE_$role") }
-            .collect(Collectors.toSet())
+        return listOf(SimpleGrantedAuthority("ROLE_${role.name}"))
     }
 
     override fun getPassword(): String = password
 
     override fun getUsername(): String = phoneNo
 
-    override fun isAccountNonExpired(): Boolean = isAccountNonExpired
+    override fun isAccountNonExpired(): Boolean = accountNonExpired
 
-    override fun isAccountNonLocked(): Boolean = isAccountNonLocked
+    override fun isAccountNonLocked(): Boolean = accountNonLocked
 
-    override fun isCredentialsNonExpired(): Boolean = isCredentialsNonExpired
+    override fun isCredentialsNonExpired(): Boolean = credentialsNonExpired
 
-    override fun isEnabled(): Boolean = isEnabled
+    override fun isEnabled(): Boolean = enabled
 }
 
