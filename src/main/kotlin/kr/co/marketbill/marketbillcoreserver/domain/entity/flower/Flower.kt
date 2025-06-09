@@ -2,15 +2,11 @@ package kr.co.marketbill.marketbillcoreserver.domain.entity.flower
 
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderItem
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
+import kr.co.marketbill.marketbillcoreserver.domain.entity.common.SoftDeleteEntity
 import javax.persistence.*
 // 품종
 @Entity
 @Table(name = "flowers")
-@SQLDelete(sql = "UPDATE flowers SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
 class Flower(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -31,5 +27,5 @@ class Flower(
 
     @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY)
     val orderItems: List<OrderItem>? = null,
-    ) : BaseTime() {
+    ) : SoftDeleteEntity() {
 }

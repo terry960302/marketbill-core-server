@@ -88,35 +88,33 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val shoppingSession: Optional<ShoppingSession> =
-                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+            val shoppingSession = shoppingSessionRepository
+                .findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+                .orElseThrow {
+                    CustomException(
+                        message = "There's no shopping_session whose retailerID is $retailerId.",
+                        errorType = ErrorType.NOT_FOUND,
+                        errorCode = ErrorCode.NO_SHOPPING_SESSION
+                    )
+                }
             val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
                 .map {
                     it.orderedAt = LocalDateTime.now()
                     it
-                }.get().toList()
-
-            if (shoppingSession.isEmpty) {
-                throw CustomException(
-                    message = "There's no shopping_session whose retailerID is $retailerId.",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION
-                )
-
-            }
+                }.content
 
             if (cartItems.isEmpty()) throw CustomException(
                 message = "There's no cart items to order.",
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_CART_ITEM
+                errorCode = ErrorCode.NO_CART_ITEM
             )
 
             val isAllConnectedWithWholesaler =
-                cartItems.mapNotNull { it.wholesaler }.size == cartItems.size && shoppingSession.get().wholesaler != null
+                cartItems.mapNotNull { it.wholesaler }.size == cartItems.size && shoppingSession.wholesaler != null
             if (!isAllConnectedWithWholesaler) throw CustomException(
                 message = "There's no connected wholesaler on cart items.",
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_CART_WHOLESALER
+                errorCode = ErrorCode.NO_CART_WHOLESALER
             )
             logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
 
@@ -124,14 +122,14 @@ class OrderService {
             cartItemRepository.flush()
             logger.info("$className.$executedFunc >> All cart items are ordered.")
 
-            shoppingSessionRepository.delete(shoppingSession.get())
+            shoppingSessionRepository.delete(shoppingSession)
             logger.info("$className.$executedFunc >> Shopping_session of retailer($retailerId) is deleted(closed).")
 
             val orderSheet = OrderSheet(
                 orderNo = "",
-                retailer = shoppingSession.get().retailer,
-                wholesaler = shoppingSession.get().wholesaler,
-                memo = shoppingSession.get().memo,
+                retailer = shoppingSession.retailer,
+                wholesaler = shoppingSession.wholesaler,
+                memo = shoppingSession.memo,
             )
             val savedOrderSheet = orderSheetRepository.save(orderSheet)
             logger.info("$className.$executedFunc >> OrderSheet is created.")
@@ -142,7 +140,7 @@ class OrderService {
                 OrderItem(
                     retailer = it.retailer,
                     orderSheet = updatedOrderSheet,
-                    wholesaler = shoppingSession.get().wholesaler,
+                    wholesaler = shoppingSession.wholesaler,
                     flower = it.flower,
                     quantity = it.quantity,
                     grade = it.grade,
@@ -270,17 +268,15 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
-            if (orderSheet.isEmpty) {
-                throw CustomException(
+            val orderSheet = orderSheetRepository.findById(orderSheetId).orElseThrow {
+                CustomException(
                     message = "There's no order sheet data whose id is $orderSheetId",
                     errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                    errorCode = ErrorCode.NO_ORDER_SHEET
                 )
-            } else {
-                logger.info("$className.$executedFunc >> completed.")
-                return orderSheet.get()
             }
+            logger.info("$className.$executedFunc >> completed.")
+            return orderSheet
         } catch (e: Exception) {
             logger.error("$className.$executedFunc >> ${e.message}.")
             throw e
@@ -292,12 +288,11 @@ class OrderService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val orderSheet = orderSheetRepository.findById(orderSheetId)
-            if (orderSheet.isEmpty) {
-                throw CustomException(
+            orderSheetRepository.findById(orderSheetId).orElseThrow {
+                CustomException(
                     message = "There's no order sheet data want to delete",
                     errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                    errorCode = ErrorCode.NO_ORDER_SHEET
                 )
             }
             deleteOrderItemGroups(orderSheetId)
@@ -456,16 +451,16 @@ class OrderService {
                 throw CustomException(
                     message = "There's no OrderSheet data whose id is $orderSheetId",
                     errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_ORDER_SHEET
+                    errorCode = ErrorCode.NO_ORDER_SHEET
                 )
             }
 
             val customOrderItems = items.map {
                 val item = CustomOrderItem(
                     id = it.id?.toLong(),
-                    orderSheet = orderSheet.get(),
-                    retailer = orderSheet.get().retailer,
-                    wholesaler = orderSheet.get().wholesaler,
+                    orderSheet = orderSheet,
+                    retailer = orderSheet.retailer,
+                    wholesaler = orderSheet.wholesaler,
                     flowerName = it.flowerName?.trim(),
                     flowerTypeName = it.flowerTypeName?.trim(),
                     grade = if (it.grade != null) convertFlowerGradeToKor(FlowerGrade.valueOf(it.grade.toString())) else null,
@@ -479,7 +474,7 @@ class OrderService {
                             .and(CustomOrderItemSpecs.byFlowerTypeName(item.flowerTypeName))
                             .and(CustomOrderItemSpecs.byFlowerGrade(item.grade))
                     )
-                    item.id = if (prevItem.isEmpty) null else prevItem.get().id
+                    item.id = prevItem.map { it.id }.orElse(null)
                 }
                 item
             }
@@ -487,9 +482,8 @@ class OrderService {
             val affectedCustomOrderItems = customOrderItemRepository.saveAll(customOrderItems)
 
             if (customOrderItems.any { it.price != null }) {
-                orderSheet.get()
-                    .priceUpdatedAt = LocalDateTime.now()
-                orderSheetRepository.save(orderSheet.get())
+                orderSheet.priceUpdatedAt = LocalDateTime.now()
+                orderSheetRepository.save(orderSheet)
             }
             logger.info("$className.$executedFunc >> completed.")
             return affectedCustomOrderItems
@@ -506,17 +500,17 @@ class OrderService {
         try {
             logger.info("$className.$executedFunc >> init")
 
-            val orderSheet: Optional<OrderSheet> = orderSheetRepository.findById(orderSheetId)
-            if (orderSheet.isEmpty) throw CustomException(
-                message = "There's no OrderSheet data whose id is $orderSheetId",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_ORDER_SHEET
-            )
+            val orderSheet = orderSheetRepository.findById(orderSheetId).orElseThrow {
+                CustomException(
+                    message = "There's no OrderSheet data whose id is $orderSheetId",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = ErrorCode.NO_ORDER_SHEET
+                )
+            }
             logger.info("$className.$executedFunc >> orderSheet is existed.")
 
-
-            val orderItems: List<OrderItem> = orderSheet.get().orderItems
-            val customOrderItems: List<CustomOrderItem> = orderSheet.get().customOrderItems.filter {
+            val orderItems: List<OrderItem> = orderSheet.orderItems
+            val customOrderItems: List<CustomOrderItem> = orderSheet.customOrderItems.filter {
                 !it.flowerTypeName.isNullOrBlank() &&
                         !it.flowerName.isNullOrBlank() &&
                         it.grade != null &&
@@ -531,18 +525,19 @@ class OrderService {
                 throw CustomException(
                     message = "Not able to issue receipt with order items in case of all items have empty price(or zero/minus price).",
                     errorType = ErrorType.INTERNAL,
-                    errorCode = CustomErrorCode.NO_PRICE_ORDER_ITEM
+                    errorCode = ErrorCode.NO_PRICE_ORDER_ITEM
                 )
             }
             logger.info("$className.$executedFunc >> order items price data validated.")
 
-            val wholesalerBusinessInfo: Optional<BusinessInfo> =
-                businessInfoRepository.findByUserId(orderSheet.get().wholesaler!!.id!!)
-            if (wholesalerBusinessInfo.isEmpty) throw CustomException(
-                message = "There's no business info data on wholesaler. Need to upload business info to wholesaler first. Not able to process receipt without business info data.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_BUSINESS_INFO
-            )
+            val wholesalerBusinessInfo =
+                businessInfoRepository.findByUserId(orderSheet.wholesaler!!.id!!).orElseThrow {
+                    CustomException(
+                        message = "There's no business info data on wholesaler. Need to upload business info to wholesaler first. Not able to process receipt without business info data.",
+                        errorType = ErrorType.NOT_FOUND,
+                        errorCode = ErrorCode.NO_BUSINESS_INFO
+                    )
+                }
             logger.info("$className.$executedFunc >> businessInfo of wholesaler is validated.")
 
             val orderItemsInput = orderItems.map {
@@ -569,18 +564,18 @@ class OrderService {
             }
 
             val input = ReceiptProcessInput(
-                orderNo = orderSheet.get().orderNo,
-                retailer = ReceiptProcessInput.Retailer(name = orderSheet.get().retailer!!.name!!),
+                orderNo = orderSheet.orderNo,
+                retailer = ReceiptProcessInput.Retailer(name = orderSheet.retailer!!.name!!),
                 wholesaler = ReceiptProcessInput.Wholesaler(
-                    businessNo = orderSheet.get().wholesaler!!.businessInfo!!.businessNo,
-                    companyName = orderSheet.get().wholesaler!!.businessInfo!!.companyName,
-                    employerName = orderSheet.get().wholesaler!!.businessInfo!!.employerName,
-                    sealStampImgUrl = orderSheet.get().wholesaler!!.businessInfo!!.sealStampImgUrl,
-                    address = orderSheet.get().wholesaler!!.businessInfo!!.address,
-                    companyPhoneNo = orderSheet.get().wholesaler!!.businessInfo!!.companyPhoneNo,
-                    businessMainCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessMainCategory,
-                    businessSubCategory = orderSheet.get().wholesaler!!.businessInfo!!.businessSubCategory,
-                    bankAccount = orderSheet.get().wholesaler!!.businessInfo!!.bankAccount,
+                    businessNo = orderSheet.wholesaler!!.businessInfo!!.businessNo,
+                    companyName = orderSheet.wholesaler!!.businessInfo!!.companyName,
+                    employerName = orderSheet.wholesaler!!.businessInfo!!.employerName,
+                    sealStampImgUrl = orderSheet.wholesaler!!.businessInfo!!.sealStampImgUrl,
+                    address = orderSheet.wholesaler!!.businessInfo!!.address,
+                    companyPhoneNo = orderSheet.wholesaler!!.businessInfo!!.companyPhoneNo,
+                    businessMainCategory = orderSheet.wholesaler!!.businessInfo!!.businessMainCategory,
+                    businessSubCategory = orderSheet.wholesaler!!.businessInfo!!.businessSubCategory,
+                    bankAccount = orderSheet.wholesaler!!.businessInfo!!.bankAccount,
                 ),
                 orderItems = orderItemsInput + customOrderItemsInput
             )
@@ -603,9 +598,9 @@ class OrderService {
 
             logger.info("$className.$executedFunc >> OrderSheetReceipt is created.")
 
-            val targetPhoneNo = orderSheet.get().retailer!!.userCredential!!.phoneNo
-            val wholesalerName = orderSheet.get().wholesaler!!.name!!
-            val orderNo = orderSheet.get().orderNo
+            val targetPhoneNo = orderSheet.retailer!!.userCredential!!.phoneNo
+            val wholesalerName = orderSheet.wholesaler!!.name!!
+            val orderNo = orderSheet.orderNo
 
             runBlocking {
                 messagingService.sendIssueOrderSheetReceiptSMS(

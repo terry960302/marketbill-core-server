@@ -7,7 +7,7 @@ import io.jsonwebtoken.SignatureAlgorithm
 import kr.co.marketbill.marketbillcoreserver.application.dto.response.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.application.service.user.CustomUserDetailsService
 import kr.co.marketbill.marketbillcoreserver.shared.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.shared.exception.CustomException
 import org.slf4j.Logger
 import org.slf4j.LoggerFactory
@@ -115,7 +115,7 @@ class JwtProvider(
         if (cookies.isEmpty() || tokens.isEmpty()) throw CustomException(
             message = JwtAuthFilter.NO_TOKEN_ERR,
             errorType = ErrorType.UNAUTHENTICATED,
-            errorCode = CustomErrorCode.TOKEN_NEEDED
+            errorCode = ErrorCode.TOKEN_NEEDED
         )
         return tokens[0].value
     }

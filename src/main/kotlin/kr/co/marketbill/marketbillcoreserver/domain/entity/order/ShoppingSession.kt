@@ -1,15 +1,11 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
 import javax.persistence.*
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
+import kr.co.marketbill.marketbillcoreserver.domain.entity.common.SoftDeleteEntity
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
 
 @Entity
 @Table(name = "shopping_sessions")
-@SQLDelete(sql = "UPDATE shopping_sessions SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
 class ShoppingSession
 private constructor(
         @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
@@ -23,7 +19,7 @@ private constructor(
                 fetch = FetchType.LAZY
         )
         val cartItems: List<CartItem> = listOf()
-) : BaseTime() {
+) : SoftDeleteEntity() {
 
     companion object {
         fun createWith(

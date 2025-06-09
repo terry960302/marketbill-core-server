@@ -1,15 +1,11 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.flower
 
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
+import kr.co.marketbill.marketbillcoreserver.domain.entity.common.SoftDeleteEntity
 import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
 @Table(name = "bidding_flowers")
-@SQLDelete(sql = "UPDATE bidding_flowers SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
 data class BiddingFlower(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -21,5 +17,5 @@ data class BiddingFlower(
 
     @Column(name = "bidding_date")
     val biddingDate: LocalDateTime = LocalDateTime.now(),
-) : BaseTime() {
+) : SoftDeleteEntity() {
 }

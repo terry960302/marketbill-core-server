@@ -5,7 +5,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
 import kr.co.marketbill.marketbillcoreserver.domain.validator.CartItemValidator
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.CartItemRepository
-import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.shared.exception.MarketbillException
 import org.springframework.stereotype.Component
 
@@ -54,7 +54,7 @@ class CartItemService(
     /** ID로 장바구니 아이템을 조회합니다. */
     fun findCartItemById(id: Long): CartItem {
         return cartItemRepository.findById(id).orElseThrow {
-            MarketbillException(CustomErrorCode.NO_CART_ITEM)
+            MarketbillException(ErrorCode.NO_CART_ITEM)
         }
     }
 

@@ -1,14 +1,10 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.user
 
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
+import kr.co.marketbill.marketbillcoreserver.domain.entity.common.SoftDeleteEntity
 import javax.persistence.*
 
 @Entity
 @Table(name = "wholesaler_connections")
-@SQLDelete(sql = "UPDATE wholesaler_connections SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
 data class WholesalerConnection(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -23,5 +19,5 @@ data class WholesalerConnection(
     @ManyToOne(fetch = FetchType.EAGER)
     @JoinColumn(name = "employee_id", nullable = false)
     val employee: User? = null,
-) : BaseTime() {
+) : SoftDeleteEntity() {
 }

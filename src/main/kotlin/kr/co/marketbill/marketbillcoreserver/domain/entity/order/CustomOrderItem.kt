@@ -1,10 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
+import kr.co.marketbill.marketbillcoreserver.domain.entity.common.SoftDeleteEntity
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
 import javax.persistence.*
 
 /**
@@ -12,8 +10,6 @@ import javax.persistence.*
  */
 @Entity
 @Table(name = "custom_order_items")
-@SQLDelete(sql = "UPDATE custom_order_items SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
 data class CustomOrderItem(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -48,7 +44,7 @@ data class CustomOrderItem(
 
     @Column(name = "price", nullable = true)
     var price: Int? = null,
-) : BaseTime() {
+) : SoftDeleteEntity() {
     @PostLoad
     @PostUpdate
     fun postLoad() {

@@ -1,16 +1,12 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
+import kr.co.marketbill.marketbillcoreserver.domain.entity.common.SoftDeleteEntity
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
 import java.time.LocalDateTime
 import javax.persistence.*
 
 @Entity
 @Table(name = "order_sheets")
-@SQLDelete(sql = "UPDATE order_sheets SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
 data class OrderSheet(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
@@ -56,7 +52,7 @@ data class OrderSheet(
 
     @Transient
     var isPriceUpdated: Boolean = false,
-) : BaseTime() {
+) : SoftDeleteEntity() {
 
     @PostLoad
     @PostUpdate

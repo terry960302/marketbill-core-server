@@ -2,7 +2,7 @@ package kr.co.marketbill.marketbillcoreserver.application.service.user
 
 import com.netflix.graphql.types.errors.ErrorType
 import kr.co.marketbill.marketbillcoreserver.shared.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.user.UserCredentialRepository
 import kr.co.marketbill.marketbillcoreserver.domain.vo.CustomUserDetails
 import kr.co.marketbill.marketbillcoreserver.shared.exception.CustomException
@@ -26,17 +26,15 @@ class CustomUserDetailsService : UserDetailsService {
 
         try {
             val userId = username!!.toLong()
-            val credential = userCredentialRepository.getUserCredentialByUserId(userId)
-
-            val hasCred = credential.isPresent
-            if (!hasCred) throw CustomException(
-                message = "There's no user whose userId is $userId",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
-            )
+            val cred = userCredentialRepository.getUserCredentialByUserId(userId)
+                .orElseThrow {
+                    CustomException(
+                        message = "There's no user whose userId is $userId",
+                        errorType = ErrorType.NOT_FOUND,
+                        errorCode = ErrorCode.NO_USER
+                    )
+                }
             logger.trace("$className.$executedFunc >> user credential is existed.")
-
-            val cred = credential.get()
             val createdDetails = CustomUserDetails(
                 phoneNo = cred.phoneNo,
                 role = AccountRole.values()

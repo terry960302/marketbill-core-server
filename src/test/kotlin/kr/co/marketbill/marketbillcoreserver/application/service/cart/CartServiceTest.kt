@@ -47,8 +47,8 @@ class CartServiceTest {
 
     @BeforeEach
     fun setUp() {
-        retailer = User(name = "retailer", belongsTo = null)
-        wholesaler = User(name = "wholesaler", belongsTo = "양재")
+        retailer = User.builder(name = "retailer", belongsTo = null)
+        wholesaler = User.builder(name = "wholesaler", belongsTo = "양재")
         flowerType = FlowerType(name = "장미")
         flower = Flower(name = "장미", flowerType = flowerType)
         shoppingSession =

@@ -19,7 +19,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.OrderSheet
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import kr.co.marketbill.marketbillcoreserver.infrastructure.security.JwtProvider
 import kr.co.marketbill.marketbillcoreserver.shared.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.shared.exception.CustomException
 import kr.co.marketbill.marketbillcoreserver.shared.util.GqlDtoConverter
@@ -104,8 +104,8 @@ class OrderFetcher {
         var date: LocalDate? = null
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
-        if (authorization.isPresent) {
-            val token = jwtProvider.filterOnlyToken(authorization.get())
+        authorization.ifPresent {
+            val token = jwtProvider.filterOnlyToken(it)
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
 
@@ -136,8 +136,8 @@ class OrderFetcher {
         var role: AccountRole? = null
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
-        if (authorization.isPresent) {
-            val token = jwtProvider.filterOnlyToken(authorization.get())
+        authorization.ifPresent {
+            val token = jwtProvider.filterOnlyToken(it)
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
 
@@ -306,7 +306,7 @@ class OrderFetcher {
             throw CustomException(
                 message = "All custom_order_items are composed of empty objects.",
                 errorType = ErrorType.BAD_REQUEST,
-                errorCode = CustomErrorCode.INVALID_DATA
+                errorCode = ErrorCode.INVALID_DATA
             )
         }
         return orderService.upsertCustomOrderItems(input.orderSheetId.toLong(), filteredInput)

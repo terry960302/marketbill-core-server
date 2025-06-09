@@ -83,19 +83,17 @@ class UserService {
     @Transactional(readOnly = true)
     fun getUser(userId: Long): User {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-        val user: Optional<User> = userRepository.findById(userId)
-        if (user.isEmpty) {
+        val user = userRepository.findById(userId).orElseThrow {
             val msg = "There's no user whose id is $userId"
             logger.error("$className.$executedFunc >> $msg")
-            throw CustomException(
+            CustomException(
                 message = msg,
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
+                errorCode = ErrorCode.NO_USER
             )
-        } else {
-            logger.info("$className.$executedFunc >> completed.")
-            return user.get()
         }
+        logger.info("$className.$executedFunc >> completed.")
+        return user
     }
 
     @Transactional(readOnly = true)
@@ -124,7 +122,7 @@ class UserService {
             throw CustomException(
                 message = msg,
                 errorType = ErrorType.UNAUTHENTICATED,
-                errorCode = CustomErrorCode.TOKEN_NEEDED
+                errorCode = ErrorCode.TOKEN_NEEDED
             )
         }
         if (role == AccountRole.RETAILER) {
@@ -134,8 +132,7 @@ class UserService {
             val usersWithApplyStatus = users.map {
                 val connections = it.receivedConnections.filter { conn -> conn.retailer!!.id == userId }
                 if (connections.isNotEmpty()) {
-                    it.applyStatus = connections[0].applyStatus
-                    it.bizConnectionId = connections[0].id
+                    it.updateApplyInfo(connections[0].applyStatus, connections[0].id)
                 }
                 it
             }
@@ -148,8 +145,7 @@ class UserService {
             val usersWithApplyStatus = users.map {
                 val connections = it.appliedConnections.filter { conn -> conn.wholesaler!!.id == userId }
                 if (connections.isNotEmpty()) {
-                    it.applyStatus = connections[0].applyStatus
-                    it.bizConnectionId = connections[0].id
+                    it.updateApplyInfo(connections[0].applyStatus, connections[0].id)
                 }
                 it
             }
@@ -169,7 +165,7 @@ class UserService {
                 throw CustomException(
                     message = msg,
                     errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_USER
+                    errorCode = ErrorCode.NO_USER
                 )
             }
             userRepository.deleteById(userId)
@@ -190,34 +186,32 @@ class UserService {
                 throw CustomException(
                     message = "Invalid format of password. Password must be at least 8 letters including english, number, special characters with no whitespaces.",
                     errorType = ErrorType.BAD_REQUEST,
-                    errorCode = CustomErrorCode.INVALID_FORMAT,
+                    errorCode = ErrorCode.INVALID_FORMAT,
                 )
             }
             logger.info("$className.$executedFunc >> password for updating is validated.")
 
-            val user: Optional<User> = userRepository.findById(input.userId.toLong())
-            if (user.isEmpty) {
-                throw CustomException(
+            val user = userRepository.findById(input.userId.toLong()).orElseThrow {
+                CustomException(
                     message = "There's no user whose id is ${input.userId}",
                     errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_USER
+                    errorCode = ErrorCode.NO_USER
                 )
             }
             logger.info("$className.$executedFunc >> user(password owner) is existed.")
 
-
-            val phoneNo: String = user.get().userCredential!!.phoneNo
+            val phoneNo: String = user.userCredential!!.phoneNo
             if (phoneNo != input.phoneNo) {
                 throw CustomException(
                     message = "Phone Number(by DB) and Phone Number(by input) is not matched. Please check phone number that you use when sign up.",
                     errorType = ErrorType.BAD_REQUEST,
-                    errorCode = CustomErrorCode.INVALID_DATA
+                    errorCode = ErrorCode.INVALID_DATA
                 )
             }
             logger.info("$className.$executedFunc >> DB phoneNo data and input phoneNo data is matched.")
 
-            val credential = user.get().userCredential
-            credential!!.password = passwordEncoder.encode(input.password)
+            val credential = user.userCredential
+            credential!!.updatePassword(passwordEncoder.encode(input.password))
             userCredentialRepository.save(credential)
             logger.info("$className.$executedFunc >> completed.")
         } catch (e: Exception) {
@@ -277,7 +271,7 @@ class UserService {
             throw CustomException(
                 message = msg,
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.INVALID_FORMAT
+                errorCode = ErrorCode.INVALID_FORMAT
             )
         }
         logger.info("$className.$executedFunc >> stamp url validated.")
@@ -289,12 +283,12 @@ class UserService {
             throw CustomException(
                 message = msg,
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
+                errorCode = ErrorCode.NO_USER
             )
         }
         logger.info("$className.$executedFunc >> userID(${input.userId}) is existed.")
 
-        val newBusinessInfo = BusinessInfo(
+        val newBusinessInfo = BusinessInfo.create(
             user = entityManager.getReference(User::class.java, input.userId.toLong()),
             companyName = input.companyName,
             companyPhoneNo = input.companyPhoneNo,
@@ -304,12 +298,10 @@ class UserService {
             businessNo = input.businessNo,
             sealStampImgUrl = input.sealStampImgUrl,
             bankAccount = input.bankAccount,
-            address = input.address
+            address = input.address,
         )
-        val prevBusinessInfo = businessInfoRepository.findByUserId(input.userId.toLong())
-        if (prevBusinessInfo.isPresent) {
-            newBusinessInfo.id = prevBusinessInfo.get().id
-        }
+        businessInfoRepository.findByUserId(input.userId.toLong())
+            .ifPresent { newBusinessInfo.assignId(it.id) }
         logger.info("$className.$executedFunc >> businessInfo object is created.")
 
         val upsertedBusinessInfo = businessInfoRepository.save(newBusinessInfo)
@@ -365,7 +357,7 @@ class UserService {
             throw CustomException(
                 message = EMPLOYEE_SIGN_UP_WITHOUT_EMPLOYER_ERR,
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.EMPLOYER_SIGNUP_NEEDED
+                errorCode = ErrorCode.EMPLOYER_SIGNUP_NEEDED
             )
         }
 
@@ -389,7 +381,7 @@ class UserService {
             throw CustomException(
                 message = msg,
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.USER_NAME_DUPLICATED
+                errorCode = ErrorCode.USER_NAME_DUPLICATED
             )
         }
         logger.info("$className.$executedFunc >> user of same name validated.")
@@ -404,24 +396,25 @@ class UserService {
 
         try {
             val userCred = userCredentialRepository.getUserCredentialByPhoneNo(input.phoneNo)
-            val hasUserCred = userCred.isPresent
-            if (!hasUserCred) throw CustomException(
-                message = NO_USER_ERR,
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
-            )
+                .orElseThrow {
+                    CustomException(
+                        message = NO_USER_ERR,
+                        errorType = ErrorType.NOT_FOUND,
+                        errorCode = ErrorCode.NO_USER
+                    )
+                }
             logger.info("$className.$executedFunc >> user credential by phoneNo checked.")
 
-            val isValidPassword = passwordEncoder.matches(input.password, userCred.get().password)
+            val isValidPassword = passwordEncoder.matches(input.password, userCred.password)
             if (!isValidPassword) throw CustomException(
                 message = NO_USER_ERR,
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
+                errorCode = ErrorCode.NO_USER
             )
             logger.info("$className.$executedFunc >> password validated.")
 
-            val role = userCred.get().role
-            val userId = userCred.get().user!!.id!!
+            val role = userCred.role
+            val userId = userCred.user!!.id!!
 
             val authToken = tokenService.generateAuthTokenPair(userId, AccountRole.valueOf(role.toString()))
             tokenService.upsertAuthToken(userId, authToken)
@@ -447,7 +440,7 @@ class UserService {
                 throw CustomException(
                     message = HAS_BIZ_CONNECTION_ERR,
                     errorType = ErrorType.INTERNAL,
-                    errorCode = CustomErrorCode.BIZ_CONNECTION_DUPLICATED
+                    errorCode = ErrorCode.BIZ_CONNECTION_DUPLICATED
                 )
             }
             logger.info("$className.$executedFunc >> existed biz_connections is validated. ready to create new biz_connection.")
@@ -458,24 +451,29 @@ class UserService {
                 applyStatus = ApplyStatus.APPLYING,
             )
 
-            val retailer = userRepository.findById(retailerId)
-            val wholesaler = userRepository.findById(wholesalerId)
-            if (wholesaler.isEmpty) {
-                throw CustomException(
-                    message = "There's no user(wholesaler) that you hope to connect with.",
+            val retailer = userRepository.findById(retailerId).orElseThrow {
+                CustomException(
+                    message = "There's no user whose id is $retailerId",
                     errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_USER
+                    errorCode = ErrorCode.NO_USER
                 )
             }
-            if (wholesaler.get().userCredential!!.role == AccountRole.WHOLESALER_EMPE) {
+            val wholesaler = userRepository.findById(wholesalerId).orElseThrow {
+                CustomException(
+                    message = "There's no user(wholesaler) that you hope to connect with.",
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = ErrorCode.NO_USER
+                )
+            }
+            if (wholesaler.userCredential!!.role == AccountRole.WHOLESALER_EMPE) {
                 throw CustomException(
                     message = "You cannot make business connection with employee(wholesaler).",
                     errorType = ErrorType.BAD_REQUEST,
-                    errorCode = CustomErrorCode.INVALID_DATA
+                    errorCode = ErrorCode.INVALID_DATA
                 )
             }
-            val retailerName = retailer.get().name!!
-            val targetPhoneNo = wholesaler.get().userCredential!!.phoneNo
+            val retailerName = retailer.name!!
+            val targetPhoneNo = wholesaler.userCredential!!.phoneNo
             logger.info("$className.$executedFunc >> bizConnection object is created.")
 
             runBlocking {
@@ -496,20 +494,21 @@ class UserService {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
         try {
-            val bizConnection: Optional<BizConnection> = bizConnectionRepository.findById(bizConnId)
-            if (bizConnection.isEmpty) throw CustomException(
-                message = NO_BIZ_CONNECTION_TO_UPDATE_ERR,
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_BIZ_CONNECTION
-            )
+            val bizConnection = bizConnectionRepository.findById(bizConnId).orElseThrow {
+                CustomException(
+                    message = NO_BIZ_CONNECTION_TO_UPDATE_ERR,
+                    errorType = ErrorType.NOT_FOUND,
+                    errorCode = ErrorCode.NO_BIZ_CONNECTION
+                )
+            }
             logger.info("$className.$executedFunc >> bizConnection to update is existed.")
 
-            bizConnection.get().applyStatus = status
-            val updatedBizConn = bizConnectionRepository.save(bizConnection.get())
+            bizConnection.applyStatus = status
+            val updatedBizConn = bizConnectionRepository.save(bizConnection)
             logger.info("$className.$executedFunc >> bizConnection is updated.")
 
-            val retailer = bizConnection.get().retailer
-            val wholesaler = bizConnection.get().wholesaler
+            val retailer = bizConnection.retailer
+            val wholesaler = bizConnection.wholesaler
             val targetPhoneNo = retailer!!.userCredential!!.phoneNo
             val wholesalerName = wholesaler!!.name!!
 
@@ -555,7 +554,7 @@ class UserService {
             throw CustomException(
                 message = msg,
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.PHONE_NO_DUPLICATED
+                errorCode = ErrorCode.PHONE_NO_DUPLICATED
             )
         }
         logger.info("$className.$executedFunc >> checked same user credential info.")
@@ -566,18 +565,18 @@ class UserService {
             AccountRole.WHOLESALER_EMPE -> DEFAULT_WHOLESALER_BELONGS_TO
         }
 
-        val user = User(
+        val user = User.builder(
             name = input.name,
             belongsTo = belongsTo,
         )
         val savedUser = userRepository.save(user)
         logger.info("$className.$executedFunc >> new user created.")
 
-        val userCred = UserCredential(
+        val userCred = UserCredential.create(
+            user = savedUser,
             phoneNo = input.phoneNo,
             password = passwordEncoder.encode(input.password),
             role = AccountRole.valueOf(input.role.name),
-            user = savedUser
         )
         userCredentialRepository.save(userCred)
         logger.info("$className.$executedFunc >> new user credential created.")
@@ -589,19 +588,17 @@ class UserService {
     fun signOut(userId: Long) {
         val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
-        val authToken = authTokenRepository.findByUserId(userId)
-        if (authToken.isPresent) {
-            authTokenRepository.deleteById(authToken.get().id!!)
-            logger.info("$className.$executedFunc >> completed.")
-        } else {
+        val authToken = authTokenRepository.findByUserId(userId).orElseThrow {
             val msg = "There's no user to sign out."
             logger.error("$className.$executedFunc >> $msg")
-            throw CustomException(
+            CustomException(
                 message = msg,
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_USER
+                errorCode = ErrorCode.NO_USER
             )
         }
+        authTokenRepository.deleteById(authToken.id!!)
+        logger.info("$className.$executedFunc >> completed.")
     }
 
     @Transactional
@@ -613,7 +610,7 @@ class UserService {
             if (connections.isEmpty()) throw CustomException(
                 message = "There's no connection data between employer and employees",
                 errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_WHOLESALE_CONNECTION
+                errorCode = ErrorCode.NO_WHOLESALE_CONNECTION
             )
             val employer = connections[0].employer!!
             logger.info("$className.$executedFunc >> completed.")

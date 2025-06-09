@@ -4,16 +4,12 @@ import java.time.LocalDateTime
 import javax.persistence.*
 import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.shared.exception.MarketbillException
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
 
 @Entity
 @Table(name = "cart_items")
-@SQLDelete(sql = "UPDATE cart_items SET deleted_at = NOW() WHERE id = ?")
-@Where(clause = "deleted_at IS NULL")
 class CartItem
 private constructor(
     @ManyToOne(fetch = FetchType.LAZY)
@@ -63,7 +59,7 @@ private constructor(
     /** 다른 장바구니 아이템과 병합합니다. 동일한 상품인 경우에만 수량을 합산합니다. */
     fun mergeWith(other: CartItem): CartItem {
         if (!isSameItem(other)) {
-            throw MarketbillException(CustomErrorCode.INVALID_DATA)
+            throw MarketbillException(ErrorCode.INVALID_DATA)
         }
         return copy(quantity = this.quantity + other.quantity)
     }
