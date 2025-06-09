@@ -1,60 +1,111 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
-import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
-import org.hibernate.annotations.SQLDelete
-import org.hibernate.annotations.Where
 import java.time.LocalDateTime
 import javax.persistence.*
+import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
+import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
+import kr.co.marketbill.marketbillcoreserver.shared.exception.MarketbillException
+import org.hibernate.annotations.SQLDelete
+import org.hibernate.annotations.Where
 
 @Entity
-@Table(
-    name = "cart_items", uniqueConstraints = [
-        UniqueConstraint(columnNames = ["retailer_id", "session_id", "flower_id", "grade"])
-    ]
-)
-@SQLDelete(sql = "UPDATE cart_items SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null AND ordered_at is Null")
-data class CartItem(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
-
-    @ManyToOne()
-    @JoinColumn(name = "session_id")
-    var shoppingSession: ShoppingSession? = null,
-
-    @ManyToOne
-    @JoinColumn(name = "retailer_id")
-    var retailer: User? = null,
-
-    @ManyToOne
-    @JoinColumn(name = "wholesaler_id", nullable = true)
-    var wholesaler: User? = null,
-
-    @ManyToOne
-    @JoinColumn(name = "flower_id")
-    val flower: Flower? = null,
-
-    @Column(name = "quantity")
-    var quantity: Int? = null,
-
-    @Column(name = "grade")
-    var grade: String? = null,
-
-    @Transient
-    var gradeValue: FlowerGrade? = null,
-
-    @Column(name = "ordered_at")
-    var orderedAt: LocalDateTime? = null,
-) : BaseTime() {
-    @PostLoad
-    @PostUpdate
-    fun postLoad() {
-        retailer = if (retailer?.deletedAt == null) retailer else null
-        wholesaler = if (wholesaler?.deletedAt == null) wholesaler else null
+@Table(name = "cart_items")
+@SQLDelete(sql = "UPDATE cart_items SET deleted_at = NOW() WHERE id = ?")
+@Where(clause = "deleted_at IS NULL")
+class CartItem
+private constructor(
+    @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "shopping_session_id", nullable = false)
+        val shoppingSession: ShoppingSession,
+    @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "retailer_id", nullable = false)
+        val retailer: User,
+    @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "wholesaler_id")
+        val wholesaler: User?,
+    @ManyToOne(fetch = FetchType.LAZY)
+        @JoinColumn(name = "flower_id", nullable = false)
+        val flower: Flower,
+    @Column(nullable = false) val quantity: Int,
+    @Column(nullable = false) val grade: String,
+    @Column(name = "ordered_at") var orderedAt: LocalDateTime? = null,
+    @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null
+) {
+    companion object {
+        fun createWith(
+                shoppingSession: ShoppingSession,
+                retailer: User,
+                wholesaler: User?,
+                flower: Flower,
+                quantity: Int,
+                grade: String
+        ): CartItem {
+            return CartItem(
+                    shoppingSession = shoppingSession,
+                    retailer = retailer,
+                    wholesaler = wholesaler,
+                    flower = flower,
+                    quantity = quantity,
+                    grade = grade
+            )
+        }
     }
 
+    /** 동일한 상품인지 확인합니다. 꽃, 등급, 도매상이 모두 동일한 경우 true를 반환합니다. */
+    fun isSameItem(other: CartItem): Boolean {
+        return this.flower == other.flower &&
+                this.grade == other.grade &&
+                this.wholesaler?.id == other.wholesaler?.id
+    }
+
+    /** 다른 장바구니 아이템과 병합합니다. 동일한 상품인 경우에만 수량을 합산합니다. */
+    fun mergeWith(other: CartItem): CartItem {
+        if (!isSameItem(other)) {
+            throw MarketbillException(CustomErrorCode.INVALID_DATA)
+        }
+        return copy(quantity = this.quantity + other.quantity)
+    }
+
+    /** 수량을 업데이트합니다. */
+    fun updateQuantity(newQuantity: Int): CartItem {
+        return copy(quantity = newQuantity)
+    }
+
+    /** 등급을 업데이트합니다. */
+    fun updateGrade(newGrade: String): CartItem {
+        return copy(grade = newGrade)
+    }
+
+    /** 도매상을 업데이트합니다. */
+    fun updateWholesaler(newWholesaler: User?): CartItem {
+        return copy(wholesaler = newWholesaler)
+    }
+
+    /** 주문 상태로 변경합니다. */
+    fun markAsOrdered(): CartItem {
+        return copy(orderedAt = LocalDateTime.now())
+    }
+
+    private fun copy(
+            shoppingSession: ShoppingSession = this.shoppingSession,
+            retailer: User = this.retailer,
+            wholesaler: User? = this.wholesaler,
+            flower: Flower = this.flower,
+            quantity: Int = this.quantity,
+            grade: String = this.grade,
+            orderedAt: LocalDateTime? = this.orderedAt,
+            id: Long? = this.id
+    ) =
+            CartItem(
+                    shoppingSession = shoppingSession,
+                    retailer = retailer,
+                    wholesaler = wholesaler,
+                    flower = flower,
+                    quantity = quantity,
+                    grade = grade,
+                    orderedAt = orderedAt,
+                    id = id
+            )
 }

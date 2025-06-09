@@ -8,6 +8,7 @@ import com.netflix.graphql.dgs.InputArgument
 import com.netflix.graphql.types.errors.ErrorType
 import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.application.dto.response.OrderSheetsAggregate
+import kr.co.marketbill.marketbillcoreserver.application.service.cart.BatchProcessor
 import kr.co.marketbill.marketbillcoreserver.application.service.cart.CartService
 import kr.co.marketbill.marketbillcoreserver.application.service.order.OrderService
 import kr.co.marketbill.marketbillcoreserver.application.service.user.UserService
@@ -36,6 +37,8 @@ import java.util.Optional
 class OrderFetcher {
     @Autowired
     private lateinit var cartService: CartService
+    @Autowired
+    private lateinit var batchProcessor: BatchProcessor
 
     @Autowired
     private lateinit var orderService: OrderService
@@ -70,7 +73,7 @@ class OrderFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.updateShoppingSession(
-            retailerId = userId,
+            userId = userId,
             wholesalerId = input.wholesalerId?.toLong(),
             memo = input.memo
         )
@@ -233,7 +236,7 @@ class OrderFetcher {
         val token = jwtProvider.filterOnlyToken(authorization)
         val userId: Long = jwtProvider.parseUserId(token)
         return cartService.addCartItem(
-            retailerId = userId,
+            userId = userId,
             flowerId = input.flowerId.toLong(),
             quantity = input.quantity,
             grade = FlowerGrade.valueOf(input.grade.toString())
@@ -244,9 +247,9 @@ class OrderFetcher {
     @DgsMutation(field = DgsConstants.MUTATION.UpdateCartItem)
     fun updateCartItem(@InputArgument input: UpdateCartItemInput): CartItem {
         return cartService.updateCartItem(
+
             input.id.toLong(),
             input.quantity,
-            FlowerGrade.valueOf(input.grade.toString())
         )
     }
 
@@ -318,7 +321,7 @@ class OrderFetcher {
 
     @DgsMutation(field = DgsConstants.MUTATION.OrderBatchCartItems)
     fun orderBatchCartItems(): CommonResponse {
-        cartService.orderBatchCartItems()
+        batchProcessor.processBatchOrder()
         return CommonResponse(success = true)
     }
 }

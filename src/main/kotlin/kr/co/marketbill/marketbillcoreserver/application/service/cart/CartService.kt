@@ -1,419 +1,99 @@
 package kr.co.marketbill.marketbillcoreserver.application.service.cart
 
-import com.netflix.graphql.types.errors.ErrorType
+import java.util.Optional
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
+import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
+import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.CartItemRepository
+import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.ShoppingSessionRepository
 import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
-import kr.co.marketbill.marketbillcoreserver.shared.constants.DEFAULT_PAGE
 import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
-import kr.co.marketbill.marketbillcoreserver.domain.entity.flower.Flower
-import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
-import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
-import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.*
-import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.user.UserRepository
-import kr.co.marketbill.marketbillcoreserver.domain.specs.CartItemSpecs
-import kr.co.marketbill.marketbillcoreserver.domain.specs.ShoppingSessionSpecs
-import kr.co.marketbill.marketbillcoreserver.shared.exception.CustomException
-import kr.co.marketbill.marketbillcoreserver.shared.util.EnumConverter.Companion.convertFlowerGradeToKor
-import kr.co.marketbill.marketbillcoreserver.shared.util.StringGenerator
-import kr.co.marketbill.marketbillcoreserver.shared.util.groupFillBy
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
-import org.springframework.beans.factory.annotation.Autowired
+import kr.co.marketbill.marketbillcoreserver.shared.exception.MarketbillException
 import org.springframework.data.domain.Page
 import org.springframework.data.domain.PageImpl
-import org.springframework.data.domain.PageRequest
 import org.springframework.data.domain.Pageable
-import org.springframework.scheduling.annotation.Scheduled
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.time.LocalDateTime
-import java.util.*
-import javax.persistence.EntityManager
-import kotlin.collections.ArrayList
-import kotlin.collections.LinkedHashMap
 
 @Service
-class CartService {
-    @Autowired
-    private lateinit var entityManager: EntityManager
-
-    @Autowired
-    private lateinit var userRepository: UserRepository
-
-    @Autowired
-    private lateinit var cartItemRepository: CartItemRepository
-
-    @Autowired
-    private lateinit var shoppingSessionRepository: ShoppingSessionRepository
-
-    @Autowired
-    private lateinit var orderSheetRepository: OrderSheetRepository
-
-    @Autowired
-    private lateinit var orderItemRepository: OrderItemRepository
-
-    @Autowired
-    private lateinit var batchCartToOrderLogsRepository: BatchCartToOrderLogsRepository
-
-    private val logger: Logger = LoggerFactory.getLogger(CartService::class.java)
-    private val className = this.javaClass.simpleName
-
-    @Transactional(readOnly = true)
+@Transactional(readOnly = true)
+class CartService(
+        private val cartItemService: CartItemService,
+        private val shoppingSessionService: ShoppingSessionService,
+        private val cartItemRepository: CartItemRepository,
+        private val shoppingSessionRepository: ShoppingSessionRepository
+) {
+    /** 소매상의 장바구니 세션을 조회합니다. */
     fun getShoppingSession(retailerId: Long): Optional<ShoppingSession> {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-        try {
-            return shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}")
-            throw e
-        }
+        return Optional.ofNullable(shoppingSessionService.findSessionByRetailerId(retailerId))
     }
 
+    /** 장바구니에 상품을 추가합니다. */
     @Transactional
-    fun addCartItem(retailerId: Long, flowerId: Long, quantity: Int, grade: FlowerGrade): CartItem {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
-        try {
-            val shoppingSession: Optional<ShoppingSession> =
-                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-
-            val session: ShoppingSession = if (shoppingSession.isEmpty) {
-                val newSession = ShoppingSession(
-                    retailer = entityManager.getReference(User::class.java, retailerId),
-                    wholesaler = null,
-                    memo = null,
-                )
-                shoppingSessionRepository.save(newSession)
-            } else {
-                shoppingSession.get()
-            }
-
-            // 꽃, 등급, 소매상, 세션이 모두 동일하면 수량만 바뀌므로 업데이트처리(그외에 소매상ID가 다르거나 품질이 다르거나 꽃이 다르면 새로 장바구니에 추가)
-            // retailer_id, flower_id, grade, session_id 복수 컬럼에 unique 처리했기에 findOne 사용가능
-            val prevCartItem: Optional<CartItem> =
-                cartItemRepository.findOne(
-                    CartItemSpecs
-                        .byRetailerId(retailerId)
-                        .and(CartItemSpecs.byFlowerId(flowerId))
-                        .and(CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade)))
-                        .and(CartItemSpecs.byShoppingSessionId(session.id))
-                )
-
-            val newCartItem = CartItem(
-                retailer = entityManager.getReference(User::class.java, retailerId),
-                wholesaler = session.wholesaler,
-                flower = entityManager.getReference(Flower::class.java, flowerId),
-                quantity = quantity,
-                shoppingSession = session,
-                grade = convertFlowerGradeToKor(grade)
-            )
-
-            if (prevCartItem.isPresent) {
-                newCartItem.id = prevCartItem.get().id
-            }
-
-            val createdCartItem = cartItemRepository.save(newCartItem)
-
-            logger.info("$className.$executedFunc >> completed.")
-            return createdCartItem
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}.")
-            throw e
-        }
+    fun addCartItem(userId: Long, flowerId: Long, grade: FlowerGrade, quantity: Int): CartItem {
+        val session = shoppingSessionService.findOrCreateSession(userId)
+        return cartItemService.createCartItem(session, flowerId, grade.name, quantity)
     }
 
+    /** 장바구니 상품을 수정합니다. */
     @Transactional
-    fun updateCartItem(id: Long, quantity: Int, grade: FlowerGrade): CartItem {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
-        try {
-            val cartItem = cartItemRepository.findById(id)
-            if (cartItem.isEmpty) throw CustomException(
-                message = "There's no cart_item whose ID is $id",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = CustomErrorCode.NO_CART_ITEM
-            )
-            val item = cartItem.get()
-            logger.info("$className.$executedFunc >> cart_item is existed.")
-
-            val sameCartItem: Optional<CartItem> = cartItemRepository.findOne(
-                CartItemSpecs.excludeId(id).and(
-                    CartItemSpecs.byRetailerId(item.retailer!!.id)
-                ).and(
-                    CartItemSpecs.byFlowerId(item.flower!!.id)
-                ).and(
-                    CartItemSpecs.byFlowerGrade(convertFlowerGradeToKor(grade))
-                ).and(
-                    CartItemSpecs.byShoppingSessionId(item.shoppingSession!!.id)
-                )
-            )
-
-            if (sameCartItem.isPresent) {
-                item.quantity = sameCartItem.get().quantity!! + quantity
-                cartItemRepository.deleteById(sameCartItem.get().id!!)
-                cartItemRepository.flush()
-            } else {
-                item.quantity = quantity
-            }
-            item.grade = convertFlowerGradeToKor(grade)
-
-            val updatedCartItem = cartItemRepository.save(item)
-            logger.info("$className.$executedFunc >> completed.")
-            return updatedCartItem
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}.")
-            throw e
-        }
+    fun updateCartItem(userId: Long, cartItemId: Long, quantity: Int): CartItem {
+        val cartItem = cartItemService.findCartItemById(cartItemId)
+        return cartItemService.updateCartItem(cartItem, quantity)
     }
 
+    /** 장바구니 상품을 삭제합니다. */
     @Transactional
     fun removeCartItem(cartItemId: Long): Long {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
-        try {
-            val cartItem: Optional<CartItem> = cartItemRepository.findById(cartItemId)
-            if (cartItem.isEmpty) {
-                throw CustomException(
-                    message = "There's no cart item data want to delete.",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_CART_ITEM
-                )
-            }
-            val session: ShoppingSession = cartItem.get().shoppingSession!!
-            val allCartItemsInSession: List<CartItem> =
-                cartItemRepository.findAll(CartItemSpecs.byShoppingSessionId(session.id))
-
-            if (allCartItemsInSession.size == 1) {
-                shoppingSessionRepository.delete(session)
-            } else {
-                cartItemRepository.delete(cartItem.get())
-            }
-            logger.info("$className.$executedFunc >> completed.")
-            return cartItemId
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}.")
-            throw e
-        }
+        val cartItem = cartItemService.findCartItemById(cartItemId)
+        val session = cartItem.shoppingSession
+        shoppingSessionService.removeCartItemFromSession(session, cartItemId)
+        return cartItemId
     }
 
+    /** 장바구니 세션을 업데이트합니다. */
     @Transactional
-    fun updateShoppingSession(retailerId: Long, wholesalerId: Long?, memo: String?): ShoppingSession {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
-        try {
-            if (wholesalerId == null && memo == null) {
-                throw CustomException(
-                    message = "There's no input data to update.",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.INVALID_DATA
-                )
-            }
-
-            val shoppingSession: Optional<ShoppingSession> =
-                shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-            if (shoppingSession.isEmpty) {
-                throw CustomException(
-                    message = "There's no shopping session whose retailerID is $retailerId",
-                    errorType = ErrorType.NOT_FOUND,
-                    errorCode = CustomErrorCode.NO_SHOPPING_SESSION
-                )
-            }
-            val session = shoppingSession.get()
-
-            if (wholesalerId != null) {
-                val wholesaler = userRepository.findById(wholesalerId)
-                if (wholesaler.isEmpty) {
-                    throw CustomException(
-                        message = "There's no wholesaler whose ID is $wholesalerId",
-                        errorType = ErrorType.NOT_FOUND,
-                        errorCode = CustomErrorCode.NO_USER
-                    )
-                }
-                logger.info("$className.$executedFunc >> wholesaler both are exists.")
-
-                session.wholesaler = wholesaler.get()
-                shoppingSessionRepository.save(session)
-                logger.info("$className.$executedFunc >> wholesaler data on shopping_session updated.")
-
-                val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
-                val updatedCartItemObjs = cartItems.map {
-                    it.wholesaler = entityManager.getReference(User::class.java, wholesalerId)
-                    it
-                }
-                cartItemRepository.saveAll(updatedCartItemObjs)
-                logger.info("$className.$executedFunc >> wholesaler data on cart_items updated.")
-            }
-
-            if (memo != null) {
-                session.memo = memo
-                shoppingSessionRepository.save(session)
-                logger.info("$className.$executedFunc >> memo data on shopping_session updated.")
-            }
-
-            logger.info("$className.$executedFunc >> completed.")
-            return session
-
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}.")
-            throw e
-        }
+    fun updateShoppingSession(userId: Long, wholesalerId: Long?, memo: String?): ShoppingSession {
+        val session =
+                shoppingSessionService.findSessionByRetailerId(userId)
+                        ?: throw MarketbillException(CustomErrorCode.NO_SHOPPING_SESSION)
+        return shoppingSessionService.updateSession(session, wholesalerId, memo)
     }
 
-    /**
-     * ### 스케쥴러
-     * : 매일 오후 10시에 자동 주문처리
-     */
-    @Scheduled(cron = "0 0 22 * * ?", zone = "Asia/Seoul")
-    @Transactional
-    fun orderBatchCartItems() {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-
-        val newOrderSheets = mutableListOf<OrderSheet>()
-        val newOrderItems = mutableListOf<OrderItem>()
-
-        val log = BatchCartToOrderLogs(
-            cartItemsCount = 0,
-            orderSheetCount = -1,
-            orderItemCount = -1,
-            errLogs = ""
-        )
-
-        try {
-            val validCartItems =
-                cartItemRepository.findAll(CartItemSpecs.hasWholesaler()).filter { it.wholesaler != null }
-            log.cartItemsCount = validCartItems.size
-            logger.info("$className.$executedFunc >> fetched all cart items each has connected wholesaler info.")
-
-            val cartItemGroup: Map<Long, List<CartItem>> = validCartItems.groupBy { it.retailer!!.id!! }
-
-            cartItemGroup.forEach { (retailerId, cartItems) ->
-                val retailer = entityManager.getReference(User::class.java, retailerId)
-                val shoppingSession = shoppingSessionRepository.findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-                val wholesaler = shoppingSession.get().wholesaler
-
-                val orderedAt = LocalDateTime.now()
-                cartItemRepository.saveAll(
-                    cartItems.map {
-                        it.orderedAt = orderedAt
-                        it
-                    }
-                )
-                logger.info("$className.$executedFunc >> cart items are ordered. (${cartItems.map { it.id }})")
-                shoppingSessionRepository.delete(shoppingSession.get())
-                logger.info("$className.$executedFunc >> shopping session is deleted(closed)")
-
-                val orderSheet = OrderSheet(
-                    orderNo = "",
-                    retailer = retailer,
-                    wholesaler = wholesaler,
-                )
-                newOrderSheets.add(orderSheet)
-                val savedOrderSheet = orderSheetRepository.save(orderSheet)
-                savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
-                val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
-                logger.info("$className.$executedFunc >> OrderSheet(ID:${updatedOrderSheet.id}) is created.")
-
-                val orderItems = cartItems.map {
-                    OrderItem(
-                        orderSheet = updatedOrderSheet,
-                        retailer = retailer,
-                        wholesaler = wholesaler,
-                        flower = it.flower,
-                        quantity = it.quantity,
-                        grade = it.grade,
-                        price = null,
-                    )
-                }
-                newOrderItems.addAll(orderItems)
-                orderItemRepository.saveAll(orderItems)
-                logger.info("$className.$executedFunc >> OrderItems(IDs:${orderItems.map { it.id }}) is created.")
-            }
-
-            log.orderSheetCount = newOrderSheets.size
-            log.orderItemCount = newOrderItems.size
-            logger.info("$className.$executedFunc >> done(no issue).")
-        } catch (e: java.lang.Exception) {
-            log.errLogs = e.message
-            logger.error("$className.$executedFunc >> ${e.message}")
-            throw e
-        } finally {
-            batchCartToOrderLogsRepository.save(log)
-            logger.info("$className.$executedFunc >> completed.")
-        }
-    }
-
-    // TODO: Pagination + Dataloader (PARTITION BY 쿼리 사용)
-    @Transactional(readOnly = true)
+    /** 여러 장바구니 세션의 상품을 페이지네이션하여 조회합니다. */
     fun getAllPaginatedCartItemsByShoppingSessionIds(
-        shoppingSessionIds: List<Long>,
-        pageable: Pageable
-    ): MutableMap<Long, Page<CartItem>> {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-        try {
-            val startRow = pageable.pageSize * pageable.pageNumber
-            val endRow = startRow + pageable.pageSize
+            shoppingSessionIds: List<Long>,
+            pageable: Pageable
+    ): Map<Long, Page<CartItem>> {
+        val startRow = pageable.pageSize * pageable.pageNumber
+        val endRow = startRow + pageable.pageSize
 
-            val groupedCounts = cartItemRepository.countTotalPaginatedCartItemsBySessionIds(shoppingSessionIds)
-            val groupedCountMap = LinkedHashMap<Long, Long>()
-            groupedCounts.forEach {
-                groupedCountMap[it.sessionId] = it.count
-            }
+        val cartItems =
+                cartItemRepository.getAllPaginatedCartItemsBySessionIds(
+                        shoppingSessionIds,
+                        startRow,
+                        endRow
+                )
 
-            val cartItems =
-                cartItemRepository.getAllPaginatedCartItemsBySessionIds(shoppingSessionIds, startRow, endRow)
-
-            val groupedCartItems = LinkedHashMap<Long, ArrayList<CartItem>>()
-            for (id in shoppingSessionIds) {
-                groupedCartItems[id] = ArrayList()
-            }
-            for (item in cartItems) {
-                val list = groupedCartItems.getOrPut(item.shoppingSession!!.id!!) { ArrayList() }
-                list.add(item)
-            }
-
-            val groupedPaginatedCartItems = LinkedHashMap<Long, Page<CartItem>>()
-
-            groupedCartItems.forEach { (sessionId, cartItems) ->
-                val totCount: Long = groupedCountMap[sessionId] ?: 0
-                groupedPaginatedCartItems[sessionId] = PageImpl(cartItems, pageable, totCount)
-            }
-            logger.info("$className.$executedFunc >> completed.")
-            return groupedPaginatedCartItems.toMutableMap()
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}.")
-            throw e
+        return cartItems.groupBy { it.shoppingSession.id!! }.mapValues { (_, items) ->
+            PageImpl(items, pageable, items.size.toLong())
         }
     }
 
+    /** 장바구니 상품들을 일괄 주문합니다. */
+    @Transactional
+    fun orderBatchCartItems(retailerId: Long): List<CartItem> {
+        val session =
+                shoppingSessionService.findSessionByRetailerId(retailerId)
+                        ?: throw MarketbillException(CustomErrorCode.NO_SHOPPING_SESSION)
 
-    fun getAllCartItemsByShoppingSessionIds(
-        shoppingSessionIds: List<Long>,
-        pageable: Pageable
-    ): MutableMap<Long, List<CartItem>> {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-        try {
-            val cartItems = cartItemRepository.findAll(CartItemSpecs.byShoppingSessionIds(shoppingSessionIds), pageable)
-            val groupedCartItems = cartItems.groupFillBy(shoppingSessionIds) { it.shoppingSession!!.id!! }
-                .toMutableMap()
-            logger.info("$className.$executedFunc >> completed.")
-            return groupedCartItems
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}.")
-            throw e
+        val cartItems =
+                cartItemRepository.findAllByRetailerId(retailerId, Pageable.unpaged()).content
+        if (cartItems.isEmpty()) {
+            throw MarketbillException(CustomErrorCode.NO_CART_ITEM)
         }
-    }
 
-    fun getCartItemsByShoppingSessionId(
-        shoppingSessionId: Long,
-        pageable: Pageable
-    ): Page<CartItem> {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
-        try {
-            val cartItems = cartItemRepository.findAll(CartItemSpecs.byShoppingSessionId(shoppingSessionId), pageable)
-            logger.info("$className.$executedFunc >> completed.")
-            return cartItems
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}.")
-            throw e
-        }
+        val orderedItems = cartItems.map { cartItem -> cartItemService.markAsOrdered(cartItem) }
+        shoppingSessionService.deleteSession(session)
+        return orderedItems
     }
 }

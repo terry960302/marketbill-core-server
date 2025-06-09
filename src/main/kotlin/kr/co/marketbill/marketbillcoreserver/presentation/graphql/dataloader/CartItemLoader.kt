@@ -22,7 +22,7 @@ class CartItemLoader : MappedBatchLoaderWithContext<Long, Page<CartItem>> {
     override fun load(
         keys: MutableSet<Long>?,
         env: BatchLoaderEnvironment
-    ): CompletionStage<MutableMap<Long, Page<CartItem>>> {
+    ): CompletionStage<Map<Long, Page<CartItem>>> {
         val cartContext =
             DgsContext.getCustomContext<CustomContext>(env)
         val pagination = cartContext.cartItemsInput.pagination

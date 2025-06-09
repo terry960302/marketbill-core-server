@@ -235,7 +235,7 @@ class DummyDataLoader {
     @Transactional
     fun createMockCartItems() {
         val cartItems = (1..5).map {
-            CartItem(
+            CartItem.createWith(
                 retailer = entityManager.getReference(User::class.java, 1.toLong()),
                 flower = entityManager.getReference(Flower::class.java, it.toLong()),
                 quantity = 10,

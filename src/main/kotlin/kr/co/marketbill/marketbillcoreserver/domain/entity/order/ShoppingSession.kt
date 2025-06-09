@@ -1,38 +1,78 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.order
 
+import javax.persistence.*
 import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import org.hibernate.annotations.SQLDelete
 import org.hibernate.annotations.Where
-import javax.persistence.*
 
 @Entity
 @Table(name = "shopping_sessions")
 @SQLDelete(sql = "UPDATE shopping_sessions SET deleted_at = current_timestamp WHERE id = ?")
 @Where(clause = "deleted_at is Null")
-data class ShoppingSession(
-    @Id
-    @GeneratedValue(strategy = GenerationType.IDENTITY)
-    var id: Long? = null,
-
-    @OneToOne
-    @JoinColumn(name = "retailer_id")
-    var retailer: User? = null,
-
-    @ManyToOne
-    @JoinColumn(name = "wholesaler_id", nullable = true)
-    var wholesaler: User? = null,
-
-    @Column(name = "memo", nullable = true, length = 600)
-    var memo: String? = null,
-
-    @OneToMany(mappedBy = "shoppingSession", cascade = [CascadeType.ALL], orphanRemoval = true, fetch = FetchType.LAZY)
-    val cartItems: List<CartItem> = listOf(),
+class ShoppingSession
+private constructor(
+        @Id @GeneratedValue(strategy = GenerationType.IDENTITY) val id: Long? = null,
+        @OneToOne @JoinColumn(name = "retailer_id") val retailer: User?,
+        @ManyToOne @JoinColumn(name = "wholesaler_id", nullable = true) val wholesaler: User?,
+        @Column(name = "memo", nullable = true, length = 600) val memo: String?,
+        @OneToMany(
+                mappedBy = "shoppingSession",
+                cascade = [CascadeType.ALL],
+                orphanRemoval = true,
+                fetch = FetchType.LAZY
+        )
+        val cartItems: List<CartItem> = listOf()
 ) : BaseTime() {
-    @PostLoad
-    @PostUpdate
-    fun postLoad() {
-        retailer = if (retailer?.deletedAt == null) retailer else null
-        wholesaler = if (wholesaler?.deletedAt == null) wholesaler else null
+
+    companion object {
+        fun createWith(
+                retailer: User,
+                wholesaler: User? = null,
+                memo: String? = null
+        ): ShoppingSession {
+            return ShoppingSession(retailer = retailer, wholesaler = wholesaler, memo = memo)
+        }
     }
+
+    /** 도매상을 업데이트합니다. */
+    fun updateWholesaler(newWholesaler: User?): ShoppingSession {
+        return copy(wholesaler = newWholesaler)
+    }
+
+    /** 메모를 업데이트합니다. */
+    fun updateMemo(newMemo: String?): ShoppingSession {
+        return copy(memo = newMemo)
+    }
+
+    /** 장바구니 아이템을 추가합니다. 같은 상품이 있으면 수량을 합산하고, 없으면 새로 추가합니다. */
+    fun addCartItem(cartItem: CartItem): ShoppingSession {
+        val existingItem = cartItems.find { it.isSameItem(cartItem) }
+        return if (existingItem != null) {
+            copy(cartItems = cartItems - existingItem + existingItem.mergeWith(cartItem))
+        } else {
+            copy(cartItems = cartItems + cartItem)
+        }
+    }
+
+    /** 장바구니 아이템을 삭제합니다. */
+    fun removeCartItem(cartItemId: Long): ShoppingSession {
+        val updatedItems = cartItems.filter { it.id != cartItemId }
+        return copy(cartItems = updatedItems)
+    }
+
+    private fun copy(
+            id: Long? = this.id,
+            retailer: User? = this.retailer,
+            wholesaler: User? = this.wholesaler,
+            memo: String? = this.memo,
+            cartItems: List<CartItem> = this.cartItems
+    ) =
+            ShoppingSession(
+                    id = id,
+                    retailer = retailer,
+                    wholesaler = wholesaler,
+                    memo = memo,
+                    cartItems = cartItems
+            )
 }
