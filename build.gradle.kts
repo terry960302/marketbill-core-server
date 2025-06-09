@@ -67,7 +67,14 @@ dependencies {
 
 	// queryDSL
 	implementation("com.querydsl:querydsl-jpa:5.0.0")
-	kapt("com.querydsl:querydsl-apt:5.0.0:jpa")
+        kapt("com.querydsl:querydsl-apt:5.0.0:jpa")
+}
+
+kapt {
+        javacOptions {
+                option("-J--add-opens=jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED")
+                option("-J--add-opens=jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED")
+        }
 }
 
 tasks.withType<KotlinCompile> {
@@ -78,7 +85,11 @@ tasks.withType<KotlinCompile> {
 }
 
 tasks.withType<Test>().configureEach {
-	useJUnitPlatform()
+        useJUnitPlatform()
+        jvmArgs(
+                "--add-opens", "jdk.compiler/com.sun.tools.javac.main=ALL-UNNAMED",
+                "--add-opens", "jdk.compiler/com.sun.tools.javac.util=ALL-UNNAMED"
+        )
 }
 
 // kotlin no default constructor error 해결용
