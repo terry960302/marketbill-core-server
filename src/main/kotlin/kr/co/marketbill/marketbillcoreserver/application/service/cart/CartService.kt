@@ -5,7 +5,7 @@ import kr.co.marketbill.marketbillcoreserver.domain.entity.order.CartItem
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.ShoppingSession
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.CartItemRepository
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.ShoppingSessionRepository
-import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.shared.constants.FlowerGrade
 import kr.co.marketbill.marketbillcoreserver.shared.exception.MarketbillException
 import org.springframework.data.domain.Page
@@ -55,7 +55,7 @@ class CartService(
     fun updateShoppingSession(userId: Long, wholesalerId: Long?, memo: String?): ShoppingSession {
         val session =
                 shoppingSessionService.findSessionByRetailerId(userId)
-                        ?: throw MarketbillException(CustomErrorCode.NO_SHOPPING_SESSION)
+                        ?: throw MarketbillException(ErrorCode.NO_SHOPPING_SESSION)
         return shoppingSessionService.updateSession(session, wholesalerId, memo)
     }
 
@@ -84,12 +84,12 @@ class CartService(
     fun orderBatchCartItems(retailerId: Long): List<CartItem> {
         val session =
                 shoppingSessionService.findSessionByRetailerId(retailerId)
-                        ?: throw MarketbillException(CustomErrorCode.NO_SHOPPING_SESSION)
+                        ?: throw MarketbillException(ErrorCode.NO_SHOPPING_SESSION)
 
         val cartItems =
                 cartItemRepository.findAllByRetailerId(retailerId, Pageable.unpaged()).content
         if (cartItems.isEmpty()) {
-            throw MarketbillException(CustomErrorCode.NO_CART_ITEM)
+            throw MarketbillException(ErrorCode.NO_CART_ITEM)
         }
 
         val orderedItems = cartItems.map { cartItem -> cartItemService.markAsOrdered(cartItem) }

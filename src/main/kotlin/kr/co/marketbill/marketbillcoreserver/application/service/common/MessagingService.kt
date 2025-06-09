@@ -4,7 +4,7 @@ import com.netflix.graphql.types.errors.ErrorType
 import kotlinx.serialization.decodeFromString
 import kotlinx.serialization.json.Json
 import kr.co.marketbill.marketbillcoreserver.shared.constants.AccountRole
-import kr.co.marketbill.marketbillcoreserver.shared.constants.CustomErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.shared.constants.MessageTemplate
 import kr.co.marketbill.marketbillcoreserver.application.dto.request.MessageReqDto
 import kr.co.marketbill.marketbillcoreserver.application.dto.response.MessageResponseDto
@@ -73,7 +73,7 @@ class MessagingService {
             throw CustomException(
                 message = "Error occurred while sending 'Default' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.SMS_NOT_REACHED
+                errorCode = ErrorCode.SMS_NOT_REACHED
             )
         }
     }
@@ -96,7 +96,7 @@ class MessagingService {
             throw CustomException(
                 message = "Error occurred while sending 'Verification' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.SMS_NOT_REACHED
+                errorCode = ErrorCode.SMS_NOT_REACHED
             )
         }
     }
@@ -120,7 +120,7 @@ class MessagingService {
             throw CustomException(
                 message = "Error occurred while sending 'ApplyBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.SMS_NOT_REACHED
+                errorCode = ErrorCode.SMS_NOT_REACHED
             )
         }
     }
@@ -145,7 +145,7 @@ class MessagingService {
             throw CustomException(
                 message = "Error occurred while sending 'ConfirmBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.SMS_NOT_REACHED
+                errorCode = ErrorCode.SMS_NOT_REACHED
             )
         }
     }
@@ -170,7 +170,7 @@ class MessagingService {
             throw CustomException(
                 message = "Error occurred while sending 'RejectBizConnection' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.SMS_NOT_REACHED
+                errorCode = ErrorCode.SMS_NOT_REACHED
             )
         }
     }
@@ -198,7 +198,7 @@ class MessagingService {
             throw CustomException(
                 message = "Error occurred while sending 'IssueOrderSheetReceipt' type of SMS. ${e.message}",
                 errorType = ErrorType.INTERNAL,
-                errorCode = CustomErrorCode.SMS_NOT_REACHED
+                errorCode = ErrorCode.SMS_NOT_REACHED
             )
         }
     }

@@ -1,19 +1,16 @@
 package kr.co.marketbill.marketbillcoreserver.domain.entity.user
 
-import kr.co.marketbill.marketbillcoreserver.domain.entity.common.BaseTime
-import org.hibernate.annotations.*
+import kr.co.marketbill.marketbillcoreserver.domain.entity.common.SoftDeleteEntity
 import javax.persistence.*
 import javax.persistence.Entity
 import javax.persistence.Table
 
 @Entity
 @Table(name = "auth_tokens")
-@SQLDelete(sql = "UPDATE auth_tokens SET deleted_at = current_timestamp WHERE id = ?")
-@Where(clause = "deleted_at is Null")
-data class AuthToken(
+class AuthToken protected constructor(
     @Id
     @GeneratedValue(strategy = GenerationType.IDENTITY)
-    val id: Long? = null,
+    var id: Long? = null,
 
     @Column(name = "refresh_token")
     var refreshToken: String = "",
@@ -21,5 +18,17 @@ data class AuthToken(
     @OneToOne
     @JoinColumn(name = "user_id")
     val user: User? = null,
-) : BaseTime() {
+) : SoftDeleteEntity() {
+
+    companion object {
+        fun create(refreshToken: String, user: User? = null): AuthToken {
+            require(refreshToken.isNotBlank()) { "refreshToken must not be blank" }
+            return AuthToken(refreshToken = refreshToken, user = user)
+        }
+    }
+
+    fun updateRefreshToken(newToken: String) {
+        require(newToken.isNotBlank()) { "refreshToken must not be blank" }
+        this.refreshToken = newToken
+    }
 }

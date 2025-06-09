@@ -71,8 +71,8 @@ class UserFetcher {
         var name: String? = null
         val pageable = GqlDtoConverter.convertPaginationInputToPageable(pagination)
 
-        if (authorization.isPresent) {
-            val token = jwtProvider.filterOnlyToken(authorization.get())
+        authorization.ifPresent {
+            val token = jwtProvider.filterOnlyToken(it)
             userId = jwtProvider.parseUserId(token)
             role = jwtProvider.parseUserRole(token)
         }

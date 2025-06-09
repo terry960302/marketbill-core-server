@@ -55,16 +55,16 @@ class TokenService {
     fun upsertAuthToken(userId: Long, newToken: AuthTokenDto): AuthToken {
         val executedFunc = object : Any() {}.javaClass.enclosingClass.name
         try {
-            val token = authTokenRepository.findByUserId(userId)
-            val authToken = if (token.isEmpty) {
-                AuthToken(
-                    user = entityManager.getReference(User::class.java, userId),
-                    refreshToken = newToken.refreshToken
-                )
-            } else {
-                token.get().refreshToken = newToken.refreshToken
-                token.get()
-            }
+            val authToken = authTokenRepository.findByUserId(userId)
+                .map {
+                    it.updateRefreshToken(newToken.refreshToken)
+                    it
+                }.orElseGet {
+                    AuthToken.create(
+                        user = entityManager.getReference(User::class.java, userId),
+                        refreshToken = newToken.refreshToken,
+                    )
+                }
             logger.info("$className.$executedFunc >> completed.")
             return authTokenRepository.save(authToken)
         } catch (e: Exception) {

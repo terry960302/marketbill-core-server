@@ -126,25 +126,26 @@ class DummyDataLoader {
         }
 
         val users = (fromCount..toCount).map {
-            User(
+            User.builder(
                 id = it.toLong(),
                 name = generateRandomStr(),
-                belongsTo = belongsTo
+                belongsTo = belongsTo,
             )
         }
 
 
         val creds = (fromCount..toCount).map {
-            UserCredential(
+            UserCredential.create(
                 user = entityManager.getReference(User::class.java, it.toLong()),
                 phoneNo = generatePhoneNoStr(),
                 password = passwordEncoder.encode("1234"),
                 role = role,
+                id = null,
             )
         }
 
         val authTokens = (fromCount..toCount).map {
-            AuthToken(
+            AuthToken.create(
                 user = entityManager.getReference(User::class.java, it.toLong()),
                 refreshToken = jwtProvider.generateToken(
                     it.toLong(),
