@@ -6,8 +6,6 @@ import kr.co.marketbill.marketbillcoreserver.shared.constants.ErrorCode
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.user.UserCredentialRepository
 import kr.co.marketbill.marketbillcoreserver.domain.vo.CustomUserDetails
 import kr.co.marketbill.marketbillcoreserver.shared.exception.CustomException
-import org.slf4j.Logger
-import org.slf4j.LoggerFactory
 import org.springframework.beans.factory.annotation.Autowired
 import org.springframework.security.core.userdetails.UserDetails
 import org.springframework.security.core.userdetails.UserDetailsService
@@ -18,13 +16,9 @@ class CustomUserDetailsService : UserDetailsService {
 
     @Autowired
     private lateinit var userCredentialRepository: UserCredentialRepository
-    private val logger: Logger = LoggerFactory.getLogger(CustomUserDetailsService::class.java)
-    private val className = this.javaClass.simpleName
 
     override fun loadUserByUsername(username: String?): UserDetails {
-        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
 
-        try {
             val userId = username!!.toLong()
             val cred = userCredentialRepository.getUserCredentialByUserId(userId)
                 .orElseThrow {
@@ -34,18 +28,12 @@ class CustomUserDetailsService : UserDetailsService {
                         errorCode = ErrorCode.NO_USER
                     )
                 }
-            logger.trace("$className.$executedFunc >> user credential is existed.")
             val createdDetails = CustomUserDetails(
                 phoneNo = cred.phoneNo,
                 role = AccountRole.values()
                     .first { it.name == cred.user!!.userCredential!!.role.toString() },
                 password = cred.password,
             )
-            logger.info("$className.$executedFunc >> completed")
             return createdDetails
-        } catch (e: Exception) {
-            logger.error("$className.$executedFunc >> ${e.message}")
-            throw e
         }
-    }
 }
