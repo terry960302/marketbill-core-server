@@ -13,6 +13,7 @@ import kr.co.marketbill.marketbillcoreserver.application.dto.response.ReceiptPro
 import kr.co.marketbill.marketbillcoreserver.application.service.common.MessagingService
 import kr.co.marketbill.marketbillcoreserver.domain.entity.order.*
 import kr.co.marketbill.marketbillcoreserver.domain.entity.user.BusinessInfo
+import kr.co.marketbill.marketbillcoreserver.domain.entity.user.User
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.order.*
 import kr.co.marketbill.marketbillcoreserver.infrastructure.repository.user.BusinessInfoRepository
 import kr.co.marketbill.marketbillcoreserver.domain.specs.*
@@ -81,65 +82,13 @@ class OrderService {
 
     @Transactional
     fun orderAllCartItems(retailerId: Long): OrderSheet {
-
-            val shoppingSession = shoppingSessionRepository
-                .findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
-                .orElseThrow {
-                    CustomException(
-                        message = "There's no shopping_session whose retailerID is $retailerId.",
-                        errorType = ErrorType.NOT_FOUND,
-                        errorCode = ErrorCode.NO_SHOPPING_SESSION
-                    )
-                }
-            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
-                .map {
-                    it.orderedAt = LocalDateTime.now()
-                    it
-                }.content
-
-            if (cartItems.isEmpty()) throw CustomException(
-                message = "There's no cart items to order.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = ErrorCode.NO_CART_ITEM
-            )
-
-            val isAllConnectedWithWholesaler =
-                cartItems.mapNotNull { it.wholesaler }.size == cartItems.size && shoppingSession.wholesaler != null
-            if (!isAllConnectedWithWholesaler) throw CustomException(
-                message = "There's no connected wholesaler on cart items.",
-                errorType = ErrorType.NOT_FOUND,
-                errorCode = ErrorCode.NO_CART_WHOLESALER
-            )
-
-            cartItemRepository.saveAll(cartItems)
-            cartItemRepository.flush()
-
-            shoppingSessionRepository.delete(shoppingSession)
-
-            val orderSheet = OrderSheet(
-                orderNo = "",
-                retailer = shoppingSession.retailer,
-                wholesaler = shoppingSession.wholesaler,
-                memo = shoppingSession.memo,
-            )
-            val savedOrderSheet = orderSheetRepository.save(orderSheet)
-            savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
-            val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
-
-            val orderItems = cartItems.map {
-                OrderItem(
-                    retailer = it.retailer,
-                    orderSheet = updatedOrderSheet,
-                    wholesaler = shoppingSession.wholesaler,
-                    flower = it.flower,
-                    quantity = it.quantity,
-                    grade = it.grade,
-                    price = null,
-                )
-            }
-            val createdOrderItems: List<OrderItem> = orderItemRepository.saveAll(orderItems)
-            createOrderItemGroups(createdOrderItems)
-            return updatedOrderSheet
+        val (shoppingSession, cartItems) = validateCartItems(retailerId)
+        closeSession(shoppingSession)
+        val orderSheet = createOrderSheet(shoppingSession)
+        val createdItems = createOrderItems(cartItems, orderSheet, shoppingSession.wholesaler)
+        createOrderItemGroups(createdItems)
+        logger.info("$className.$executedFunc >> completed.")
+        return orderSheet
     }
 
 
@@ -489,6 +438,112 @@ class OrderService {
                 )
             }
             return createdReceipt
+    }
+
+    private fun validateCartItems(retailerId: Long): Pair<ShoppingSession, List<CartItem>> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val shoppingSession = shoppingSessionRepository
+                .findOne(ShoppingSessionSpecs.byRetailerId(retailerId))
+                .orElseThrow {
+                    CustomException(
+                        message = "There's no shopping_session whose retailerID is $retailerId.",
+                        errorType = ErrorType.NOT_FOUND,
+                        errorCode = ErrorCode.NO_SHOPPING_SESSION
+                    )
+                }
+            val cartItems = cartItemRepository.findAllByRetailerId(retailerId, PageRequest.of(DEFAULT_PAGE, 9999))
+                .map {
+                    it.orderedAt = LocalDateTime.now()
+                    it
+                }.content
+
+            if (cartItems.isEmpty()) throw CustomException(
+                message = "There's no cart items to order.",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = ErrorCode.NO_CART_ITEM
+            )
+
+            val isAllConnectedWithWholesaler =
+                cartItems.mapNotNull { it.wholesaler }.size == cartItems.size && shoppingSession.wholesaler != null
+            if (!isAllConnectedWithWholesaler) throw CustomException(
+                message = "There's no connected wholesaler on cart items.",
+                errorType = ErrorType.NOT_FOUND,
+                errorCode = ErrorCode.NO_CART_WHOLESALER
+            )
+            logger.info("$className.$executedFunc >> All cart items have wholesaler info.")
+
+            cartItemRepository.saveAll(cartItems)
+            cartItemRepository.flush()
+            logger.info("$className.$executedFunc >> All cart items are ordered.")
+
+            return Pair(shoppingSession, cartItems)
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
+    private fun closeSession(shoppingSession: ShoppingSession) {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            shoppingSessionRepository.delete(shoppingSession)
+            logger.info("$className.$executedFunc >> Shopping_session of retailer(${shoppingSession.retailer?.id}) is deleted(closed).")
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
+    private fun createOrderSheet(shoppingSession: ShoppingSession): OrderSheet {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val orderSheet = OrderSheet(
+                orderNo = "",
+                retailer = shoppingSession.retailer,
+                wholesaler = shoppingSession.wholesaler,
+                memo = shoppingSession.memo,
+            )
+            val savedOrderSheet = orderSheetRepository.save(orderSheet)
+            savedOrderSheet.orderNo = StringGenerator.generateOrderNo(savedOrderSheet.id!!)
+            val updatedOrderSheet = orderSheetRepository.save(savedOrderSheet)
+            logger.info("$className.$executedFunc >> OrderSheet is created.")
+            return updatedOrderSheet
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
+    }
+
+    private fun createOrderItems(
+        cartItems: List<CartItem>,
+        orderSheet: OrderSheet,
+        wholesaler: User?
+    ): List<OrderItem> {
+        val executedFunc = object : Any() {}.javaClass.enclosingMethod.name
+
+        try {
+            val orderItems = cartItems.map {
+                OrderItem(
+                    retailer = it.retailer,
+                    orderSheet = orderSheet,
+                    wholesaler = wholesaler,
+                    flower = it.flower,
+                    quantity = it.quantity,
+                    grade = it.grade,
+                    price = null,
+                )
+            }
+            val createdOrderItems = orderItemRepository.saveAll(orderItems)
+            logger.info("$className.$executedFunc >> Order items are created by cart items.")
+            return createdOrderItems
+        } catch (e: Exception) {
+            logger.error("$className.$executedFunc >> ${e.message}")
+            throw e
+        }
     }
 
     @Transactional
