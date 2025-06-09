@@ -31,122 +31,78 @@ class MessagingService {
     private lateinit var profile: String
 
 
-    private fun createClient(): WebClient {
+    private fun createClient(): WebClient = WebClient
+        .builder()
+        .baseUrl(baseUrl)
+        .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
+        .build()
 
-        val client = WebClient
-            .builder()
-            .baseUrl(baseUrl)
-            .defaultHeader(HttpHeaders.CONTENT_TYPE, MediaType.APPLICATION_JSON_VALUE)
-            .build()
-        return client
+    private suspend fun requestSms(
+        template: MessageTemplate,
+        to: String,
+        args: List<String>,
+    ): MessageResponseDto {
+        return try {
+            val client = createClient()
+            val req = MessageReqDto(
+                to = to,
+                template = template.toString(),
+                args = args,
+            )
+            req.validate()
 
+            client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
+        } catch (e: Exception) {
+            throw CustomException(
+                message = "Error occurred while sending '${template.name}' type of SMS. ${e.message}",
+                errorType = ErrorType.INTERNAL,
+                errorCode = ErrorCode.SMS_NOT_REACHED,
+            )
+        }
     }
 
 
     suspend fun sendDefaultSMS(to: String, message: String): MessageResponseDto {
-
-        try {
-            val client = createClient()
-            val req = MessageReqDto(
-                to = to,
-                template = MessageTemplate.Default.toString(),
-                args = listOf(message)
-            )
-
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            return res
-        } catch (e: Exception) {
-            throw CustomException(
-                message = "Error occurred while sending 'Default' type of SMS. ${e.message}",
-                errorType = ErrorType.INTERNAL,
-                errorCode = ErrorCode.SMS_NOT_REACHED
-            )
-        }
+        return requestSms(
+            template = MessageTemplate.Default,
+            to = to,
+            args = listOf(message),
+        )
     }
 
     suspend fun sendVerificationSMS(to: String, code: String): MessageResponseDto {
-
-        try {
-            val client = createClient()
-            val req = MessageReqDto(
-                to = to,
-                template = MessageTemplate.Verification.toString(),
-                args = listOf(code)
-            )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            return res
-        } catch (e: Exception) {
-            throw CustomException(
-                message = "Error occurred while sending 'Verification' type of SMS. ${e.message}",
-                errorType = ErrorType.INTERNAL,
-                errorCode = ErrorCode.SMS_NOT_REACHED
-            )
-        }
+        return requestSms(
+            template = MessageTemplate.Verification,
+            to = to,
+            args = listOf(code),
+        )
     }
 
     suspend fun sendApplyBizConnectionSMS(to: String, retailerName: String): MessageResponseDto {
-
-        try {
-            val client = createClient()
-            val url = generateSmsUrl(AccountRole.WHOLESALER_EMPR)
-            val req = MessageReqDto(
-                to = to,
-                template = MessageTemplate.ApplyBizConnection.toString(),
-                args = listOf(retailerName, url)
-            )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            return res
-        } catch (e: Exception) {
-            throw CustomException(
-                message = "Error occurred while sending 'ApplyBizConnection' type of SMS. ${e.message}",
-                errorType = ErrorType.INTERNAL,
-                errorCode = ErrorCode.SMS_NOT_REACHED
-            )
-        }
+        val url = generateSmsUrl(AccountRole.WHOLESALER_EMPR)
+        return requestSms(
+            template = MessageTemplate.ApplyBizConnection,
+            to = to,
+            args = listOf(retailerName, url),
+        )
     }
 
     suspend fun sendConfirmBizConnectionSMS(to: String, wholesalerName: String): MessageResponseDto {
-
-        try {
-            val client = createClient()
-            val url = generateSmsUrl(AccountRole.RETAILER)
-            val req = MessageReqDto(
-                to = to,
-                template = MessageTemplate.ConfirmBizConnection.toString(),
-                args = listOf(wholesalerName, wholesalerName, url)
-            )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            return res
-        } catch (e: Exception) {
-
-            throw CustomException(
-                message = "Error occurred while sending 'ConfirmBizConnection' type of SMS. ${e.message}",
-                errorType = ErrorType.INTERNAL,
-                errorCode = ErrorCode.SMS_NOT_REACHED
-            )
-        }
+        val url = generateSmsUrl(AccountRole.RETAILER)
+        return requestSms(
+            template = MessageTemplate.ConfirmBizConnection,
+            to = to,
+            args = listOf(wholesalerName, wholesalerName, url),
+        )
     }
 
     suspend fun sendRejectBizConnectionSMS(to: String, wholesalerName: String): MessageResponseDto {
-
-        try {
-            val client = createClient()
-            val url = generateSmsUrl(AccountRole.RETAILER)
-            val req = MessageReqDto(
-                to = to,
-                template = MessageTemplate.RejectBizConnection.toString(),
-                args = listOf(wholesalerName, wholesalerName, url)
-            )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            return res
-        } catch (e: Exception) {
-
-            throw CustomException(
-                message = "Error occurred while sending 'RejectBizConnection' type of SMS. ${e.message}",
-                errorType = ErrorType.INTERNAL,
-                errorCode = ErrorCode.SMS_NOT_REACHED
-            )
-        }
+        val url = generateSmsUrl(AccountRole.RETAILER)
+        return requestSms(
+            template = MessageTemplate.RejectBizConnection,
+            to = to,
+            args = listOf(wholesalerName, wholesalerName, url),
+        )
     }
 
     suspend fun sendIssueOrderSheetReceiptSMS(
@@ -154,24 +110,12 @@ class MessagingService {
         wholesalerName: String,
         orderNo: String,
     ): MessageResponseDto {
-
-        try {
-            val client = createClient()
-            val url = generateSmsUrl(AccountRole.RETAILER)
-            val req = MessageReqDto(
-                to = to,
-                template = MessageTemplate.IssueOrderSheetReceipt.toString(),
-                args = listOf(wholesalerName, orderNo, url)
-            )
-            val res = client.post().body(BodyInserters.fromValue(req)).awaitExchange { onMessagingResponse(it) }
-            return res
-        } catch (e: Exception) {
-            throw CustomException(
-                message = "Error occurred while sending 'IssueOrderSheetReceipt' type of SMS. ${e.message}",
-                errorType = ErrorType.INTERNAL,
-                errorCode = ErrorCode.SMS_NOT_REACHED
-            )
-        }
+        val url = generateSmsUrl(AccountRole.RETAILER)
+        return requestSms(
+            template = MessageTemplate.IssueOrderSheetReceipt,
+            to = to,
+            args = listOf(wholesalerName, orderNo, url),
+        )
     }
 
     private suspend fun onMessagingResponse(res: ClientResponse): MessageResponseDto {
