@@ -1,7 +1,9 @@
 package kr.co.marketbill.marketbillcoreserver.application.service.user
 
 import com.netflix.graphql.types.errors.ErrorType
-import kotlinx.coroutines.runBlocking
+import kr.co.marketbill.marketbillcoreserver.application.event.BizConnectionCreatedEvent
+import kr.co.marketbill.marketbillcoreserver.application.event.BizConnectionUpdatedEvent
+import org.springframework.context.ApplicationEventPublisher
 import kr.co.marketbill.marketbillcoreserver.application.dto.response.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.shared.constants.*
 import kr.co.marketbill.marketbillcoreserver.application.service.common.MessagingService
@@ -52,6 +54,9 @@ class UserService {
 
     @Autowired
     private lateinit var messagingService: MessagingService
+
+    @Autowired
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @Autowired
     private lateinit var authTokenRepository: AuthTokenRepository
@@ -476,10 +481,14 @@ class UserService {
             val targetPhoneNo = wholesaler.userCredential!!.phoneNo
             logger.info("$className.$executedFunc >> bizConnection object is created.")
 
-            runBlocking {
-                messagingService.sendApplyBizConnectionSMS(targetPhoneNo, retailerName)
-            }
-            logger.info("$className.$executedFunc >> sent bizConnection message.")
+            eventPublisher.publishEvent(
+                BizConnectionCreatedEvent(
+                    this,
+                    targetPhoneNo = targetPhoneNo,
+                    retailerName = retailerName,
+                )
+            )
+            logger.info("$className.$executedFunc >> published bizConnection created event.")
 
             val createdBizConn = bizConnectionRepository.save(bizConnection)
             logger.info("$className.$executedFunc >> completed.")
@@ -512,28 +521,19 @@ class UserService {
             val targetPhoneNo = retailer!!.userCredential!!.phoneNo
             val wholesalerName = wholesaler!!.name!!
 
-            when (status) {
-                ApplyStatus.APPLYING -> {
-                    logger.info("No need messaging API call on APPLYING status")
-                }
-                ApplyStatus.CONFIRMED -> {
-                    runBlocking {
-                        messagingService.sendConfirmBizConnectionSMS(
-                            to = targetPhoneNo,
-                            wholesalerName = wholesalerName,
-                        )
-                    }
-                }
-                ApplyStatus.REJECTED -> {
-                    runBlocking {
-                        messagingService.sendRejectBizConnectionSMS(
-                            to = targetPhoneNo,
-                            wholesalerName = wholesalerName,
-                        )
-                    }
-                }
+            if (status != ApplyStatus.APPLYING) {
+                eventPublisher.publishEvent(
+                    BizConnectionUpdatedEvent(
+                        this,
+                        status = status,
+                        targetPhoneNo = targetPhoneNo,
+                        wholesalerName = wholesalerName,
+                    )
+                )
+                logger.info("$className.$executedFunc >> published bizConnection updated event.")
+            } else {
+                logger.info("No need messaging API call on APPLYING status")
             }
-            logger.info("$className.$executedFunc >> sent bizConnection status updated message.")
             logger.info("$className.$executedFunc >> completed.")
 
             return updatedBizConn
