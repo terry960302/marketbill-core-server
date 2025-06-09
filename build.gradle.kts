@@ -15,7 +15,18 @@ plugins {
 
 group = "kr.co.marketbill"
 version = "0.0.1-SNAPSHOT"
-java.sourceCompatibility = JavaVersion.VERSION_17
+
+java {
+    toolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
+
+kotlin {
+    jvmToolchain {
+        languageVersion.set(JavaLanguageVersion.of(17))
+    }
+}
 
 extra["kotlin.version"] = "1.7.0"
 extra["graphql-java.version"] = "19.2"

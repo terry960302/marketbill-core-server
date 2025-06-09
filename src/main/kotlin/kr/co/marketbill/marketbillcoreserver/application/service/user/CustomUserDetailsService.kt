@@ -36,10 +36,12 @@ class CustomUserDetailsService : UserDetailsService {
             )
             logger.trace("$className.$executedFunc >> user credential is existed.")
 
+            val cred = credential.get()
             val createdDetails = CustomUserDetails(
-                phoneNo = credential.get().phoneNo,
+                phoneNo = cred.phoneNo,
                 role = AccountRole.values()
-                    .first { it.name == credential.get().user!!.userCredential!!.role.toString() }
+                    .first { it.name == cred.user!!.userCredential!!.role.toString() },
+                password = cred.password,
             )
             logger.info("$className.$executedFunc >> completed")
             return createdDetails
