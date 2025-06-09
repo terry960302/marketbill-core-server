@@ -1,7 +1,9 @@
 package kr.co.marketbill.marketbillcoreserver.application.service.user
 
 import com.netflix.graphql.types.errors.ErrorType
-import kotlinx.coroutines.runBlocking
+import kr.co.marketbill.marketbillcoreserver.application.event.BizConnectionCreatedEvent
+import kr.co.marketbill.marketbillcoreserver.application.event.BizConnectionUpdatedEvent
+import org.springframework.context.ApplicationEventPublisher
 import kr.co.marketbill.marketbillcoreserver.application.dto.response.AuthTokenDto
 import kr.co.marketbill.marketbillcoreserver.shared.constants.*
 import kr.co.marketbill.marketbillcoreserver.application.service.common.MessagingService
@@ -23,7 +25,8 @@ import org.springframework.data.domain.Pageable
 import org.springframework.security.crypto.bcrypt.BCryptPasswordEncoder
 import org.springframework.stereotype.Service
 import org.springframework.transaction.annotation.Transactional
-import java.net.URL
+import kr.co.marketbill.marketbillcoreserver.domain.validator.PasswordValidator
+import kr.co.marketbill.marketbillcoreserver.domain.validator.UrlValidator
 import java.util.*
 import javax.persistence.EntityManager
 
@@ -50,6 +53,9 @@ class UserService {
 
     @Autowired
     private lateinit var messagingService: MessagingService
+
+    @Autowired
+    private lateinit var eventPublisher: ApplicationEventPublisher
 
     @Autowired
     private lateinit var authTokenRepository: AuthTokenRepository
@@ -154,8 +160,7 @@ class UserService {
 
     @Transactional
     fun updatePassword(input: UpdatePasswordInput) {
-
-            val isValidPassword = validatePassword(input.password)
+            val isValidPassword = PasswordValidator.isValid(input.password)
             if (!isValidPassword) {
                 throw CustomException(
                     message = "Invalid format of password. Password must be at least 8 letters including english, number, special characters with no whitespaces.",
@@ -217,7 +222,7 @@ class UserService {
     @Transactional
     fun upsertBusinessInfo(input: CreateBusinessInfoInput): BusinessInfo {
 
-        val isValidStampUrl = validateUrl(input.sealStampImgUrl)
+        val isValidStampUrl = UrlValidator.isValid(input.sealStampImgUrl)
         if (!isValidStampUrl) {
             val msg = "Invalid seal stamp img url. Please check url format."
             throw CustomException(
@@ -398,9 +403,13 @@ class UserService {
             val retailerName = retailer.name!!
             val targetPhoneNo = wholesaler.userCredential!!.phoneNo
 
-            runBlocking {
-                messagingService.sendApplyBizConnectionSMS(targetPhoneNo, retailerName)
-            }
+            eventPublisher.publishEvent(
+                BizConnectionCreatedEvent(
+                    this,
+                    targetPhoneNo = targetPhoneNo,
+                    retailerName = retailerName,
+                )
+            )
 
             val createdBizConn = bizConnectionRepository.save(bizConnection)
             return createdBizConn
@@ -426,25 +435,15 @@ class UserService {
             val targetPhoneNo = retailer!!.userCredential!!.phoneNo
             val wholesalerName = wholesaler!!.name!!
 
-            when (status) {
-                ApplyStatus.APPLYING -> {
-                }
-                ApplyStatus.CONFIRMED -> {
-                    runBlocking {
-                        messagingService.sendConfirmBizConnectionSMS(
-                            to = targetPhoneNo,
-                            wholesalerName = wholesalerName,
-                        )
-                    }
-                }
-                ApplyStatus.REJECTED -> {
-                    runBlocking {
-                        messagingService.sendRejectBizConnectionSMS(
-                            to = targetPhoneNo,
-                            wholesalerName = wholesalerName,
-                        )
-                    }
-                }
+            if (status != ApplyStatus.APPLYING) {
+                eventPublisher.publishEvent(
+                    BizConnectionUpdatedEvent(
+                        this,
+                        status = status,
+                        targetPhoneNo = targetPhoneNo,
+                        wholesalerName = wholesalerName,
+                    )
+                )
             }
 
             return updatedBizConn
@@ -514,19 +513,5 @@ class UserService {
         }
     }
 
-    private fun validateUrl(urlString: String?): Boolean {
-        return try {
-            URL(urlString)
-            true
-        } catch (ignored: Exception) {
-            false
-        }
-    }
-
-    private fun validatePassword(password: String): Boolean {
-        // 영문, 숫자, 특수문자 조합 + 공백없음 + 8자 이상
-        val minLength = 8
-        val passwordPattern = "^(?!.* )(?=.*[a-zA-Z])(?=.*[0-9])(?=.*[@#\$%^&*]).{$minLength,}\$".toRegex()
-        return password.matches(passwordPattern)
-    }
+    
 }
