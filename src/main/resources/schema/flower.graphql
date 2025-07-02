@@ -24,7 +24,7 @@ type FlowerColor {
 
 type BiddingFlower {
     id : Int!,
-    flower : Flower!,
+    flower : Flower,
     biddingDate : LocalDate!,
 }
 
@@ -35,9 +35,6 @@ extend type Query{
     # - 사입가능한 꽃 목록(기간별)
     # - 꽃 검색(검색)
     flowers(filter : FlowerFilterInput, pagination : PaginationInput) : FlowersOutput!,
-
-
-    getFlowers(filter : FlowerFilterInput, pagination : PaginationInput) : FlowersOutput! @deprecated(reason: "getFlowers is deprecated. Use 'flowers' instead.")
 }
 
 ## -------------- MUTATION ------------------
