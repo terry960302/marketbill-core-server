@@ -6,4 +6,5 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface BiddingFlowerCrudRepository : JpaRepository<BiddingFlowerJpo, Long>{
+    fun findAllByFlowerIdIn(flowerIds: Set<Long>): List<BiddingFlowerJpo>
 }

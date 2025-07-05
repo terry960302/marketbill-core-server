@@ -1,5 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.flower.domain.model
 
+import kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity.FlowerColorJpo
+import kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity.FlowerJpo
+import kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity.FlowerTypeJpo
 import kr.co.marketbill.marketbillcoreserver.flower.domain.vo.*
 import java.time.LocalDate
 import java.time.LocalDateTime
@@ -9,10 +12,9 @@ data class Flower(
     val name: String,
     val type: FlowerType, // 품목
     val images: List<FlowerImageUrl>,
-    val color: FlowerColor?,
+    val color: FlowerColor,
     val createdAt: LocalDateTime,
     val updatedAt: LocalDateTime,
-    val biddingFlowers : List<BiddingFlower>
 ) {
     init {
         require(name.isNotBlank()) { "꽃 이름은 필수입니다" }
@@ -24,7 +26,21 @@ data class Flower(
         name.contains(keyword, ignoreCase = true) || type.matchesKeyword(keyword)
 
     fun hasImages(): Boolean = images.isNotEmpty()
-    fun hasBiddingFlowers() : Boolean = biddingFlowers.isNotEmpty()
+
+    companion object {
+        fun fromJpo(jpo: FlowerJpo): Flower = Flower(
+            id = jpo.id?.let { FlowerId(it) },
+            name = jpo.name,
+            type = FlowerType.fromJpo(jpo.flowerTypeJpo), // FlowerType에 fromJpo가 필요
+            images = jpo.images.map { FlowerImageUrl(it) },
+            color = FlowerColor.fromJpo(jpo.flowerColor), // FlowerColor에 fromJpo가 필요
+            createdAt = jpo.createdAt,
+            updatedAt = jpo.updatedAt,
+        )
+
+    }
+
+
 }
 
 

@@ -1,12 +1,15 @@
 package kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity
 
+import kr.co.marketbill.marketbillcoreserver.shared.adapter.out.persistence.types.ListStringType
 import kr.co.marketbill.marketbillcoreserver.shared.infrastructure.adapter.out.persistence.entity.BaseJpo
 import kr.co.marketbill.marketbillcoreserver.types.FlowerColor
 import javax.persistence.*
 import org.hibernate.annotations.Type
 import org.hibernate.annotations.OrderBy
+import org.hibernate.annotations.TypeDef
 
 // 품종
+@TypeDef(name = "list-string", typeClass = ListStringType::class)
 @Entity
 @Table(
     name = "flowers", indexes = [
@@ -39,11 +42,11 @@ class FlowerJpo(
     @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY, cascade = [CascadeType.REMOVE], orphanRemoval = true)
     val biddingFlowerJpos: MutableList<BiddingFlowerJpo> = mutableListOf(),
 
-    @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY, cascade = [CascadeType.REMOVE], orphanRemoval = true)
-    val cartItems: MutableList<CartItem> = mutableListOf(),
-
-    @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY, cascade = [CascadeType.REMOVE], orphanRemoval = true)
-    val orderItems: MutableList<OrderItem> = mutableListOf()
+//    @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY, cascade = [CascadeType.REMOVE], orphanRemoval = true)
+//    val cartItems: MutableList<CartItem> = mutableListOf(),
+//
+//    @OneToMany(mappedBy = "flower", fetch = FetchType.LAZY, cascade = [CascadeType.REMOVE], orphanRemoval = true)
+//    val orderItems: MutableList<OrderItem> = mutableListOf()
 ) : BaseJpo() {
 
     companion object {

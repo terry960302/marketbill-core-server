@@ -1,0 +1,663 @@
+---
+description: 
+globs: 
+alwaysApply: false
+---
+
+# 🏗️ Hexagonal Architecture + DDD 도메인 생성 규칙
+
+## �� 1. 폴더 구조 규칙
+
+### 필수 폴더 구조
+```
+{{도메인명}}/
+├── domain/
+│   ├── model/           # 핵심 도메인 엔티티
+│   └── vo/              # Value Objects
+├── application/
+│   ├── command/         # 외부 요청 변환
+│   ├── result/          # 도메인 응답 결과
+│   ├── service/         # 트랜잭션 관리
+│   ├── usecase/         # 비즈니스 로직
+│   └── port/
+│       ├── inbound/     # 입력 포트 (필요시)
+│       └── outbound/    # 출력 포트
+└── adapter/
+    ├── in/              # 입력 어댑터
+    │   └── graphql/     # GraphQL 어댑터
+    │       ├── datafetcher/
+    │       ├── mapper/
+    │       └── dto/
+    └── out/             # 출력 어댑터 (필요시)
+        └── persistence/ # JPA 어댑터
+            ├── entity/
+            └── repository/
+```
+
+## ��️ 2. 계층별 책임 규칙
+
+### Domain Layer
+- **model/**: 핵심 도메인 엔티티와 비즈니스 로직
+  - `data class` 사용, 불변성 보장
+  - `init` 블록으로 유효성 검증
+  - 도메인 메서드 포함 (`isCreatedAfter`, `matchesKeyword` 등)
+- **vo/**: 타입 안전한 값 객체
+  - `@JvmInline value class` 사용
+  - DB ID: `{Entity}Id`
+  - 비즈니스 개념: `{Entity}{Attribute}`
+
+### Application Layer
+- **command/**: 외부 요청을 도메인 모델로 변환
+  - `companion object`에 팩토리 메서드 (`fromGraphql`, `fromRest` 등)
+  - 유효성 검증 포함
+- **result/**: 도메인 모델을 외부 응답용으로 변환
+  - `companion object`에 `from()` 팩토리 메서드
+  - 페이지네이션 정보 포함
+- **service/**: 트랜잭션 관리와 어댑터 연결
+  - `@Service`, `@Transactional` 사용
+  - UseCase 호출 후 Mapper로 변환
+- **usecase/**: 특정 비즈니스 시나리오 실행
+  - 순수한 비즈니스 로직 orchestration
+  - Port를 통해서만 외부와 연결
+- **port/**: 외부와의 인터페이스 정의
+  - Domain 모델을 반환하는 인터페이스
+
+### Adapter Layer
+- **in/graphql/datafetcher/**: GraphQL 진입점
+  - `@DgsComponent` 사용
+  - Service 계층만 호출
+- **in/graphql/mapper/**: Application 결과를 DGS Codegen 타입으로 변환
+  - `object`로 구현 (상태 없음)
+  - `types` 패키지의 생성된 타입 사용
+- **in/graphql/dto/**: GraphQL 요청 전용 DTO
+  - 입력 파라미터 캡슐화
+- **out/persistence/repository/**: Port 인터페이스 구현체
+  - `@Repository` 사용
+  - QueryRepository + Mapper + CrudRepository 조합
+  - JPO ↔ Domain 변환은 Mapper 사용
+- **out/persistence/mapper/**: JPO ↔ Domain 모델 변환
+  - `@Component` 사용
+  - `toDomain()`, `toJpo()`, `toDomainList()` 메서드 구현
+- **out/persistence/entity/**: JPA 엔티티
+  - `@Entity` 사용
+  - Domain 모델과 독립적인 DB 스키마
+- **out/persistence/dataloader/**: GraphQL DataLoader (필요시)
+  - N+1 문제 해결을 위한 DataLoader 구현
+  - Legacy 폴더에 연관관계가 있는 경우 필수
+  - Batch 로딩 로직 포함
+
+## 🎯 3. 명명 규칙
+
+### 클래스 명명 패턴
+```kotlin
+// Domain
+data class {{도메인명}}(...)                    // 핵심 엔티티
+data class {{도메인명}}SearchCriteria(...)      // 검색 조건
+@JvmInline value class {{도메인명}}Id(val value: Long)  // ID VO
+
+// Application
+data class {{도메인명}}SearchCommand(...)       // 명령 객체
+data class {{도메인명}}SearchResult(...)        // 검색 결과
+data class {{도메인명}}Result(...)              // 개별 결과
+class {{도메인명}}SearchUseCase(...)            // 유스케이스
+class {{도메인명}}Service(...)                  // 서비스
+interface {{도메인명}}Repository                // 포트
+
+// Adapter
+class {{도메인명}}Fetcher(...)                  // GraphQL 진입점
+object {{도메인명}}OutputMapper                 // 응답 변환
+data class {{도메인명}}Request(...)             // 요청 DTO
+```
+
+## 🔄 4. 의존성 방향 규칙
+
+### 허용되는 의존성
+```
+Adapter(in) → Application → Domain
+Adapter(out) → Application → Domain
+Application → Domain
+```
+
+### 금지되는 의존성
+```
+❌ Domain → Application
+❌ Domain → Adapter
+❌ Application → Adapter
+❌ Adapter → Adapter (다른 어댑터)
+```
+
+## 🏭 5. 생성 패턴 규칙
+
+### Factory Method 패턴
+```kotlin
+// Command
+companion object {
+    fun fromGraphql(filter: FilterInput?, pagination: PaginationInput?): {{도메인명}}SearchCommand
+}
+
+// Result
+companion object {
+    fun from(domain: {{도메인명}}): {{도메인명}}Result
+}
+
+// VO
+companion object {
+    fun from(value: String): {{도메인명}}Id
+}
+```
+
+### Mapper 패턴
+```kotlin
+object {{도메인명}}OutputMapper {
+    fun mapTo{{도메인명}}Output(result: {{도메인명}}SearchResult): {{도메인명}}Output {
+        // DGS Codegen 타입으로 변환
+    }
+}
+```
+
+## �� 6. 테스트 규칙
+
+### 테스트 위치
+```
+src/test/kotlin/kr/co/marketbill/marketbillcoreserver/{{도메인명}}/
+├── domain/
+├── application/
+└── adapter/
+```
+
+### 테스트 명명
+```kotlin
+class {{도메인명}}FetcherTest
+class {{도메인명}}ServiceTest
+class {{도메인명}}UseCaseTest
+```
+
+## �� 7. 구현 체크리스트
+
+새로운 도메인 생성 시 다음 항목들을 확인하세요:
+
+### Domain Layer
+- [ ] `data class`로 엔티티 정의
+- [ ] `init` 블록으로 유효성 검증
+- [ ] 도메인 메서드 포함
+- [ ] `@JvmInline value class`로 VO 정의
+- [ ] `companion object`에 팩토리 메서드
+
+### Application Layer
+- [ ] Command에 `fromGraphql` 팩토리 메서드
+- [ ] Result에 `from()` 팩토리 메서드
+- [ ] UseCase는 순수한 비즈니스 로직만
+- [ ] Service에 `@Transactional` 적용
+- [ ] Port 인터페이스 정의
+
+### Adapter Layer
+- [ ] Fetcher에 `@DgsComponent` 적용
+- [ ] Mapper는 `object`로 구현
+- [ ] DGS Codegen 타입 사용
+- [ ] Service만 호출
+
+### 의존성 검증
+- [ ] Domain은 외부 라이브러리 없음
+- [ ] Application은 Port만 참조
+- [ ] Adapter는 Application만 참조
+
+## ⚠️ 8. 주의사항
+
+1. **GraphQL 응답은 반드시 DGS Codegen 타입 사용**
+2. **Domain은 절대 외부 라이브러리 사용 금지**
+3. **Adapter 간 직접 참조 금지**
+4. **모든 도메인 객체는 불변성 보장**
+5. **팩토리 메서드는 `companion object`에 정의**
+
+## ��️ 9. RepositoryImpl 구현 규칙
+
+### RepositoryImpl 구조
+```kotlin
+@Repository
+class {{도메인명}}RepositoryImpl(
+    private val {{도메인명}}QueryRepository: {{도메인명}}QueryRepository,
+    private val {{도메인명}}Mapper: {{도메인명}}Mapper,
+    private val crudRepository: {{도메인명}}CrudRepository,
+) : {{도메인명}}Repository {
+    // Port 인터페이스 구현
+}
+```
+
+### 구성 요소 역할
+- **QueryRepository**: 복잡한 검색/조회 쿼리 처리 (QueryDSL 기반)
+- **Mapper**: JPO ↔ Domain 모델 변환
+- **CrudRepository**: 단순 CRUD 작업 (JPA Repository)
+
+### 메서드 구현 패턴
+```kotlin
+// 검색 메서드
+override fun find{{도메인명}}sWithCriteria(
+    criteria: {{도메인명}}SearchCriteria,
+    pageInfo: PageInfo
+): PageResult<{{도메인명}}> {
+    val jpoPage = {{도메인명}}QueryRepository.find{{도메인명}}sWithDynamicQuery(criteria, pageInfo)
+    val domain{{도메인명}}s = {{도메인명}}Mapper.toDomainList(jpoPage.content)
+    
+    return PageResult(
+        content = domain{{도메인명}}s,
+        pageInfo = pageInfo,
+        totalElements = jpoPage.totalElements
+    )
+}
+
+// 단순 조회 메서드
+override fun findById(id: {{도메인명}}Id): {{도메인명}}? {
+    val jpo = crudRepository.findById(id.value).orElse(null)
+    return jpo?.let { {{도메인명}}Mapper.toDomain(it) }
+}
+
+// 저장 메서드
+override fun save({{도메인명}}: {{도메인명}}): {{도메인명}} {
+    val jpo = {{도메인명}}Mapper.toJpo({{도메인명}})
+    val savedJpo = crudRepository.save(jpo)
+    return {{도메인명}}Mapper.toDomain(savedJpo)
+}
+```
+
+### QueryRepository 구현 규칙
+```kotlin
+@Repository
+interface {{도메인명}}QueryRepository {
+    fun find{{도메인명}}sWithDynamicQuery(
+        criteria: {{도메인명}}SearchCriteria, 
+        pageInfo: PageInfo
+    ): Page<{{도메인명}}Jpo>
+}
+```
+
+### Mapper 구현 규칙
+```kotlin
+@Component
+class {{도메인명}}Mapper {
+    fun toDomain(jpo: {{도메인명}}Jpo): {{도메인명}}
+    fun toJpo(domain: {{도메인명}}): {{도메인명}}Jpo
+    fun toDomainList(jpos: List<{{도메인명}}Jpo>): List<{{도메인명}}>
+}
+```
+
+### RepositoryImpl 체크리스트
+새로운 RepositoryImpl 생성 시:
+
+- [ ] **QueryRepository + Mapper + CrudRepository 조합** 사용
+- [ ] **@Repository** 어노테이션 적용
+- [ ] **JPO ↔ Domain 변환은 Mapper 사용**
+- [ ] **복잡한 쿼리는 QueryRepository 위임**
+- [ ] **단순 CRUD는 CrudRepository 위임**
+- [ ] **Port 인터페이스의 모든 메서드 구현**
+
+## ��️ 10. JPO Entity 구현 규칙
+
+### JPO Entity 구조
+```kotlin
+@Entity
+@Table(
+    name = "{{테이블명}}", 
+    indexes = [
+        Index(name = "idx_{{테이블명}}_created_at", columnList = "created_at"),
+        // 필요한 인덱스 추가
+    ]
+)
+class {{도메인명}}Jpo(
+    @Id
+    @GeneratedValue(strategy = GenerationType.IDENTITY)
+    val id: Long? = null,
+    
+    // 필드들...
+    
+) : BaseJpo() {
+    companion object {
+        fun create(/* 파라미터 */): {{도메인명}}Jpo {
+            // 유효성 검증
+            return {{도메인명}}Jpo(/* 값들 */)
+        }
+    }
+    
+    override fun equals(other: Any?): Boolean {
+        if (this === other) return true
+        if (other !is {{도메인명}}Jpo) return false
+        return id != null && id == other.id
+    }
+    
+    override fun hashCode(): Int = javaClass.hashCode()
+}
+```
+
+### Entity 관계 매핑 규칙
+- **@ManyToOne**: fetch = FetchType.LAZY (기본값)
+- **@OneToMany**: fetch = FetchType.LAZY, cascade = [CascadeType.REMOVE]
+- **@OneToOne**: fetch = FetchType.EAGER (자주 사용되는 경우)
+- **orphanRemoval = true**: 부모 삭제 시 자식도 삭제
+
+### JPO Entity 체크리스트
+- [ ] **BaseJpo 상속**
+- [ ] **@Entity, @Table 어노테이션**
+- [ ] **필요한 인덱스 설정**
+- [ ] **companion object에 create() 팩토리 메서드**
+- [ ] **equals/hashCode 오버라이드**
+- [ ] **Entity 관계 매핑 설정**
+
+##️ 11. Types 패키지 사용 기준
+
+### Types 패키지란?
+- **DGS Codegen**으로 자동 생성되는 GraphQL 타입들
+- `src/main/kotlin/kr/co/marketbill/marketbillcoreserver/types/` 패키지에 위치
+- GraphQL 스키마에서 정의된 Input, Output 타입들
+
+### 언제 Types 패키지 클래스를 사용해야 하는가?
+
+#### 1. **GraphQL Input 타입 사용**
+```kotlin
+// ✅ 올바른 사용 - GraphQL Input
+@DgsComponent
+class {{도메인명}}Fetcher {
+    fun get{{도메인명}}s(
+        @InputArgument filter: {{도메인명}}FilterInput?,  // types 패키지 사용
+        @InputArgument pagination: PaginationInput?      // types 패키지 사용
+    ): {{도메인명}}sOutput {
+        // ...
+    }
+}
+```
+
+#### 2. **GraphQL Output 타입 사용**
+```kotlin
+// ✅ 올바른 사용 - GraphQL Output
+object {{도메인명}}OutputMapper {
+    fun mapTo{{도메인명}}sOutput(result: {{도메인명}}SearchResult): {{도메인명}}sOutput {
+        // types 패키지의 {{도메인명}}sOutput 사용
+        return {{도메인명}}sOutput(
+            resultCount = result.totalElements,
+            items = result.{{도메인명}}s.map { mapTo{{도메인명}}Output(it) }
+        )
+    }
+}
+```
+
+#### 3. **사용 금지 케이스**
+```kotlin
+// ❌ 잘못된 사용 - Application Layer에서 types 패키지 사용
+class {{도메인명}}Service {
+    fun get{{도메인명}}s(filter: {{도메인명}}FilterInput?): {{도메인명}}sOutput {
+        // Application Layer는 types 패키지 사용 금지
+    }
+}
+
+// ❌ 잘못된 사용 - Domain Layer에서 types 패키지 사용
+data class {{도메인명}}(
+    val id: {{도메인명}}Id,
+    val name: String,
+    val type: {{도메인명}}Type  // types 패키지 사용 금지
+)
+```
+
+### Types 패키지 사용 체크리스트
+- [ ] **GraphQL Input/Output 타입만 사용**
+- [ ] **Adapter Layer에서만 사용**
+- [ ] **Application Layer에서는 사용 금지**
+- [ ] **Domain Layer에서는 사용 금지**
+- [ ] **DGS Codegen으로 자동 생성된 타입만 사용**
+
+##️ 12. DataLoader 사용 기준
+
+### DataLoader란?
+- **DGS Framework**의 N+1 문제 해결 도구
+- GraphQL에서 연관관계 데이터를 효율적으로 로딩
+- Batch 로딩을 통한 성능 최적화
+
+### 언제 DataLoader를 사용해야 하는가?
+
+#### 1. **Legacy 폴더에 연관관계가 있는 경우**
+```kotlin
+// ✅ Legacy 폴더에 연관관계가 있으면 DataLoader 사용
+// legacy/domain/entity/user/User.kt
+@Entity
+class User {
+    @OneToMany(mappedBy = "retailer")
+    val appliedConnections: List<BizConnection> = listOf()
+    
+    @OneToMany(mappedBy = "wholesaler") 
+    val receivedConnections: List<BizConnection> = listOf()
+}
+
+// → DataLoader 구현 필요
+@DgsDataLoader(name = "appliedConnections")
+class AppliedConnectionLoader : MappedBatchLoaderWithContext<Long, List<BizConnection>>
+```
+
+#### 2. **GraphQL Field에서 연관 데이터를 가져오는 경우**
+```kotlin
+// ✅ GraphQL Field에서 연관 데이터 로딩
+@DgsData(parentType = "User", field = "appliedConnections")
+fun appliedConnections(
+    dfe: DgsDataFetchingEnvironment,
+    @InputArgument pagination: PaginationInput?
+): CompletableFuture<List<BizConnection>> {
+    val user = dfe.getSource<User>()
+    val dataLoader = dfe.getDataLoader<Long, List<BizConnection>>(AppliedConnectionLoader::class.java)
+    return dataLoader.load(user.id)
+}
+```
+
+#### 3. **사용하지 않는 경우**
+```kotlin
+// ❌ 단순 조회는 DataLoader 불필요
+@DgsQuery(field = "getUser")
+fun getUser(@InputArgument id: Long): User {
+    return userService.getUser(id)  // 단순 조회는 DataLoader 불필요
+}
+
+// ❌ 연관관계가 없는 경우
+data class {{도메인명}}(
+    val id: {{도메인명}}Id,
+    val name: String,
+    val description: String  // 연관관계 없음 → DataLoader 불필요
+)
+```
+
+### DataLoader 구현 규칙
+```kotlin
+@DgsDataLoader(name = "{{도메인명}}Loader")
+class {{도메인명}}Loader : MappedBatchLoaderWithContext<Long, List<{{도메인명}}>> {
+    
+    @Autowired
+    private lateinit var {{도메인명}}Service: {{도메인명}}Service
+    
+    override fun load(
+        keys: Set<Long>, 
+        environment: BatchLoaderEnvironment
+    ): CompletionStage<Map<Long, List<{{도메인명}}>>> {
+        // Batch 로딩 로직 구현
+        val results = {{도메인명}}Service.findByParentIds(keys)
+        return CompletableFuture.completedFuture(results)
+    }
+}
+```
+
+### DataLoader 사용 체크리스트
+- [ ] **Legacy 폴더에 연관관계가 있는지 확인**
+- [ ] **GraphQL Field에서 연관 데이터를 가져오는지 확인**
+- [ ] **N+1 문제가 발생할 수 있는지 확인**
+- [ ] **Batch 로딩이 가능한지 확인**
+- [ ] **DataLoader 구현체 생성**
+- [ ] **GraphQL Field에서 DataLoader 사용**
+
+---
+
+# �� Legacy 폴더 분석 및 도메인 정보 찾기 가이드
+
+## 📁 Legacy 폴더 구조 분석
+
+### Legacy vs New Architecture 비교
+
+| 구분 | Legacy 구조 | New Architecture (Flower) |
+|------|-------------|---------------------------|
+| **도메인 분리** | ❌ 단일 `legacy` 폴더에 모든 도메인 혼재 | ✅ 각 도메인별 독립 폴더 |
+| **계층 분리** | ❌ `application`, `domain`, `infrastructure` 혼재 | ✅ 명확한 Hexagonal Architecture |
+| **DTO 위치** | ❌ `legacy/application/dto/response/` | ✅ `adapter/in/graphql/dto/` |
+| **Repository** | ❌ `legacy/infrastructure/repository/` | ✅ `adapter/out/persistence/repository/` |
+| **GraphQL** | ❌ `legacy/graphql/datafetcher/` | ✅ `adapter/in/graphql/datafetcher/` |
+
+
+---
+
+## �� 도메인 정보 찾기 가이드
+
+### 1. 기존 도메인 정보 찾기
+
+새로운 도메인을 생성할 때, 다음 위치에서 기존 도메인 정보를 찾을 수 있습니다:
+
+#### A. Legacy 응답 DTO (기존 API 응답 구조)
+```
+legacy/application/dto/response/
+├── FlowersOutput.kt          # 꽃 목록 응답
+├── GetFlowersOutput.kt       # 꽃 조회 응답
+├── CartItemsOutput.kt        # 장바구니 응답
+├── OrderSheetsAggregate.kt   # 주문서 응답
+└── ...
+```
+
+#### B. Legacy 엔티티 (기존 데이터 모델)
+```
+legacy/domain/entity/
+├── order/
+│   ├── CartItem.kt           # 장바구니 아이템
+│   ├── OrderSheet.kt         # 주문서
+│   ├── OrderItem.kt          # 주문 아이템
+│   └── ...
+└── common/
+    └── BaseTime.kt           # 공통 시간 정보
+```
+
+#### C. Legacy Repository (기존 데이터 접근)
+```
+legacy/infrastructure/repository/
+├── order/
+│   ├── CartItemRepository.kt     # 장바구니 저장소
+│   ├── OrderSheetRepository.kt   # 주문서 저장소
+│   └── ...
+└── user/
+    └── ...
+```
+
+#### D. Legacy GraphQL (기존 API 엔드포인트)
+{도메인}.graphql 에 정의된 기준으로만 코드를 작성합니다.
+```
+legacy/graphql/datafetcher/
+├── OrderFetcher.kt           # 주문 관련 쿼리
+├── UserFetcher.kt            # 사용자 관련 쿼리
+├── CommonFetcher.kt          # 공통 쿼리
+└── ...
+```
+
+### 2. 도메인 정보 추출 프로세스
+
+새로운 도메인 `{{도메인명}}`을 생성할 때:
+
+#### Step 1: Legacy 응답 DTO 분석
+```kotlin
+// legacy/application/dto/response/{{도메인명}}Output.kt
+data class {{도메인명}}Output(
+    val resultCount: Long,
+    val items: Page<{{도메인명}}>
+)
+```
+
+#### Step 2: Legacy 엔티티 분석
+```kotlin
+// legacy/domain/entity/{{도메인명}}/{{도메인명}}.kt
+@Entity
+class {{도메인명}} : BaseTime() {
+    // 기존 필드들 분석
+}
+```
+
+#### Step 3: Legacy Repository 분석
+```kotlin
+// legacy/infrastructure/repository/{{도메인명}}/{{도메인명}}Repository.kt
+interface {{도메인명}}Repository : JpaRepository<{{도메인명}}, Long> {
+    // 기존 쿼리 메서드들 분석
+}
+```
+
+#### Step 4: Legacy GraphQL 분석
+```kotlin
+// legacy/graphql/datafetcher/{{도메인명}}Fetcher.kt
+@DgsComponent
+class {{도메인명}}Fetcher {
+    // 기존 API 엔드포인트 분석
+}
+```
+
+### 3. 도메인 마이그레이션 체크리스트
+
+Legacy → New Architecture 마이그레이션 시:
+
+#### A. 응답 구조 분석
+- [ ] `legacy/application/dto/response/{{도메인명}}Output.kt` 분석
+- [ ] 기존 응답 필드들을 `application/result/{{도메인명}}Result.kt`로 변환
+- [ ] DGS Codegen 타입과 매핑 관계 확인
+
+#### B. 데이터 모델 분석
+- [ ] `legacy/domain/entity/{{도메인명}}/{{도메인명}}.kt` 분석
+- [ ] JPA 엔티티를 도메인 모델로 변환
+- [ ] VO 분리 (`{{도메인명}}Id`, `{{도메인명}}ImageUrl` 등)
+
+#### C. 비즈니스 로직 분석
+- [ ] `legacy/infrastructure/repository/{{도메인명}}/{{도메인명}}Repository.kt` 분석
+- [ ] 기존 쿼리 로직을 UseCase로 변환
+- [ ] Port 인터페이스 정의
+
+#### D. API 엔드포인트 분석
+- [ ] `legacy/graphql/datafetcher/{{도메인명}}Fetcher.kt` 분석
+- [ ] 기존 API를 새로운 Fetcher로 변환
+- [ ] Command/Result 패턴 적용
+
+### 4. 실제 예시: Flower 도메인 마이그레이션
+
+#### Legacy → New Architecture 변환
+
+```kotlin
+// Legacy 응답 DTO
+// legacy/application/dto/response/FlowersOutput.kt
+data class FlowersOutput(
+    val resultCount: Long,
+    val items: Page<Flower>
+)
+
+// ↓ 변환
+
+// New Application Result
+// flower/application/result/FlowerSearchResult.kt
+data class FlowerSearchResult(
+    val flowers: List<FlowerResult>,
+    val totalElements: Long,
+    val totalPages: Int,
+    val currentPage: Int,
+    val hasNext: Boolean
+)
+
+// New Adapter Mapper
+// flower/adapter/in/graphql/mapper/FlowerOutputMapper.kt
+object FlowerOutputMapper {
+    fun mapToFlowersOutput(result: FlowerSearchResult): FlowersOutput {
+        // DGS Codegen 타입으로 변환
+    }
+}
+```
+
+## �� 결론
+
+새로운 도메인을 생성할 때:
+
+1. **Legacy 폴더에서 기존 도메인 정보 찾기**
+2. **기존 응답 구조, 엔티티, Repository, GraphQL 분석**
+3. **Hexagonal Architecture + DDD 원칙에 따라 새 구조로 변환**
+4. **Flower 도메인을 표준 템플릿으로 활용**
+
+이렇게 하면 기존 시스템의 비즈니스 로직을 보존하면서 새로운 아키텍처로 마이그레이션할 수 있습니다.
+

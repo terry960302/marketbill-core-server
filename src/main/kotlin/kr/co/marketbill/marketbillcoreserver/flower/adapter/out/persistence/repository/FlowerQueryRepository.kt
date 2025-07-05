@@ -3,6 +3,8 @@ package kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.rep
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQueryFactory
 import kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity.FlowerJpo
+import kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity.QFlowerJpo
+import kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity.QFlowerTypeJpo
 import kr.co.marketbill.marketbillcoreserver.flower.domain.model.FlowerSearchCriteria
 import kr.co.marketbill.marketbillcoreserver.flower.domain.vo.FlowerTypeId
 import kr.co.marketbill.marketbillcoreserver.shared.domain.vo.PageInfo
@@ -57,7 +59,7 @@ class FlowerQueryRepository(
         return listOfNotNull(
             dateRangeCondition(criteria.fromDate, criteria.toDate),
             keywordCondition(criteria.keyword),
-            flowerTypeCondition(criteria.flowerTypeId)
+//            flowerTypeCondition(criteria.Vgd)
         ).reduceOrNull { acc, condition -> acc.and(condition) }
     }
 

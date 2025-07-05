@@ -2,10 +2,16 @@ package kr.co.marketbill.marketbillcoreserver.flower.adapter.`in`.graphql.mapper
 
 import kr.co.marketbill.marketbillcoreserver.flower.application.result.FlowerResult
 import kr.co.marketbill.marketbillcoreserver.flower.application.result.FlowerSearchResult
-import kr.co.marketbill.marketbillcoreserver.types.*
+import kr.co.marketbill.marketbillcoreserver.shared.adapter.`in`.graphql.mapper.ResultOutputMapper
+import kr.co.marketbill.marketbillcoreserver.types.Flower
+import kr.co.marketbill.marketbillcoreserver.types.FlowerColor
+import kr.co.marketbill.marketbillcoreserver.types.FlowerType
+import kr.co.marketbill.marketbillcoreserver.types.FlowersOutput
+import org.springframework.stereotype.Component
 
-object FlowerOutputMapper {
-    fun mapToFlowersOutput(result: FlowerSearchResult): FlowersOutput {
+@Component
+class FlowerOutputMapper : ResultOutputMapper<FlowerSearchResult, FlowersOutput>() {
+    override fun toOutput(result: FlowerSearchResult): FlowersOutput {
         return FlowersOutput(
             resultCount = result.flowers.size,
             items = result.flowers.map { mapToFlower(it) }
@@ -28,13 +34,7 @@ object FlowerOutputMapper {
                     name = item.flowerColor.name
                 )
             },
-            biddingFlowers = item.biddingFlowers.map {
-                BiddingFlower(
-                    id = it.id.toInt(),
-                    biddingDate = it.biddingDate,
-                    flower = null,
-                )
-            },
+            biddingFlowers = mutableListOf()
         )
     }
 }

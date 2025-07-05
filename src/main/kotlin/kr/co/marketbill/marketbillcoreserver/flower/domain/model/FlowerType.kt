@@ -1,5 +1,6 @@
 package kr.co.marketbill.marketbillcoreserver.flower.domain.model
 
+import kr.co.marketbill.marketbillcoreserver.flower.adapter.out.persistence.entity.FlowerTypeJpo
 import kr.co.marketbill.marketbillcoreserver.flower.domain.vo.FlowerTypeId
 
 data class FlowerType(
@@ -12,6 +13,14 @@ data class FlowerType(
     }
 
     fun matchesKeyword(keyword: String): Boolean = name.contains(keyword, ignoreCase = true)
+
+    companion object {
+        fun fromJpo(jpo: FlowerTypeJpo): FlowerType = FlowerType(
+            id = jpo.id?.let { FlowerTypeId(it) },
+            name = jpo.name,
+            imgUrl = jpo.imgUrl
+        )
+    }
 }
 
 

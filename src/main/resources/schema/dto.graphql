@@ -45,6 +45,7 @@ input UserFilterInput{
     roles : [AccountRole!],
     phoneNo : String,
     name : String,
+    connectable: Boolean,
 }
 
 input DateFilterInput{

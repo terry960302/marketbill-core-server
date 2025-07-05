@@ -1,9 +1,8 @@
 package kr.co.marketbill.marketbillcoreserver.shared.config
 
 import graphql.com.google.common.collect.ImmutableList
-import kr.co.marketbill.marketbillcoreserver.infrastructure.security.JwtAuthFilter
-import kr.co.marketbill.marketbillcoreserver.infrastructure.security.JwtExceptionFilter
-import org.springframework.beans.factory.annotation.Autowired
+import kr.co.marketbill.marketbillcoreserver.shared.adapter.`in`.security.JwtAuthFilter
+import kr.co.marketbill.marketbillcoreserver.shared.adapter.`in`.security.JwtExceptionFilter
 import org.springframework.context.annotation.Bean
 import org.springframework.context.annotation.Configuration
 import org.springframework.http.HttpMethod
@@ -25,14 +24,10 @@ import org.springframework.web.cors.UrlBasedCorsConfigurationSource
 @Configuration
 @EnableWebSecurity
 @EnableGlobalMethodSecurity(prePostEnabled = true)
-class SecurityConfig {
-
-    @Autowired
-    private lateinit var jwtAuthFilter: JwtAuthFilter
-
-    @Autowired
-    private lateinit var jwtExceptionFilter: JwtExceptionFilter
-
+class SecurityConfig(
+    private val jwtAuthFilter : JwtAuthFilter,
+    private val jwtExceptionFilter: JwtExceptionFilter,
+) {
     @Bean
     fun passwordEncoder(): BCryptPasswordEncoder = BCryptPasswordEncoder()
 

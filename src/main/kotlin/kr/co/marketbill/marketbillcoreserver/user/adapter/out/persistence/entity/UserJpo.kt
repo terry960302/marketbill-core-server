@@ -5,7 +5,7 @@ import javax.persistence.*
 
 @Entity
 @Table(name = "users")
-class UserJpo protected constructor(
+class UserJpo(
     @Id @GeneratedValue(strategy = GenerationType.IDENTITY)
     var id: Long? = null,
 
@@ -21,7 +21,7 @@ class UserJpo protected constructor(
         orphanRemoval = true,
         fetch = FetchType.EAGER,
     )
-    val userCredential: UserCredential? = null,
+    val userCredentialJpo: UserCredentialJpo? = null,
 
     @OneToOne(
         mappedBy = "userJpo",
@@ -71,83 +71,72 @@ class UserJpo protected constructor(
     )
     val wholesalerConnectionsByEmployeeJpo: List<WholesalerConnectionJpo> = listOf(),
 
-    @OneToMany(
-        mappedBy = "retailer",
-        cascade = [CascadeType.ALL],
-        orphanRemoval = true,
-        fetch = FetchType.LAZY
-    )
-    val retailerCartItems: List<CartItem> = listOf(),
-
-    @OneToMany(
-        mappedBy = "wholesaler",
-        cascade = [CascadeType.ALL],
-        orphanRemoval = true,
-        fetch = FetchType.LAZY
-    )
-    val wholesalerCartItems: List<CartItem> = listOf(),
-
-    @OneToMany(mappedBy = "retailer", fetch = FetchType.LAZY)
-    val orderSheetsByRetailer: List<OrderSheet> = listOf(),
-
-    @OneToMany(mappedBy = "wholesaler", fetch = FetchType.LAZY)
-    val orderSheetsByWholesaler: List<OrderSheet> = listOf(),
-
-    @OneToMany(
-        mappedBy = "retailer",
-        fetch = FetchType.LAZY,
-    )
-    val orderItemsByRetailer: List<OrderItem> = listOf(),
-
-    @OneToMany(
-        mappedBy = "wholesaler",
-        fetch = FetchType.LAZY,
-    )
-    val orderItemsByWholesaler: List<OrderItem> = listOf(),
-
-    @OneToOne(mappedBy = "retailer")
-    val retailerShoppingSession: ShoppingSession? = null,
-
-    @OneToMany(mappedBy = "wholesaler")
-    val wholesalerShoppingSessions: List<ShoppingSession> = listOf(),
-
-    @Transient
-    var applyStatus: ApplyStatus? = null,
-
-    @Transient
-    var bizConnectionId: Long? = null,
-
-    @Transient
-    var connectedEmployer: UserJpo? = null,
-
-    @Transient
-    var connectedEmployees: List<UserJpo> = listOf(),
+//    @OneToMany(
+//        mappedBy = "retailer",
+//        cascade = [CascadeType.ALL],
+//        orphanRemoval = true,
+//        fetch = FetchType.LAZY
+//    )
+//    val retailerCartItems: List<CartItem> = listOf(),
+//
+//    @OneToMany(
+//        mappedBy = "wholesaler",
+//        cascade = [CascadeType.ALL],
+//        orphanRemoval = true,
+//        fetch = FetchType.LAZY
+//    )
+//    val wholesalerCartItems: List<CartItem> = listOf(),
+//
+//    @OneToMany(mappedBy = "retailer", fetch = FetchType.LAZY)
+//    val orderSheetsByRetailer: List<OrderSheet> = listOf(),
+//
+//    @OneToMany(mappedBy = "wholesaler", fetch = FetchType.LAZY)
+//    val orderSheetsByWholesaler: List<OrderSheet> = listOf(),
+//
+//    @OneToMany(
+//        mappedBy = "retailer",
+//        fetch = FetchType.LAZY,
+//    )
+//    val orderItemsByRetailer: List<OrderItem> = listOf(),
+//
+//    @OneToMany(
+//        mappedBy = "wholesaler",
+//        fetch = FetchType.LAZY,
+//    )
+//    val orderItemsByWholesaler: List<OrderItem> = listOf(),
+//
+//    @OneToOne(mappedBy = "retailer")
+//    val retailerShoppingSession: ShoppingSession? = null,
+//
+//    @OneToMany(mappedBy = "wholesaler")
+//    val wholesalerShoppingSessions: List<ShoppingSession> = listOf(),
+//
+//    @Transient
+//    var connectedEmployer: UserJpo? = null,
+//
+//    @Transient
+//    var connectedEmployees: List<UserJpo> = listOf(),
 ) : BaseJpo() {
 
     companion object {
-        fun builder(name: String, belongsTo: String? = null, id: Long? = null): UserJpo {
+        fun create(id: Long? = null, name: String, belongsTo: String? = null): UserJpo {
             require(name.isNotBlank()) { "name must not be blank" }
             return UserJpo(id = id, name = name, belongsTo = belongsTo)
         }
     }
 
-    fun updateApplyInfo(status: ApplyStatus?, connectionId: Long?) {
-        this.applyStatus = status
-        this.bizConnectionId = connectionId
-    }
-
-    fun mapConnectedEmployer() {
-        if (wholesalerConnectionsByEmployeeJpo.isNotEmpty()) {
-            val conns = wholesalerConnectionsByEmployeeJpo.mapNotNull { it.employer }
-            if (conns.isNotEmpty()) {
-                connectedEmployer = wholesalerConnectionsByEmployeeJpo.mapNotNull { it.employer }[0]
-            }
-        }
-    }
-
-    fun mapConnectedEmployees() {
-        if (wholesalerConnectionsByEmployerJpo.isNotEmpty()) {
-            connectedEmployees = wholesalerConnectionsByEmployerJpo.mapNotNull { it.employee }
-        }
-    }
+//    fun mapConnectedEmployer() {
+//        if (wholesalerConnectionsByEmployeeJpo.isNotEmpty()) {
+//            val conns = wholesalerConnectionsByEmployeeJpo.mapNotNull { it.employer }
+//            if (conns.isNotEmpty()) {
+//                connectedEmployer = wholesalerConnectionsByEmployeeJpo.mapNotNull { it.employer }[0]
+//            }
+//        }
+//    }
+//
+//    fun mapConnectedEmployees() {
+//        if (wholesalerConnectionsByEmployerJpo.isNotEmpty()) {
+//            connectedEmployees = wholesalerConnectionsByEmployerJpo.mapNotNull { it.employee }
+//        }
+//    }
 }

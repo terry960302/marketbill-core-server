@@ -12,7 +12,7 @@ data class FlowerColor(
     }
 
     companion object {
-        fun from(jpo: FlowerColorJpo): FlowerColor {
+        fun fromJpo(jpo: FlowerColorJpo): FlowerColor {
             return FlowerColor(
                 id = jpo.id?.let { FlowerColorId(it) },
                 name = jpo.name,

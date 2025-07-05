@@ -10,7 +10,6 @@ data class FlowerResult(
     val flowerTypeImgUrl: String?,
     val flowerImages: List<String>,
     val flowerColor: FlowerColorResult?,
-    val biddingFlowers: List<BiddingFlowerResult>,
     val createdAt: LocalDateTime
 ) {
     companion object {
@@ -22,7 +21,6 @@ data class FlowerResult(
                 flowerTypeImgUrl = flower.type.imgUrl,
                 flowerImages = flower.images.map { it.value },
                 flowerColor = flower.color?.let { FlowerColorResult.from(it) },
-                biddingFlowers = flower.biddingFlowers.map { BiddingFlowerResult.from(it) },
                 createdAt = flower.createdAt,
             )
         }

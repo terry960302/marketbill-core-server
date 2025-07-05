@@ -7,11 +7,11 @@ import kr.co.marketbill.marketbillcoreserver.flower.domain.model.Flower
 import kr.co.marketbill.marketbillcoreserver.flower.domain.model.FlowerColor
 import kr.co.marketbill.marketbillcoreserver.flower.domain.model.FlowerType
 import kr.co.marketbill.marketbillcoreserver.flower.domain.vo.*
-import kr.co.marketbill.marketbillcoreserver.shared.infrastructure.adapter.out.persistence.mapper.BaseMapper
+import kr.co.marketbill.marketbillcoreserver.shared.infrastructure.adapter.out.persistence.mapper.DomainPersistenceMapper
 import org.springframework.stereotype.Component
 
 @Component
-class FlowerMapper : BaseMapper<Flower, FlowerJpo>() {
+class FlowerMapper : DomainPersistenceMapper<Flower, FlowerJpo>() {
 
     override fun toDomain(jpo: FlowerJpo): Flower {
         return Flower(
@@ -23,7 +23,7 @@ class FlowerMapper : BaseMapper<Flower, FlowerJpo>() {
                 imgUrl = jpo.flowerTypeJpo.imgUrl
             ),
             images = jpo.images.map { FlowerImageUrl.from(it) },
-            color = FlowerColor.from(jpo.flowerColor),
+            color = FlowerColor.fromJpo(jpo.flowerColor),
             createdAt = jpo.createdAt,
             updatedAt = jpo.updatedAt
         )
@@ -37,7 +37,7 @@ class FlowerMapper : BaseMapper<Flower, FlowerJpo>() {
         return FlowerJpo.create(
             name = domain.name,
             type = FlowerTypeJpo.create(domain.type.name, domain.type.imgUrl),
-            color = FlowerColorJpo.create(domain.color.name),
+            color = domain.color.let { FlowerColorJpo.create(domain.color.name) },
             images = domain.images.map { it.value },
         )
     }
