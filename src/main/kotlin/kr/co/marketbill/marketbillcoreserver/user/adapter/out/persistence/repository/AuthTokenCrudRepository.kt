@@ -7,5 +7,4 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface AuthTokenCrudRepository : JpaRepository<AuthTokenJpo, Long> {
-    fun findByUserId(userId: Long): Optional<AuthTokenJpo>
 }

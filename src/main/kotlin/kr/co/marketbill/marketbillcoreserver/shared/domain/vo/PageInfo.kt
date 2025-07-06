@@ -9,8 +9,11 @@ data class PageInfo(val page: Int, val size: Int) {
     }
 
     companion object {
-        fun from(page: Int, size: Int): PageInfo {
-            return PageInfo(page, size)
+        fun from(page: Int?, size: Int?): PageInfo? {
+            val validPage = page ?: return null
+            val validSize = size ?: return null
+
+            return PageInfo(validPage, validSize)
         }
     }
 }

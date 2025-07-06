@@ -4,10 +4,11 @@ spring:
 
 dgs:
   graphql:
+    path: /graphql # 서버 엔드포인트(콘솔x)
     graphiql:
       title: "MarketBill-Core-Server"
+      path: /graphiql
       enabled: true
-    path: /graphql # 서버 엔드포인트(콘솔x)
 logging:
   file:
     max-history: 9999999

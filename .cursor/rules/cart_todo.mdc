@@ -1,0 +1,231 @@
+---
+description:
+globs:
+alwaysApply: false
+---
+# Cart 도메인 작업 단계별 가이드
+
+## 현재 상태 분석 (2024년 12월 업데이트)
+
+### ✅ 완료된 부분
+- **Domain Layer**: CartItem, ShoppingSession, VO들 완전 구현 ✅
+- **Infrastructure Layer**: Jpo, Repository 완전 구현 ✅
+- **Application Layer**: Command, UseCase, Service 완전 구현 ✅
+- **GraphQL Adapter Layer**: CartFetcher, CartOutputMapper 완전 구현 ✅
+- **사용자 인증 처리**: getUserIdFromContext() 사용으로 완료 ✅
+- **Domain-Jpo 매핑**: 도메인 모델에서 처리 (fromJpo, toJpo) ✅
+
+### ❌ 미완성 부분
+- **DataLoader 및 FieldFetcher**: N+1 문제 해결을 위한 구현 필요
+- **테스트 코드**: 전혀 없음
+
+---
+
+## 🎯 작업 단계별 가이드 (업데이트됨)
+
+### Phase 1: N+1 문제 해결 (Day 1)
+
+#### Step 1-1: CartItemsDataLoader 구현 (2시간)
+
+**파일**: `src/main/kotlin/kr/co/marketbill/marketbillcoreserver/cart/adapter/in/graphql/dataloader/CartItemsDataLoader.kt`
+
+**구현해야 할 내용**:
+```kotlin
+@DgsDataLoader(name = "cartItems")
+class CartItemsDataLoader(private val cartService: CartService) : 
+    MappedBatchLoaderWithContext<Long, CartItemsOutput> {
+
+    override fun load(
+        keys: Set<Long>,
+        environment: BatchLoaderEnvironment
+    ): CompletionStage<Map<Long, CartItemsOutput>> {
+        val command = FindShoppingSessionCommand.from(keys)
+        val results = cartService.findShoppingSessionsByRetailerIds(command)
+        return CompletableFuture.completedFuture(results.mapKeys { it.key.value })
+    }
+}
+```
+
+#### Step 1-2: CartFieldFetcher 구현 (2시간)
+
+**파일**: `src/main/kotlin/kr/co/marketbill/marketbillcoreserver/cart/adapter/in/graphql/datafetcher/CartFieldFetcher.kt`
+
+**구현해야 할 내용**:
+```kotlin
+@DgsComponent
+class CartFieldFetcher {
+    
+    @DgsData(parentType = "ShoppingSession", field = "cartItems")
+    fun cartItems(
+        dfe: DgsDataFetchingEnvironment,
+        @InputArgument pagination: PaginationInput?
+    ): CompletableFuture<CartItemsOutput> {
+        val shoppingSession = dfe.getSource<ShoppingSession>()
+        val dataLoader = dfe.getDataLoader<Long, CartItemsOutput>(CartItemsDataLoader::class.java)
+        
+        return dataLoader.load(shoppingSession.id.toLong())
+    }
+}
+```
+
+#### Step 1-3: CartOutputMapper 수정 (1시간)
+
+**파일**: `src/main/kotlin/kr/co/marketbill/marketbillcoreserver/cart/adapter/in/graphql/mapper/CartOutputMapper.kt`
+
+**수정해야 할 내용**:
+```kotlin
+fun toShoppingSessionOutput(shoppingSession: DomainShoppingSession): ShoppingSession {
+    return ShoppingSession(
+        id = shoppingSession.id?.value?.toInt() ?: 0,
+        retailer = userOutputMapper.toUser(UserResult.from(shoppingSession.retailer!!)),
+        wholesaler = shoppingSession.wholesaler?.let { userOutputMapper.toUser(UserResult.from(it)) },
+        memo = shoppingSession.memo?.value,
+        // cartItems 필드 제거 - DataLoader로 처리
+        createdAt = shoppingSession.createdAt?.toLocalDate() ?: LocalDate.now(),
+        updatedAt = shoppingSession.updatedAt?.toLocalDate() ?: LocalDate.now(),
+        deletedAt = shoppingSession.deletedAt?.toLocalDate()
+    )
+}
+```
+
+#### Step 1-4: Service에 배치 조회 메서드 추가 (1시간)
+
+**파일**: `src/main/kotlin/kr/co/marketbill/marketbillcoreserver/cart/application/service/CartService.kt`
+
+**추가해야 할 내용**:
+```kotlin
+fun findShoppingSessionsByRetailerIds(command: FindShoppingSessionCommand): Map<ShoppingSessionId, ShoppingSession> {
+    return findShoppingSessionUseCase.executeBatch(command)
+}
+```
+
+**파일**: `src/main/kotlin/kr/co/marketbill/marketbillcoreserver/cart/application/usecase/FindShoppingSessionUseCase.kt`
+
+**추가해야 할 내용**:
+```kotlin
+fun executeBatch(command: FindShoppingSessionCommand): Map<ShoppingSessionId, ShoppingSession> {
+    return cartRepository.findShoppingSessionsByRetailerIds(command.retailerIds)
+}
+```
+
+---
+
+### Phase 2: 테스트 코드 작성 (Day 2)
+
+#### Step 2-1: UseCase 단위 테스트 (4시간)
+
+**파일**: `src/test/kotlin/kr/co/marketbill/marketbillcoreserver/cart/application/usecase/`
+
+**작성할 테스트**:
+1. `AddToCartUseCaseTest.kt`
+2. `UpdateCartItemUseCaseTest.kt`
+3. `RemoveCartItemUseCaseTest.kt`
+4. `FindShoppingSessionUseCaseTest.kt`
+5. `UpdateShoppingSessionUseCaseTest.kt`
+
+#### Step 2-2: DataLoader 테스트 (2시간)
+
+**파일**: `src/test/kotlin/kr/co/marketbill/marketbillcoreserver/cart/adapter/in/graphql/dataloader/CartItemsDataLoaderTest.kt`
+
+#### Step 2-3: FieldFetcher 테스트 (2시간)
+
+**파일**: `src/test/kotlin/kr/co/marketbill/marketbillcoreserver/cart/adapter/in/graphql/datafetcher/CartFieldFetcherTest.kt`
+
+---
+
+### Phase 3: 검증 및 최종 점검 (Day 3)
+
+#### Step 3-1: N+1 문제 해결 검증 (2시간)
+- GraphQL Playground에서 쿼리 실행
+- DataLoader 동작 확인
+- 성능 개선 확인
+
+#### Step 3-2: 컴파일 및 빌드 검증 (1시간)
+- 모든 import 정상 작동 확인
+- 타입 매칭 확인
+- 빌드 성공 확인
+
+#### Step 3-3: 통합 테스트 (2시간)
+- 전체 플로우 테스트
+- 실제 DB 연동 테스트
+- DataLoader 동작 테스트
+
+---
+
+## 체크리스트 (업데이트됨)
+
+### Phase 1 체크리스트
+- [ ] CartItemsDataLoader 구현
+- [ ] CartFieldFetcher 구현
+- [ ] CartOutputMapper에서 cartItems 필드 제거
+- [ ] Service에 배치 조회 메서드 추가
+- [ ] UseCase에 배치 조회 메서드 추가
+- [ ] Repository에 배치 조회 메서드 추가
+- [ ] N+1 문제 해결 확인
+
+### Phase 2 체크리스트
+- [ ] AddToCartUseCaseTest 작성
+- [ ] UpdateCartItemUseCaseTest 작성
+- [ ] RemoveCartItemUseCaseTest 작성
+- [ ] FindShoppingSessionUseCaseTest 작성
+- [ ] UpdateShoppingSessionUseCaseTest 작성
+- [ ] CartItemsDataLoaderTest 작성
+- [ ] CartFieldFetcherTest 작성
+
+### Phase 3 체크리스트
+- [ ] N+1 문제 해결 검증
+- [ ] 컴파일 성공 확인
+- [ ] GraphQL 쿼리/뮤테이션 테스트
+- [ ] DataLoader 동작 테스트
+- [ ] 통합 테스트 성공
+
+---
+
+## ⚠️ 주의사항 (업데이트됨)
+
+1. **GraphQL 스키마는 절대 수정하지 말 것**
+2. **DataLoader는 N+1 문제 해결을 위한 필수 구현**
+3. **FieldFetcher는 @DgsData 어노테이션으로 구현**
+4. **Domain-Jpo 매핑은 도메인 모델에서 처리 (fromJpo, toJpo)**
+5. **Mapper 클래스는 만들지 말 것**
+6. **테스트는 반드시 작성할 것**
+7. **MDC 규칙을 준수할 것**
+
+---
+
+## �� 시작하기 (업데이트됨)
+
+**즉시 시작하세요:**
+
+1. **Step 1-1**부터 시작: CartItemsDataLoader 구현
+2. **순서대로 진행**: DataLoader → FieldFetcher → Service/UseCase 배치 메서드 → 테스트
+3. **체크리스트 활용**: 각 단계 완료 시 체크
+4. **N+1 문제 해결**: 성능 최적화가 핵심 목표
+
+---
+
+## �� 예상 소요 시간 (업데이트됨)
+
+| Phase | 작업 | 시간 |
+|---|---|---|
+| **Phase 1** | DataLoader + FieldFetcher + 배치 조회 메서드 | 6시간 |
+| **Phase 2** | 테스트 코드 작성 | 8시간 |
+| **Phase 3** | 검증 및 최종 점검 | 5시간 |
+| **총계** | | **19시간 (2-3일)** |
+
+**핵심 목표: N+1 문제 해결을 통한 성능 최적화!**
+
+---
+
+## �� 핵심 변경사항
+
+### **제거된 작업**
+- ❌ **Mapper 구현**: Domain-Jpo 매핑은 도메인 모델에서 처리
+- ❌ **CartItemMapper.toDomain()**: 불필요
+- ❌ **ShoppingSessionMapper.toDomain()**: 불필요
+
+### **추가된 작업**
+- ✅ **배치 조회 메서드**: Service, UseCase, Repository에 배치 조회 기능 추가
+- ✅ **DataLoader 최적화**: N+1 문제 해결에 집중
+
+**도메인 중심 설계로 더 깔끔한 구조가 되었습니다!**

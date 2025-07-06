@@ -9,6 +9,8 @@ import kr.co.marketbill.marketbillcoreserver.flower.domain.model.FlowerSearchCri
 import kr.co.marketbill.marketbillcoreserver.flower.domain.vo.FlowerId
 import kr.co.marketbill.marketbillcoreserver.shared.domain.vo.PageInfo
 import kr.co.marketbill.marketbillcoreserver.shared.domain.vo.PageResult
+import kr.co.marketbill.marketbillcoreserver.shared.error.ErrorCode
+import kr.co.marketbill.marketbillcoreserver.shared.error.MarketbillException
 import org.springframework.stereotype.Repository
 
 @Repository
@@ -18,6 +20,11 @@ class FlowerRepositoryImpl(
     private val crudRepository: FlowerCrudRepository,
     private val biddingFlowerCrudRepository: BiddingFlowerCrudRepository,
 ) : FlowerRepository {
+    override fun findById(id: FlowerId): Flower? {
+        val jpo = crudRepository.findById(id.value).orElseThrow() ?: throw MarketbillException(ErrorCode.NO_FLOWER)
+        return Flower.fromJpo(jpo)
+
+    }
 
     override fun findFlowersWithCriteria(
         criteria: FlowerSearchCriteria,

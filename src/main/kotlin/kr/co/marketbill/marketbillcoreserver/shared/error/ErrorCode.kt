@@ -27,6 +27,12 @@ enum class ErrorCode(val status: Int, val code: String, val message: String) {
     NO_CART_WHOLESALER(HttpStatus.BAD_REQUEST.value(), "E203", "장바구니에 도매상이 연결되어 있지 않습니다."),
     NO_ORDER_SHEET(HttpStatus.NOT_FOUND.value(), "E204", "주문서를 찾을 수 없습니다."),
     NO_PRICE_ORDER_ITEM(HttpStatus.BAD_REQUEST.value(), "E205", "주문 항목에 가격 정보가 없습니다."),
+    // Cart
+    CART_ITEM_ALREADY_DELETED(HttpStatus.BAD_REQUEST.value(), "E206", "이미 삭제된 장바구니 항목입니다."),
+    CART_ITEM_ALREADY_ORDERED(HttpStatus.BAD_REQUEST.value(), "E207", "이미 주문된 장바구니 항목은 삭제할 수 없습니다."),
+    CART_ITEM_ALREADY_ORDERED_UPDATE(HttpStatus.BAD_REQUEST.value(), "E208", "이미 주문된 장바구니 항목입니다."),
+    NO_RETAILER(HttpStatus.NOT_FOUND.value(), "E209", "소매상을 찾을 수 없습니다."),
+    NO_WHOLESALER(HttpStatus.NOT_FOUND.value(), "E210", "도매상을 찾을 수 없습니다."),
     // New
     NO_FLOWER(HttpStatus.NOT_FOUND.value(), "E301", "꽃을 찾을 수 없습니다.");
 }

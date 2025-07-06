@@ -28,7 +28,7 @@ data class PageResult<T>(val content: List<T>, val pageInfo: PageInfo, val total
                 hasNext: Boolean
         ): PageResult<T> {
             val pageInfo = PageInfo.from(currentPage, content.size)
-            return PageResult(content, pageInfo, totalElements)
+            return PageResult(content, pageInfo!!, totalElements)
         }
     }
 }

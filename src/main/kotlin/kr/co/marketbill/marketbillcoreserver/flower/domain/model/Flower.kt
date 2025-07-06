@@ -38,6 +38,16 @@ data class Flower(
             updatedAt = jpo.updatedAt,
         )
 
+        fun toJpo(domain : Flower) : FlowerJpo{
+            return FlowerJpo(
+                id = domain.id?.value,
+                name = domain.name,
+                flowerTypeJpo = FlowerType.toJpo(domain.type),
+                images = domain.images.map { it.value },
+                flowerColor = domain.color.let { FlowerColor.toJpo(domain.color) },
+            )
+        }
+
     }
 
 

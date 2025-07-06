@@ -7,4 +7,4 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface BizConnectionCrudRepository :
-        JpaRepository<BizConnectionJpo, Long>, JpaSpecificationExecutor<BizConnectionJpo> {}
+    JpaRepository<BizConnectionJpo, Long> {}

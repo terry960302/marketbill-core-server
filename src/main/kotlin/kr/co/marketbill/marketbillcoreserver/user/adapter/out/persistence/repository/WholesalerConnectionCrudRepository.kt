@@ -7,5 +7,4 @@ import org.springframework.stereotype.Repository
 
 @Repository
 interface WholesalerConnectionCrudRepository :
-        JpaRepository<WholesalerConnectionJpo, Long>,
-        JpaSpecificationExecutor<WholesalerConnectionJpo> {}
+    JpaRepository<WholesalerConnectionJpo, Long> {}

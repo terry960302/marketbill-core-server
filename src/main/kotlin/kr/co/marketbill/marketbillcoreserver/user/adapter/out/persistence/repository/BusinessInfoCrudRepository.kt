@@ -7,7 +7,5 @@ import org.springframework.data.jpa.repository.JpaSpecificationExecutor
 import org.springframework.stereotype.Repository
 
 @Repository
-interface BusinessInfoCrudRepository :
-        JpaRepository<BusinessInfoJpo, Long>, JpaSpecificationExecutor<BusinessInfoJpo> {
-    fun findByUserId(userId: Long): Optional<BusinessInfoJpo>
+interface BusinessInfoCrudRepository : JpaRepository<BusinessInfoJpo, Long> {
 }

@@ -3,10 +3,10 @@ package kr.co.marketbill.marketbillcoreserver.user.adapter.out.persistence.repos
 import kr.co.marketbill.marketbillcoreserver.shared.domain.vo.PageInfo
 import kr.co.marketbill.marketbillcoreserver.shared.domain.vo.PageResult
 import kr.co.marketbill.marketbillcoreserver.user.adapter.out.persistence.entity.UserJpo
-import kr.co.marketbill.marketbillcoreserver.user.application.port.outbound.UserRepository
-import kr.co.marketbill.marketbillcoreserver.user.domain.model.User
 import kr.co.marketbill.marketbillcoreserver.user.application.command.UserSearchCriteria
+import kr.co.marketbill.marketbillcoreserver.user.application.port.outbound.UserRepository
 import kr.co.marketbill.marketbillcoreserver.user.domain.model.BizConnection
+import kr.co.marketbill.marketbillcoreserver.user.domain.model.User
 import kr.co.marketbill.marketbillcoreserver.user.domain.vo.AccountRole
 import kr.co.marketbill.marketbillcoreserver.user.domain.vo.ApplyStatus
 import kr.co.marketbill.marketbillcoreserver.user.domain.vo.PhoneNumber
@@ -17,8 +17,8 @@ import org.springframework.stereotype.Repository
 
 @Repository
 class UserRepositoryImpl(
-    private val userQueryRepository: UserQueryRepository,
-    private val userCrudRepository: UserCrudRepository
+        private val userQueryRepository: UserQueryRepository,
+        private val userCrudRepository: UserCrudRepository
 ) : UserRepository {
 
     override fun save(user: User): User {
@@ -30,39 +30,51 @@ class UserRepositoryImpl(
         return jpo?.let { User.fromJpo(it) }
     }
 
+    override fun findByIds(ids: Set<UserId>): Map<UserId, User> {
+        val userJpos = userCrudRepository.findAllById(ids.map { it.value })
+        return userJpos.associate { userJpo ->
+            val userId = UserId(userJpo.id!!)
+            userId to User.fromJpo(userJpo)
+        }
+    }
+
     override fun findByPhoneNumber(phoneNumber: PhoneNumber): User? {
-        val userJpo: UserJpo? = userCrudRepository.findByPhoneNo(phoneNumber.value)
+        val userJpo: UserJpo? = userCrudRepository.findByUserCredentialJpo_PhoneNo(phoneNumber.value)
         return userJpo?.let { User.fromJpo(userJpo) }
     }
 
     override fun search(criteria: UserSearchCriteria, pageInfo: PageInfo): PageResult<User> {
         val pageRequest = PageRequest.of(pageInfo.page, pageInfo.size)
         val users: Page<User> =
-            userQueryRepository.findUsersWithDynamicQuery(
-                roles = criteria.roles,
-                name = criteria.name,
-                phoneNo = criteria.phoneNumber?.let { PhoneNumber.from(criteria.phoneNumber) },
-                pageable = pageRequest
-            )
+                userQueryRepository.findUsersWithDynamicQuery(
+                        roles = criteria.roles,
+                        name = criteria.name,
+                        phoneNo =
+                                criteria.phoneNumber?.let {
+                                    PhoneNumber.from(criteria.phoneNumber)
+                                },
+                        pageable = pageRequest
+                )
 
         return PageResult(
-            content = users.content,
-            pageInfo = pageInfo,
-            totalElements = users.totalElements
+                content = users.content,
+                pageInfo = pageInfo,
+                totalElements = users.totalElements
         )
     }
 
     override fun findConnectableUsers(
-        currentUserId: UserId,
-        currentUserRole: AccountRole,
-        pageInfo: PageInfo
+            currentUserId: UserId,
+            currentUserRole: AccountRole,
+            pageInfo: PageInfo
     ): PageResult<User> {
         val pageable = PageRequest.of(pageInfo.page, pageInfo.size)
-        val users = userQueryRepository.findConnectableUsers(currentUserId, currentUserRole, pageable)
+        val users =
+                userQueryRepository.findConnectableUsers(currentUserId, currentUserRole, pageable)
         return PageResult(
-            content = users.content,
-            pageInfo = pageInfo,
-            totalElements = users.totalElements
+                content = users.content,
+                pageInfo = pageInfo,
+                totalElements = users.totalElements
         )
     }
 
@@ -71,25 +83,33 @@ class UserRepositoryImpl(
     }
 
     override fun existsByPhoneNumber(phoneNumber: PhoneNumber): Boolean {
-        return userCrudRepository.existsByPhoneNo(phoneNo = phoneNumber.value)
+        return userCrudRepository.existsByUserCredentialJpo_PhoneNo(phoneNo = phoneNumber.value)
     }
 
     override fun findAppliedConnectionsByRetailerIds(
-        retailerIds: Set<UserId>,
-        status: List<ApplyStatus>?,
-        pageInfo: PageInfo
+            retailerIds: Set<UserId>,
+            status: List<ApplyStatus>?,
+            pageInfo: PageInfo
     ): Page<BizConnection> {
         val pageable = PageRequest.of(pageInfo.page, pageInfo.size)
-        return userQueryRepository.findAppliedConnectionsByRetailerIds(retailerIds, status, pageable)
+        return userQueryRepository.findAppliedConnectionsByRetailerIds(
+                retailerIds,
+                status,
+                pageable
+        )
     }
 
     override fun findReceivedConnectionsByWholesalerIds(
-        wholesalerIds: Set<UserId>,
-        status: List<ApplyStatus>?,
-        pageInfo: PageInfo
+            wholesalerIds: Set<UserId>,
+            status: List<ApplyStatus>?,
+            pageInfo: PageInfo
     ): Page<BizConnection> {
         val pageable = PageRequest.of(pageInfo.page, pageInfo.size)
-        return userQueryRepository.findReceivedConnectionsByWholesalerIds(wholesalerIds, status, pageable)
+        return userQueryRepository.findReceivedConnectionsByWholesalerIds(
+                wholesalerIds,
+                status,
+                pageable
+        )
     }
 
     override fun findEmployeesByEmployerIds(employerIds: Set<UserId>): List<User> {
@@ -99,6 +119,4 @@ class UserRepositoryImpl(
     override fun findEmployersByEmployeeIds(employeeIds: Set<UserId>): List<User> {
         return userQueryRepository.findEmployersByEmployeeIds(employeeIds)
     }
-
-
 }

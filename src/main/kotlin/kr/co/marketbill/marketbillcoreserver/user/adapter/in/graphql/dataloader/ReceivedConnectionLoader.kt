@@ -1,7 +1,7 @@
 package kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.dataloader
 
 import com.netflix.graphql.dgs.DgsDataLoader
-import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.context.BizConnectionKeyContext
+import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.context.BizConnectionContext
 import java.util.concurrent.CompletableFuture
 import java.util.concurrent.CompletionStage
 import kr.co.marketbill.marketbillcoreserver.user.application.command.FindConnectionsCommand
@@ -19,7 +19,7 @@ class ReceivedConnectionLoader(
         keys: Set<Long>,
         environment: org.dataloader.BatchLoaderEnvironment
     ): CompletionStage<Map<Long, List<BizConnection>>> {
-        val context = environment.keyContexts as BizConnectionKeyContext
+        val context = environment.keyContexts as BizConnectionContext
         val command = FindConnectionsCommand.from(keys, context.status, context.pageInfo)
         val results = userService.findReceivedConnectionsByWholesalerIds(command)
         return CompletableFuture.completedFuture(results.mapKeys { it.key.value })

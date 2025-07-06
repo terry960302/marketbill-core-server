@@ -31,7 +31,7 @@ data class UserSearchCommand(val criteria: UserSearchCriteria, val pageInfo: Pag
                     name = name,
                     connectable = connectable,
                 ),
-                pageInfo = PageInfo.from(page, size)
+                pageInfo = PageInfo.from(page, size)!!
             )
         }
     }

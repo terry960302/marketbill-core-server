@@ -20,6 +20,14 @@ data class FlowerType(
             name = jpo.name,
             imgUrl = jpo.imgUrl
         )
+
+        fun toJpo(domain : FlowerType) : FlowerTypeJpo  {
+            return FlowerTypeJpo(
+                id = domain.id?.value,
+                name = domain.name,
+                imgUrl = domain.imgUrl
+            )
+        }
     }
 }
 

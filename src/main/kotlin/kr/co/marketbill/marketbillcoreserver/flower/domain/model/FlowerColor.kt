@@ -18,5 +18,12 @@ data class FlowerColor(
                 name = jpo.name,
             )
         }
+
+        fun toJpo(domain: FlowerColor): FlowerColorJpo {
+            return FlowerColorJpo(
+                id = domain.id?.value,
+                name = domain.name
+            )
+        }
     }
 }

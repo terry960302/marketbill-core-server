@@ -8,14 +8,13 @@ import kr.co.marketbill.marketbillcoreserver.DgsConstants
 import kr.co.marketbill.marketbillcoreserver.shared.adapter.`in`.graphql.mapper.toPageInfo
 import kr.co.marketbill.marketbillcoreserver.types.BizConnectionFilterInput
 import kr.co.marketbill.marketbillcoreserver.types.PaginationInput
-import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.context.BizConnectionKeyContext
+import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.context.BizConnectionContext
 import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.dataloader.AppliedConnectionLoader
 import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.dataloader.ConnectedEmployeesLoader
 import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.dataloader.ConnectedEmployerLoader
 import kr.co.marketbill.marketbillcoreserver.user.adapter.`in`.graphql.dataloader.ReceivedConnectionLoader
 import kr.co.marketbill.marketbillcoreserver.user.domain.model.BizConnection
 import kr.co.marketbill.marketbillcoreserver.user.domain.model.User
-import java.util.*
 import java.util.concurrent.CompletableFuture
 
 @DgsComponent
@@ -31,7 +30,7 @@ class UserFieldFetcher {
 
         return dataLoader.load(
             user.id!!.value,
-            BizConnectionKeyContext.from(filter?.applyStatus, pagination.toPageInfo())
+            BizConnectionContext.from(filter?.applyStatus, pagination.toPageInfo())
         )
     }
 
@@ -46,7 +45,7 @@ class UserFieldFetcher {
 
         return dataLoader.load(
             user.id!!.value,
-            BizConnectionKeyContext.from(filter?.applyStatus, pagination.toPageInfo())
+            BizConnectionContext.from(filter?.applyStatus, pagination.toPageInfo())
         )
     }
 
