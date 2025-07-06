@@ -131,7 +131,7 @@ extend type Query {
     dailyOrderSheetAggregates(pagination : PaginationInput) : [OrderSheetsAggregate!]!,
     # [도매상] 오늘의 주문합계
     # - date : "yyyy-MM-dd" 문자열 포맷(없는 경우 오늘 날짜 들어감)
-    dailyOrderSheetAggregate(date : String) : OrderSheetsAggregate,
+    dailyOrderSheetAggregate(date : LocalDate) : OrderSheetsAggregate,
     # [도매상] 판매가 일괄적용시 불러오는 주문항목들
     dailyOrderItems(filter : DailyOrderItemFilterInput, pagination : PaginationInput) : [DailyOrderItem!]!,
 

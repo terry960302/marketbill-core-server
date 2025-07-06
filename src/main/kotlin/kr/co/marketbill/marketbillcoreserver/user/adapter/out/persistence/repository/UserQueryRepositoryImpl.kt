@@ -4,6 +4,7 @@ import com.querydsl.core.QueryFactory
 import com.querydsl.core.types.dsl.BooleanExpression
 import com.querydsl.jpa.impl.JPAQuery
 import com.querydsl.jpa.impl.JPAQueryFactory
+import kr.co.marketbill.marketbillcoreserver.shared.adapter.out.persistence.mapper.toPageJpoResponse
 import kr.co.marketbill.marketbillcoreserver.user.adapter.out.persistence.entity.BizConnectionJpo
 import kr.co.marketbill.marketbillcoreserver.user.adapter.out.persistence.entity.QBizConnectionJpo
 import javax.persistence.EntityManager
@@ -38,7 +39,7 @@ class UserQueryRepositoryImpl(private val jpaQuery: JPAQueryFactory) : UserQuery
                 .selectFrom(userJpo)
                 .where(rolesIn(roles?.map { it.name }), nameLike(name), phoneNoEq(phoneNo?.value))
 
-        return toPageJpoResponse(query, pageable).map { User.fromJpo(it) }
+        return query.toPageJpoResponse(pageable).map { User.fromJpo(it) }
     }
 
     override fun findConnectableUsers(
@@ -54,7 +55,7 @@ class UserQueryRepositoryImpl(private val jpaQuery: JPAQueryFactory) : UserQuery
                         ?.and(excludeId(currentUserId.value))
                 )
 
-        return toPageJpoResponse(query, pageable).map { User.fromJpo(it) }
+        return query.toPageJpoResponse(pageable).map { User.fromJpo(it) }
     }
 
     // 내가 소매상일 때: 내가 보낸 요청만 조회
@@ -68,7 +69,7 @@ class UserQueryRepositoryImpl(private val jpaQuery: JPAQueryFactory) : UserQuery
             .selectFrom(bizConnectionJpo)
             .where(retailerIdsInAndApplyStatusIn(retailerIds, status))
 
-        return toPageJpoResponse<BizConnectionJpo>(query, pageable)
+        return query.toPageJpoResponse(pageable)
             .map { BizConnection.fromJpo(it) }
     }
 
@@ -83,7 +84,7 @@ class UserQueryRepositoryImpl(private val jpaQuery: JPAQueryFactory) : UserQuery
             .selectFrom(bizConnectionJpo)
             .where(wholesalerIdsInAndApplyStatusIn(wholesalerIds, status))
 
-        return toPageJpoResponse(query, pageable)
+        return query.toPageJpoResponse(pageable)
             .map { BizConnection.fromJpo(it) }
 
     }
@@ -111,12 +112,6 @@ class UserQueryRepositoryImpl(private val jpaQuery: JPAQueryFactory) : UserQuery
             .distinct()
             .fetch()
             .map { User.fromJpo(it) }
-    }
-
-    private fun <T> toPageJpoResponse(query: JPAQuery<T>, pageable: Pageable): Page<T> {
-        val total = query.fetchCount()
-        val content = query.offset(pageable.offset).limit(pageable.pageSize.toLong()).fetch()
-        return PageImpl<T>(content, pageable, total)
     }
 
     private fun retailerIdsInAndApplyStatusIn(

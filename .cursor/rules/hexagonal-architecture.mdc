@@ -68,7 +68,7 @@ build/generated/sources/dgs-codegen/kr/co/marketbill/marketbillcoreserver/types
 ```kotlin
 // Domain
 data class Cart(...)                   // 핵심 도메인 객체
-@JvmInline value class CartId(...)     // ID VO
+@JvmInline value class CartId(...)     // ID VO(vo는 반드시 from 정적메서드를 통해 원시타입을 vo로 만들 수 있게 해야함.))
 
 // Application
 data class CartSearchCommand(...)

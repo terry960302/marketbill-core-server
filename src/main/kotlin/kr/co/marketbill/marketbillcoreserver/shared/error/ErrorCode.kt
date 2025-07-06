@@ -34,5 +34,11 @@ enum class ErrorCode(val status: Int, val code: String, val message: String) {
     NO_RETAILER(HttpStatus.NOT_FOUND.value(), "E209", "소매상을 찾을 수 없습니다."),
     NO_WHOLESALER(HttpStatus.NOT_FOUND.value(), "E210", "도매상을 찾을 수 없습니다."),
     // New
-    NO_FLOWER(HttpStatus.NOT_FOUND.value(), "E301", "꽃을 찾을 수 없습니다.");
+    NO_FLOWER(HttpStatus.NOT_FOUND.value(), "E301", "꽃을 찾을 수 없습니다."),
+    // Order
+    CANNOT_DELETE_ORDER_SHEET_WITH_RECEIPT(HttpStatus.BAD_REQUEST.value(), "E302", "영수증이 발행된 주문서는 삭제할 수 없습니다."),
+    NO_ORDER_ITEM(HttpStatus.NOT_FOUND.value(), "E303", "주문 항목을 찾을 수 없습니다."),
+    NO_CUSTOM_ORDER_ITEM(HttpStatus.NOT_FOUND.value(), "E304", "커스텀 주문 항목을 찾을 수 없습니다."),
+    NO_DAILY_ORDER_ITEM(HttpStatus.NOT_FOUND.value(), "E305", "일별 주문 항목을 찾을 수 없습니다."),
+    NO_ORDER_SHEET_RECEIPT(HttpStatus.NOT_FOUND.value(), "E306", "주문서 영수증을 찾을 수 없습니다.");
 }

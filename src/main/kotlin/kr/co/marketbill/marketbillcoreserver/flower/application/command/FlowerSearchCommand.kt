@@ -24,9 +24,8 @@ data class FlowerSearchCommand(
             filter: FlowerFilterInput?,
             pagination: PaginationInput?
         ): FlowerSearchCommand {
-            val dateFormatter = DateTimeFormatter.ofPattern("yyyy-MM-dd")
-            val fromDate = filter?.dateRange?.fromDate?.let { LocalDate.parse(it, dateFormatter) }
-            val toDate = filter?.dateRange?.toDate?.let { LocalDate.parse(it, dateFormatter) }
+            val fromDate = filter?.dateRange?.fromDate
+            val toDate = filter?.dateRange?.toDate
             val keyword = filter?.keyword?.takeIf { !it.isNullOrBlank() }
             val page = pagination?.page ?: 0
             val size = pagination?.size ?: 15
