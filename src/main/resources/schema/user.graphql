@@ -15,17 +15,17 @@ type User {
     connectedEmployees : [User!]!,
     # [도매상] 연결된 사장(업체)
     connectedEmployer : User,
-    # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
-    applyStatus : ApplyStatus, @deprecated(reason:  "applyStatus is deprecated. Use 'connectableUsers(QUERY)' instead.")
-    # 거래처 신청 테이블 고유값
-    bizConnectionId : Int, @deprecated(reason:  "applyStatus is deprecated. Use 'connectableUsers(QUERY)' instead.")
+#    # 거래처 신청상태(토큰 내부 role에 기반하여 상대방과의 거래관계 상태값을 바로 가져옴)
+#    applyStatus : ApplyStatus, @deprecated(reason:  "applyStatus is deprecated. Use 'connectableUsers(QUERY)' instead.")
+#    # 거래처 신청 테이블 고유값
+#    bizConnectionId : Int, @deprecated(reason:  "applyStatus is deprecated. Use 'connectableUsers(QUERY)' instead.")
     deletedAt : LocalDate,
 }
 
 # 유저의 로그인, 회원가입 정보
 type UserCredential {
     id : Int!,
-    user: User!,
+    user: User,
     # 역할, 권한
     role : AccountRole!,
     phoneNo : String!,
@@ -83,17 +83,19 @@ type Query {
     # - 거래처 목록 가져오기(내가 신청한 것만)
     me : User!
     # 유저 목록 가져오기
+    # - 일반 목록 조회
+    # - 본인의 role 과 반대인 유저의 목록을 가져옵니다.(로그인 필요)
     users(filter : UserFilterInput, pagination : PaginationInput) : [User!]!,
     # [관리자] 단일 유저 정보 가져오기
     user(id : Int!) : User!,
-    # 거래관계를 맺을 수 있는 유저 전체 목록 가져오기
-    # : 본인의 role 과 반대인 유저의 목록을 가져옵니다.
-    connectableUsers(pagination : PaginationInput) : [User!]!
+#    # 거래관계를 맺을 수 있는 유저 전체 목록 가져오기
+#    # : 본인의 role 과 반대인 유저의 목록을 가져옵니다.
+#    connectableUsers(pagination : PaginationInput) : [User!]!
 
 
-    getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User!]!, @deprecated(reason: "getUsers is deprecated. Use 'users' instead.")
-    getUser(id : Int!) : User!, @deprecated(reason: "getUser is deprecated. Use 'user' instead.")
-    getConnectableUsers(pagination : PaginationInput) : [User!]!, @deprecated(reason: "getConnectableUsers is deprecated. Use 'connectableUsers' instead.")
+#    getUsers(filter : UserFilterInput, pagination : PaginationInput) : [User!]!, @deprecated(reason: "getUsers is deprecated. Use 'users' instead.")
+#    getUser(id : Int!) : User!, @deprecated(reason: "getUser is deprecated. Use 'user' instead.")
+#    getConnectableUsers(pagination : PaginationInput) : [User!]!, @deprecated(reason: "getConnectableUsers is deprecated. Use 'connectableUsers' instead.")
 }
 
 ## -------------- MUTATION ------------------

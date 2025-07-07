@@ -1,0 +1,40 @@
+type ShoppingSession{
+    id : Int!,
+    retailer: User,
+    wholesaler : User,
+    memo : String,
+    cartItems(pagination: PaginationInput) : CartItemsOutput!,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+type CartItem{
+    id : Int!,
+    retailer : User,
+    wholesaler : User,
+    flower : Flower!,
+    quantity : Int!,
+    grade : FlowerGrade!,
+    memo : String,
+    orderedAt : LocalDate,
+    createdAt : LocalDate!,
+    updatedAt : LocalDate!,
+    deletedAt : LocalDate,
+}
+
+extend type Query {
+    # [소매상] 장바구니 쇼핑 세션 가져오기
+    shoppingSession : ShoppingSession,
+}
+
+extend type Mutation {
+    # [소매상] 장바구니 담기
+    addToCart(input : AddToCartInput) : CartItem!,
+    # [소매상] 장바구니 항목 삭제
+    removeCartItem(cartItemId : Int!) : CommonResponse!,
+    # [소매상] 장바구니 항목 수정
+    updateCartItem(input : UpdateCartItemInput!) : CartItem!
+    # [소매상] 장바구니 쇼핑 세션값(도매상, 메모) 수정
+    updateShoppingSession(input : UpdateShoppingSessionInput!) : ShoppingSession!,
+}
